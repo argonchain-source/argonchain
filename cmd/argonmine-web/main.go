@@ -105,10 +105,14 @@ type page struct {
 	MineURL   string // where "start mining" links go
 	DocsURL   string // the documentation's base: https://docs.example.com, or <site>/docs
 	SiteURL   string // the website's front page
+	Source    string // the public source repository
 	Assets    string // /assets/<build>/: token logos and shared files
 	StaticV   string // cache-busting version for the miner files
 	Data      any
 }
+
+// sourceURL is the public source repository, linked from the site, the app and the docs.
+const sourceURL = "https://github.com/argonchain-source/argonchain"
 
 func main() {
 	var cfg Config
@@ -471,7 +475,7 @@ func (s *site) renderTo(buf *bytes.Buffer, name, active, title string, data any)
 		Title: title, Head: template.HTML(ui.Head(template.HTMLEscapeString(full))), Mark: template.HTML(ui.Mark), Brand: ui.Brand, Coin: ui.Coin,
 		Tagline: ui.Tagline, Version: ui.Version, UIJS: ui.AssetPath("ui.js"), EVMJS: ui.AssetPath("evm.js"), Cfg: s.cfg, Docs: s.docs, DocGroups: s.groups, Active: active,
 		AppMode: name == "app", MineURL: mineURL, StaticV: s.staticV, Data: data,
-		DocsURL: s.docsBase, SiteURL: s.siteURL(), Assets: ui.AssetPath(""),
+		DocsURL: s.docsBase, SiteURL: s.siteURL(), Source: sourceURL, Assets: ui.AssetPath(""),
 	})
 }
 

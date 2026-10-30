@@ -70,7 +70,8 @@ Hosting is described in [deploy/README.md](deploy/README.md) and
 
 ## Build and test
 
-Requires Go 1.26 or later. No cgo, so it builds anywhere Go does.
+The source is this repository, [github.com/argonchain-source/argonchain](https://github.com/argonchain-source/argonchain),
+under the MIT licence. Requires Go 1.26 or later. No cgo, so it builds anywhere Go does.
 
 ```
 go build ./...
@@ -79,7 +80,7 @@ go build -o argonmined ./cmd/argonmined
 ```
 
 The browser miner and wallet: `GOOS=js GOARCH=wasm go build -o cmd/argonmine-web/site/static/miner.wasm ./cmd/argonmine-webminer`.
-The contracts: `forge test` in `contracts/` (Foundry).
+The contracts: `forge install foundry-rs/forge-std && forge test` in `contracts/` (Foundry).
 
 ## Mining in the browser
 

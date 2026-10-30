@@ -16,7 +16,8 @@ only when it does, and will be announced here first.
 
 ## How the code is reviewed
 
-There is no external audit. Instead, every part that holds or moves money
+The source is public at [github.com/argonchain-source/argonchain](https://github.com/argonchain-source/argonchain),
+with its tests, so a report can point at the line. There is no external audit. Instead, every part that holds or moves money
 (the chain rules, the bridge and its contracts, the wallets, the swap
 service) goes through independent in-house review passes, and a finding
 counts only once a test proves it; the fix keeps that test as a regression

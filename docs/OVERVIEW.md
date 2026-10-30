@@ -112,8 +112,9 @@ ARG. See [Assets](docs/TOKENS.md).
 
 **Nodes.** A node is a program, `argonmined`, that keeps a full copy of the
 chain, checks every block and transaction, and passes them on to other
-nodes. Anyone can run one. A node earns nothing by itself; mining is what
-pays. The treasury may fund public seed nodes later. See
+nodes. Anyone can run one, from a release archive or built from the
+[source](https://github.com/argonchain-source/argonchain). A node earns nothing by itself;
+mining is what pays. The treasury may fund public seed nodes later. See
 [Run a node](docs/NODE.md).
 
 ## Where does the project stand?
@@ -137,3 +138,4 @@ pays. The treasury may fund public seed nodes later. See
 - [Roadmap](docs/ROADMAP.md): what launched and what comes next.
 - [Run a node](docs/NODE.md): for operators who want to verify the chain themselves or run a seed.
 - [Consensus specification](docs/SPEC.md): every rule, in full.
+- [Source code](https://github.com/argonchain-source/argonchain): the node, wallets, explorer, bridge, swap service and app, under the MIT licence.

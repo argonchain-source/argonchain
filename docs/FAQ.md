@@ -177,7 +177,8 @@ predicate layer is a candidate for later. See
 **How do I run a node?**
 You do not need one to use or mine Argonmine. For operators who want to
 verify the chain themselves, [Run a node](docs/NODE.md) covers hardware,
-installation, configuration and monitoring.
+installation, configuration and monitoring. Install a release archive, or
+build the node from the [source](https://github.com/argonchain-source/argonchain).
 
 **What do I get for running a node?**
 Nothing from the protocol, and that is deliberate: there is no masternode
@@ -189,6 +190,13 @@ still matter for the network, as seed nodes and as independent verifiers,
 and are run by people and projects with a reason to keep the chain
 healthy, exactly as on Bitcoin. The treasury may fund public seed nodes
 later. A node that mines must run release 1.1.0 before block 300.
+
+**Is the code open source?**
+Yes. The node, the wallets, the explorer, the bridge and its contracts,
+the swap service and the app are at
+[github.com/argonchain-source/argonchain](https://github.com/argonchain-source/argonchain), under
+the MIT licence, with the tests. Anyone can build it, run a node and
+check the rules in [the specification](docs/SPEC.md) against the code.
 
 **Has the code been audited?**
 Not by an outside firm. Internal reviews of the chain, node and network

@@ -211,8 +211,9 @@ referral rewards in an address's history.
 
 ## Mining with a node
 
-If you run a node (see [Run a node](docs/NODE.md)), it can mine with as
-many processor cores as you give it. It builds blocks from its own copy of
+If you run a node (see [Run a node](docs/NODE.md); install a release or
+[build it from source](docs/NODE.md#build-from-source)), it can mine with
+as many processor cores as you give it. It builds blocks from its own copy of
 the chain and needs no explorer. Use the address from the app's
 **Receive** screen, and the rewards appear in the app:
 

@@ -29,7 +29,7 @@
   <div class="wrap">
     <div class="foot-row">
       <a class="wordmark" href="{{.MineURL}}">{{.Mark}}<span>{{.Brand}}</span></a>
-      <nav class="foot-links" aria-label="Footer"><a href="{{.MineURL}}">App</a><a href="{{.DocsURL}}">Docs</a><a href="{{.Cfg.Explorer}}">Explorer</a>{{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}">Bridge</a>{{end}}<a href="{{.DocsURL}}/security">Security</a></nav>
+      <nav class="foot-links" aria-label="Footer"><a href="{{.MineURL}}">App</a><a href="{{.DocsURL}}">Docs</a><a href="{{.Cfg.Explorer}}">Explorer</a>{{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}">Bridge</a>{{end}}<a href="{{.DocsURL}}/security">Security</a><a href="{{.Source}}">Source</a></nav>
     </div>
     <div class="foot-meta"><span>{{.Brand}} {{.Version}}</span><span>No premine. From block 300, 1% of each block funds the treasury.</span></div>
   </div>
@@ -404,6 +404,7 @@
       <a href="{{.Cfg.Explorer}}" target="_blank" rel="noopener"><i data-icon="search"></i>Explorer</a>
       {{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}" target="_blank" rel="noopener"><i data-icon="swap"></i>Bridge</a>{{end}}
       <a href="{{.DocsURL}}" target="_blank" rel="noopener"><i data-icon="layers"></i>Docs</a>
+      <a href="{{.Source}}" target="_blank" rel="noopener"><i data-icon="cube"></i>Source</a>
     </nav>
     <div class="sidebar-foot">
       <div class="me" id="meCard" title="Open wallet"><div class="av">ARG</div><div><div class="b" id="meBal">–</div><div class="a" id="meAddr">no wallet yet</div></div></div>
@@ -694,7 +695,7 @@
               <div class="card st-card">
                 <div class="st-row" id="installRow" hidden><span class="st-ic"><i data-icon="download"></i></span><div class="st-t"><b>Install the app</b><span id="installHint">Opens from your home screen, full screen.</span></div><button class="btn btn-primary btn-sm" id="btnInstall" type="button" hidden>Install</button></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="globe"></i></span><div class="st-t"><b>Network</b><span id="netHint">–</span></div><a class="btn btn-secondary btn-sm" href="{{.Cfg.Explorer}}" target="_blank" rel="noopener">Explorer</a></div>
-                <div class="st-row"><span class="st-ic"><i data-icon="layers"></i></span><div class="st-t"><b>{{.Brand}} app {{.Version}}</b><span>No premine. From block 300, 1% of each block funds the treasury.</span></div><div class="st-acts"><a class="btn btn-ghost btn-sm" href="{{.DocsURL}}" target="_blank" rel="noopener">Docs</a><a class="btn btn-ghost btn-sm" href="{{.DocsURL}}/security" target="_blank" rel="noopener">Security</a></div></div>
+                <div class="st-row"><span class="st-ic"><i data-icon="layers"></i></span><div class="st-t"><b>{{.Brand}} app {{.Version}}</b><span>No premine. From block 300, 1% of each block funds the treasury.</span></div><div class="st-acts"><a class="btn btn-ghost btn-sm" href="{{.DocsURL}}" target="_blank" rel="noopener">Docs</a><a class="btn btn-ghost btn-sm" href="{{.DocsURL}}/security" target="_blank" rel="noopener">Security</a><a class="btn btn-ghost btn-sm" href="{{.Source}}" target="_blank" rel="noopener">Source</a></div></div>
               </div>
             </section>
 
@@ -3229,7 +3230,7 @@
       </div>
       <nav class="lp-foot-col" aria-label="Product"><h4>Product</h4><a href="{{.MineURL}}">App</a><a href="{{.Cfg.Explorer}}">Explorer</a>{{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}">Bridge</a>{{end}}</nav>
       <nav class="lp-foot-col" aria-label="Learn"><h4>Learn</h4><a href="{{.DocsURL}}/getting-started">Getting started</a><a href="{{.DocsURL}}/mining">Mining</a><a href="{{.DocsURL}}/faq">FAQ</a><a href="{{.DocsURL}}/spec">Specification</a></nav>
-      <nav class="lp-foot-col" aria-label="Project"><h4>Project</h4><a href="{{.DocsURL}}/roadmap">Roadmap</a><a href="{{.DocsURL}}/security">Security</a><a href="{{.DocsURL}}/security-review">Security review</a></nav>
+      <nav class="lp-foot-col" aria-label="Project"><h4>Project</h4><a href="{{.DocsURL}}/roadmap">Roadmap</a><a href="{{.DocsURL}}/security">Security</a><a href="{{.DocsURL}}/security-review">Security review</a><a href="{{.Source}}">Source</a></nav>
     </div>
     <div class="lp-foot-meta"><span>{{.Brand}} {{.Version}}{{if ne .Cfg.HRP "arg"}} · Not mainnet. Coins here have no value.{{end}}</span></div>
   </div>

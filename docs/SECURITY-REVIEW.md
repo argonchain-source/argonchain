@@ -47,7 +47,8 @@ Out of scope for the first review: UI styling, docs, release scripts.
 
 ## Tests
 
-A reviewer gets the source code with its test suite: unit tests for every
+The source code is public at [github.com/argonchain-source/argonchain](https://github.com/argonchain-source/argonchain)
+with its test suite: unit tests for every
 rule, end-to-end tests that start real nodes and bridge guardians on a
 private regtest chain, contract tests for the vault, and a fuzz target for
 every decoder.

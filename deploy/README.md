@@ -16,7 +16,8 @@ ports, monitoring and troubleshooting are in [Run a node](../docs/NODE.md).
 ## Set up a seed (Linux)
 
 1. Download the Linux archive for your processor and check it against
-   `SHA256SUMS` ([Run a node, Download](../docs/NODE.md#download)).
+   `SHA256SUMS` ([Run a node, Download](../docs/NODE.md#download)), or
+   build it from the [source](https://github.com/argonchain-source/argonchain).
 2. Unzip it and install the node as a systemd service, with the unit file
    given in [Run a node](../docs/NODE.md#as-a-systemd-service-linux).
 3. Open TCP 9333 (mainnet P2P) in the machine's and the provider's

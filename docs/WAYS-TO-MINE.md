@@ -97,7 +97,8 @@ ever down. It is the right choice for a computer that mines most of the
 day.
 
 1. **Download release 1.1.0** for your system and check its checksum,
-   exactly as [Run a node, Download](docs/NODE.md#download) describes.
+   exactly as [Run a node, Download](docs/NODE.md#download) describes,
+   or [build it from source](docs/NODE.md#build-from-source).
    Releases before 1.1.0 cannot mine from block 300.
 2. **Install it** with the script in the archive
    ([Install](docs/NODE.md#install)): `sh install.sh` on Linux and macOS,
@@ -159,7 +160,8 @@ Before you rent one:
    sha256sum -c SHA256SUMS --ignore-missing
    ```
 
-   The last command must print `OK`. On an ARM server use
+   The last command must print `OK`. If you would rather compile it
+   yourself, see [Build from source](docs/NODE.md#build-from-source). On an ARM server use
    `argonmine-1.1.0-linux-arm64.zip` instead.
 
 2. **Install the node** under its own user, with its data in

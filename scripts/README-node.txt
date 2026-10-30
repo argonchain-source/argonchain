@@ -29,5 +29,6 @@ quarantine flag (xattr -d com.apple.quarantine <file>). Details are under
 "Download" in docs/NODE.md.
 
 Full guide: docs/NODE.md, or https://docs.argonmine.com/node
+Source code: https://github.com/argonchain-source/argonchain
 Consensus rules: docs/SPEC.md
 Reporting a security problem: SECURITY.md
