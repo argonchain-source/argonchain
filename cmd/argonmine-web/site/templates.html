@@ -2970,7 +2970,11 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('moreSheet').hidden) setMore(false); });
   document.querySelectorAll('#moreSheet .more-list a').forEach(function (a) { a.addEventListener('click', function () { setMore(false); }); });
   // Install: the browser offers it (beforeinstallprompt, Chrome and Edge);
-  // Safari on iPhone and iPad installs from its Share menu instead.
+  // Safari on iPhone and iPad installs from its Share menu instead. The
+  // offer is kept for the Install button in Settings and the More menu:
+  // without preventDefault, Chrome shows its own install dialog on its own
+  // schedule, over whatever the person is doing, and it has been mistaken
+  // for a plug-in being installed.
   var installEvt = null;
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -2986,7 +2990,7 @@
     e.prompt(); try { await e.userChoice; } catch (x) { }
     renderInstall();
   }
-  window.addEventListener('beforeinstallprompt', function (e) { installEvt = e; renderInstall(); });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; renderInstall(); });
   window.addEventListener('appinstalled', function () { installEvt = null; standalone = true; renderInstall(); });
   $('btnInstall').onclick = installApp;
   $('moreInstall').addEventListener('click', function (e) { if (installEvt) { e.preventDefault(); installApp(); } });
