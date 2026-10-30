@@ -308,3 +308,47 @@ func TestPagesRender(t *testing.T) {
 		t.Error("empty asset list lacks its empty state")
 	}
 }
+
+// Since the treasury height a coinbase ends with the treasury's output. It
+// is not a referral, and a referrer's output before it still is one.
+func TestReferralOutputWithTreasury(t *testing.T) {
+	p := *consensus.RegTest
+	p.TreasuryHeight = 1
+	p.TreasuryKey = make([]byte, consensus.P2PKPayloadLen)
+	treasuryAddr, err := wallet.EncodeAddress(p.HRP, consensus.OutputTypeP2PK, p.TreasuryKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ix, err := newIndexer(t.TempDir(), nil, &p, t.Logf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ix.close()
+	sub := consensus.Subsidy(1)
+	tre := consensus.TreasuryAmount(&p, 1)
+	if tre == 0 {
+		t.Fatal("no treasury amount at height 1")
+	}
+	rest := sub - tre
+	share := rest / 100 * 5
+	cb := func(outs ...wallet.TxOutJSON) txJSON {
+		return txJSON{TxJSON: wallet.TxJSON{TxID: "cb", Coinbase: true, Inputs: []wallet.TxInJSON{{Coinbase: true}}, Outputs: outs}}
+	}
+	cases := []struct {
+		name   string
+		height uint32
+		tx     txJSON
+		want   int
+	}{
+		{"miner and treasury", 1, cb(testOut(minerAddr, rest, ""), testOut(treasuryAddr, tre, "")), -1},
+		{"miner, referrer and treasury", 1, cb(testOut(minerAddr, rest-share, ""), testOut(aliceAddr, share, ""), testOut(treasuryAddr, tre, "")), 1},
+		{"miner alone with treasury", 1, cb(testOut(minerAddr, sub, ""), testOut(treasuryAddr, tre, "")), -1},
+		{"before the treasury: miner and referrer", 0, cb(testOut(minerAddr, sub-sub/100*5, ""), testOut(aliceAddr, sub/100*5, "")), 1},
+		{"before the treasury: miner alone", 0, cb(testOut(minerAddr, sub, "")), -1},
+	}
+	for _, c := range cases {
+		if got := ix.referralOutput(c.tx, c.height); got != c.want {
+			t.Errorf("%s: referral output %d, want %d", c.name, got, c.want)
+		}
+	}
+}

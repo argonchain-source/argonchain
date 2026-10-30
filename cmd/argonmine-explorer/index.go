@@ -78,7 +78,7 @@ type AddrEntry struct {
 
 // indexVersion is bumped whenever the stored shapes change; a mismatch
 // rebuilds the index from genesis on start.
-const indexVersion = "5"
+const indexVersion = "6"
 
 // AssetTotals are an address's lifetime totals for one non-ARG asset.
 type AssetTotals struct {
@@ -222,10 +222,11 @@ type blockJSON struct {
 
 // Indexer syncs the index with the node.
 type Indexer struct {
-	db     *leveldb.DB
-	client *wallet.Client
-	params *consensus.Params
-	logf   func(string, ...any)
+	db       *leveldb.DB
+	client   *wallet.Client
+	params   *consensus.Params
+	treasury string // the treasury's address, or "" on a network without one
+	logf     func(string, ...any)
 
 	onRewind func() // called after a block is rewound (reorg), to drop caches
 
@@ -289,6 +290,11 @@ func newIndexer(path string, client *wallet.Client, params *consensus.Params, lo
 		return nil, err
 	}
 	ix := &Indexer{db: db, client: client, params: params, logf: logf, height: -1}
+	if len(params.TreasuryKey) == consensus.P2PKPayloadLen {
+		if a, err := wallet.EncodeAddress(params.HRP, consensus.OutputTypeP2PK, params.TreasuryKey); err == nil {
+			ix.treasury = a
+		}
+	}
 	if v, err := db.Get([]byte("v"), nil); err != nil || string(v) != indexVersion {
 		iter := db.NewIterator(nil, nil)
 		batch := new(leveldb.Batch)
@@ -612,7 +618,7 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 
 		refAddr := ""
 		if ti == 0 {
-			if i := referralOutput(tx); i >= 0 {
+			if i := ix.referralOutput(tx, blk.Height); i >= 0 {
 				refAddr = tx.Outputs[i].Address
 			}
 		}
@@ -795,16 +801,25 @@ func (ix *Indexer) lastEntryBefore(addr string, h uint32) (AddrEntry, bool) {
 }
 
 // referralOutput returns the index of the referral output of a coinbase
-// built by a work server (cmd/argonmine-explorer/work.go): exactly two ARG
-// outputs to two different addresses, the second being p percent of their
-// sum for a whole p from 1 to 50, computed as the server does (total/100*p).
-// Any other coinbase has no referral output (-1); its outputs are all
-// mining rewards.
-func referralOutput(cb txJSON) int {
-	if len(cb.Outputs) != 2 {
+// built by a work server (cmd/argonmine-explorer/work.go): after the
+// treasury's output, if the height pays one, exactly two ARG outputs to two
+// different addresses, the second being p percent of their sum for a whole
+// p from 1 to 50, computed as the server does (total/100*p). Any other
+// coinbase has no referral output (-1); its outputs are all mining rewards.
+func (ix *Indexer) referralOutput(cb txJSON, height uint32) int {
+	outs := cb.Outputs
+	// From the treasury height the coinbase ends with the treasury's output
+	// (consensus/treasury.go; the explorer's own jobs put it last). It is
+	// not a referral, so set it aside before looking for one.
+	if want := consensus.TreasuryAmount(ix.params, height); want > 0 && ix.treasury != "" && len(outs) >= 2 {
+		if last := outs[len(outs)-1]; last.Address == ix.treasury && last.Asset == "" && last.Amount >= want {
+			outs = outs[:len(outs)-1]
+		}
+	}
+	if len(outs) != 2 {
 		return -1
 	}
-	a, b := cb.Outputs[0], cb.Outputs[1]
+	a, b := outs[0], outs[1]
 	if a.Asset != "" || b.Asset != "" || a.Address == "" || b.Address == "" || a.Address == b.Address || a.Amount < 0 || b.Amount <= 0 {
 		return -1
 	}
