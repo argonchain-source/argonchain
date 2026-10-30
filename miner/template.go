@@ -23,22 +23,34 @@ type TemplateJSON struct {
 }
 
 // AssembleFromTemplate builds a complete block (nonce 0) from a node's
-// template, paying the whole coinbase value to payout. Remote miners and
-// pools use this; the in-process miner uses BuildTemplate.
-func AssembleFromTemplate(t *TemplateJSON, payout consensus.TxOut, tag []byte, now int64) (*consensus.Block, error) {
+// template, paying the whole coinbase value to payout, less the treasury's
+// share from the network's treasury height (consensus/treasury.go), which
+// it pays the treasury. Remote miners and pools use this; the in-process
+// miner uses BuildTemplate.
+func AssembleFromTemplate(p *consensus.Params, t *TemplateJSON, payout consensus.TxOut, tag []byte, now int64) (*consensus.Block, error) {
 	if payout.Type != consensus.OutputTypeP2PK || len(payout.Payload) != consensus.P2PKPayloadLen {
 		return nil, ErrNoPayout
 	}
-	return AssembleFromTemplateOutputs(t, []consensus.TxOut{{Amount: t.CoinbaseValue, Type: payout.Type, Payload: append([]byte{}, payout.Payload...)}}, tag, now)
+	value := t.CoinbaseValue - consensus.TreasuryAmount(p, t.Height)
+	if value < 0 {
+		return nil, fmt.Errorf("template: coinbase value %d is below the treasury's share", t.CoinbaseValue)
+	}
+	return AssembleFromTemplateOutputs(p, t, []consensus.TxOut{{Amount: value, Type: payout.Type, Payload: append([]byte{}, payout.Payload...)}}, tag, now)
 }
 
 // AssembleFromTemplateOutputs is AssembleFromTemplate with an explicit
 // coinbase output list, for example a miner share and a referral share. The
 // amounts must be P2PK ARG outputs summing to at most the template's
-// coinbase value.
-func AssembleFromTemplateOutputs(t *TemplateJSON, outputs []consensus.TxOut, tag []byte, now int64) (*consensus.Block, error) {
+// coinbase value less the treasury's share, which is appended as the last
+// output when the height pays one.
+func AssembleFromTemplateOutputs(p *consensus.Params, t *TemplateJSON, outputs []consensus.TxOut, tag []byte, now int64) (*consensus.Block, error) {
 	if len(outputs) == 0 {
 		return nil, ErrNoPayout
+	}
+	budget := t.CoinbaseValue
+	treasury, payTreasury := consensus.TreasuryOutput(p, t.Height)
+	if payTreasury {
+		budget -= treasury.Amount
 	}
 	var total consensus.Amount
 	for i := range outputs {
@@ -51,7 +63,7 @@ func AssembleFromTemplateOutputs(t *TemplateJSON, outputs []consensus.TxOut, tag
 			return nil, err
 		}
 	}
-	if total > t.CoinbaseValue {
+	if total > budget {
 		return nil, fmt.Errorf("template: coinbase outputs exceed the coinbase value")
 	}
 	prev, err := consensus.HashFromHex(t.PreviousBlockHash)
@@ -68,9 +80,12 @@ func AssembleFromTemplateOutputs(t *TemplateJSON, outputs []consensus.TxOut, tag
 	if len(tag) > consensus.MaxCoinbaseTagLen {
 		tag = tag[:consensus.MaxCoinbaseTagLen]
 	}
-	outs := make([]consensus.TxOut, len(outputs))
-	for i, o := range outputs {
-		outs[i] = consensus.TxOut{Amount: o.Amount, Type: o.Type, Payload: append([]byte{}, o.Payload...)}
+	outs := make([]consensus.TxOut, 0, len(outputs)+1)
+	for _, o := range outputs {
+		outs = append(outs, consensus.TxOut{Amount: o.Amount, Type: o.Type, Payload: append([]byte{}, o.Payload...)})
+	}
+	if payTreasury {
+		outs = append(outs, treasury)
 	}
 	cb := &consensus.Tx{
 		Version:    consensus.TxVersion,

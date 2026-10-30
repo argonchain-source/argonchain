@@ -371,7 +371,7 @@ func TestWorkSideBranchStale(t *testing.T) {
 		t.Fatal(err)
 	}
 	json.Unmarshal(raw, &tj)
-	other, err := miner.AssembleFromTemplate(&tj, consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: make([]byte, 32)}, []byte("other"), time.Now().Unix())
+	other, err := miner.AssembleFromTemplate(consensus.RegTest, &tj, consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: make([]byte, 32)}, []byte("other"), time.Now().Unix())
 	if err != nil {
 		t.Fatal(err)
 	}

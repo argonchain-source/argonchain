@@ -55,6 +55,29 @@ every decoder.
 
 ## Internal review log
 
+- 2026-10-30 (mainnet, found in production): **browser blocks paid 0.5 ARG
+  short since block 300.** The node's `getblocktemplate` reported
+  `coinbasevalue` as its own template's first output, which from the
+  treasury height is the subsidy less the treasury's share; the explorer's
+  work server, which takes the share out itself, took it out a second
+  time, so a browser-found block paid the miner 49.0 ARG and the treasury
+  0.5 and left 0.5 unminted. Blocks found by nodes were right. About 660
+  browser blocks were affected, roughly 330 ARG that will never exist; the
+  supply cap is unchanged and no coins went to anyone. Fixed on both
+  sides: the node reports the whole coinbase (test
+  `TestTemplateCoinbaseValueWithTreasury`), `miner.AssembleFromTemplate`
+  pays the treasury itself, and the explorer refuses a template whose
+  value is below the subsidy, so an old node cannot cause it again. Found
+  while reading coinbases on the explorer by hand; the end-to-end tests
+  ran the explorer against a regtest node without a treasury, which is
+  why they passed. A regtest treasury is now part of the test.
+- 2026-10-30: the explorer labelled the treasury's output of a block without
+  an inviter as a referral, and did not recognise the inviter's output of
+  a block with one, because its referral detector predated the treasury.
+  Address pages and the app's Dashboard showed referral income under
+  blocks mined and the treasury as having referrals. Fixed with a test
+  for each coinbase shape; the index rebuilds on the next start.
+
 - 2026-10-25: self-review of consensus against SPEC §9 (Bitcoin pitfalls)
   with a dedicated test per pitfall; nine fuzz targets, 20 s each, no crashes.
 - 2026-10-25: independent read of consensus, chain, mempool and P2P by a

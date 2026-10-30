@@ -341,6 +341,12 @@ func newWorkTemplate(t *miner.TemplateJSON, now time.Time) (*workTemplate, error
 	if t.CoinbaseValue < 0 || t.CoinbaseValue > consensus.MaxMoney {
 		return nil, fmt.Errorf("template: coinbase value out of range")
 	}
+	// The value is the whole coinbase, subsidy plus fees; the treasury's
+	// share comes out of it below. A node that reports only the miner's
+	// share would have every browser block paid short, so refuse it.
+	if sub := consensus.Subsidy(t.Height); t.CoinbaseValue < sub {
+		return nil, fmt.Errorf("template: coinbase value %d is below the subsidy %d at height %d: update the node", t.CoinbaseValue, sub, t.Height)
+	}
 	wt := &workTemplate{prev: prev, height: t.Height, version: t.Version, bits: bits, target: target, targetHex: fmt.Sprintf("%064x", target),
 		curTime: t.CurTime, minTime: t.MinTime, value: t.CoinbaseValue, ntx: 1 + len(t.Transactions), fetched: now}
 	txids := make([]consensus.Hash, 0, len(t.Transactions))

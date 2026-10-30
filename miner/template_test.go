@@ -43,7 +43,7 @@ func TestAssembleFromNodeTemplate(t *testing.T) {
 		if err := json.Unmarshal(raw, &tmpl); err != nil {
 			t.Fatal(err)
 		}
-		blk, err := miner.AssembleFromTemplate(&tmpl, payout, []byte("remote"), time.Now().Unix())
+		blk, err := miner.AssembleFromTemplate(consensus.RegTest, &tmpl, payout, []byte("remote"), time.Now().Unix())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func TestAssembleFromNodeTemplate(t *testing.T) {
 		t.Fatalf("height %d", ch.Tip().Height)
 	}
 	// Bad payout.
-	if _, err := miner.AssembleFromTemplate(&miner.TemplateJSON{}, consensus.TxOut{}, nil, 0); err != miner.ErrNoPayout {
+	if _, err := miner.AssembleFromTemplate(consensus.RegTest, &miner.TemplateJSON{}, consensus.TxOut{}, nil, 0); err != miner.ErrNoPayout {
 		t.Fatal("payout check")
 	}
 }

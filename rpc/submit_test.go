@@ -50,7 +50,7 @@ func TestSubmitBlockSideChain(t *testing.T) {
 		for i := range payload {
 			payload[i] = fill
 		}
-		blk, err := miner.AssembleFromTemplate(&tmpl, consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: payload}, []byte("t"), time.Now().Unix())
+		blk, err := miner.AssembleFromTemplate(consensus.RegTest, &tmpl, consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: payload}, []byte("t"), time.Now().Unix())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,5 +74,56 @@ func TestSubmitBlockSideChain(t *testing.T) {
 	}
 	if v := submit(a); v == nil || *v != "duplicate" {
 		t.Fatalf("resubmission: verdict %v, want duplicate", v)
+	}
+}
+
+// From the treasury height, getblocktemplate's coinbasevalue is still the
+// whole coinbase (subsidy plus fees), and a block assembled from it by a
+// remote miner pays the treasury its share and is accepted. Before this
+// test the node reported the miner's share only, and the explorer, which
+// takes the share out itself, paid every browser block short by it.
+func TestTemplateCoinbaseValueWithTreasury(t *testing.T) {
+	p := *consensus.RegTest
+	p.TreasuryHeight = 1
+	p.TreasuryKey = make([]byte, consensus.P2PKPayloadLen)
+	p.TreasuryKey[0] = 7
+	ch, err := chain.Open(&p, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ch.Close()
+	pool := mempool.New(ch, mempool.DefaultConfig())
+	srv := New(Config{Listen: "127.0.0.1:0", Token: "s"}, Deps{Params: &p, Chain: ch, Pool: pool, Started: time.Now(), Logf: t.Logf})
+	if err := srv.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer srv.Stop()
+	c := &client{t: t, url: "http://" + srv.Addr(), token: "s"}
+	var tmpl miner.TemplateJSON
+	if err := json.Unmarshal(c.must("getblocktemplate"), &tmpl); err != nil {
+		t.Fatal(err)
+	}
+	share := consensus.TreasuryAmount(&p, 1)
+	if share == 0 || tmpl.Height != 1 || tmpl.CoinbaseValue != consensus.Subsidy(1) {
+		t.Fatalf("height %d coinbasevalue %d, want the whole subsidy %d (treasury share %d)", tmpl.Height, tmpl.CoinbaseValue, consensus.Subsidy(1), share)
+	}
+	payload := make([]byte, 32)
+	payload[0] = 1
+	blk, err := miner.AssembleFromTemplate(&p, &tmpl, consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: payload}, []byte("t"), time.Now().Unix())
+	if err != nil {
+		t.Fatal(err)
+	}
+	outs := blk.Txs[0].Outputs
+	if len(outs) != 2 || outs[0].Amount != consensus.Subsidy(1)-share || outs[1].Amount != share || string(outs[1].Payload) != string(p.TreasuryKey) {
+		t.Fatalf("coinbase outputs %+v, want miner %d and treasury %d", outs, consensus.Subsidy(1)-share, share)
+	}
+	solve(t, blk)
+	var verdict *string
+	json.Unmarshal(c.must("submitblock", hexOf(blk.Serialize())), &verdict)
+	if verdict != nil {
+		t.Fatalf("block rejected: %s", *verdict)
+	}
+	if ch.Tip().Height != 1 {
+		t.Fatalf("height %d", ch.Tip().Height)
 	}
 }

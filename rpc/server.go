@@ -703,6 +703,15 @@ func (s *Server) getblocktemplate(params []json.RawMessage) (any, error) {
 	for _, tx := range blk.Txs[1:] {
 		txs = append(txs, map[string]any{"data": hex.EncodeToString(tx.Serialize()), "txid": tx.TxID().String()})
 	}
+	// coinbasevalue is the whole coinbase, subsidy plus fees, as in Bitcoin.
+	// From the treasury height the template's coinbase also pays the
+	// treasury (miner.BuildTemplate), so its first output alone would be
+	// short by that share; the miner takes the share out of this value
+	// itself (miner.AssembleFromTemplate, the explorer's work server).
+	var value consensus.Amount
+	for _, o := range blk.Txs[0].Outputs {
+		value += o.Amount
+	}
 	return map[string]any{
 		"version":           blk.Header.Version,
 		"previousblockhash": tip.Hash.String(),
@@ -711,7 +720,7 @@ func (s *Server) getblocktemplate(params []json.RawMessage) (any, error) {
 		"target":            fmt.Sprintf("%064x", target),
 		"curtime":           blk.Header.Time,
 		"mintime":           chain.MedianTimePast(tip) + 1,
-		"coinbasevalue":     blk.Txs[0].Outputs[0].Amount,
+		"coinbasevalue":     value,
 		"transactions":      txs,
 		"sizelimit":         consensus.MaxBlockSize,
 	}, nil

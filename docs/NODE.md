@@ -646,7 +646,7 @@ request. Every request carries the token (see [The RPC token](#the-rpc-token)).
 | `getrawmempool` | Transaction ids waiting for a block |
 | `getmempoolinfo` | `size` (transactions) and `bytes` in the mempool |
 | `sendrawtransaction <hex>` | Check, add to the mempool and relay; returns the txid |
-| `getblocktemplate` | Everything a miner needs for the next block |
+| `getblocktemplate` | Everything a miner needs for the next block. `coinbasevalue` is the whole coinbase, subsidy plus fees; from block 300 the miner pays the treasury its 1% of the subsidy out of it (fixed 2026-10-30; nodes before that reported the miner's share only) |
 | `submitblock <hex>` | Check and connect a mined block |
 | `getmininginfo` | `blocks`, `difficulty`, `pooledtx`, `chain`, `mining`, `hashrate`, `threads`, `blocksfound`, `powalgorithm` |
 | `getpeerinfo` | Connected peers: address, direction, user agent, start height, ban score, ping, bytes in and out |
