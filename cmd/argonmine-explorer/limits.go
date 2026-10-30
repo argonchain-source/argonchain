@@ -137,10 +137,14 @@ func (l *rateLimiter) sweep() {
 // the mempool, search) cost the node more and get less. A browser miner
 // fetches a job every 20 seconds and submits only solved blocks.
 var (
-	limitPages  = [2]float64{10, 100} // per second, burst
-	limitHeavy  = [2]float64{3, 30}
-	limitWork   = [2]float64{2, 40}
-	limitSubmit = [2]float64{1, 10}
+	limitPages = [2]float64{10, 100} // per second, burst
+	limitHeavy = [2]float64{3, 30}
+	// A miner asks for work every 20 seconds, so 20 a second serves 400
+	// miners behind one address: a carrier's shared mobile address holds
+	// that many. Serving a job is cheap (the template is cached); checking
+	// a submission is not, and submissions are rare (a found block).
+	limitWork   = [2]float64{20, 200}
+	limitSubmit = [2]float64{2, 20}
 	limitTx     = [2]float64{1, 10}
 )
 

@@ -192,11 +192,22 @@ func (c *Client) rateLoop(ctx context.Context) {
 
 func (c *Client) loop(ctx context.Context) {
 	defer c.wg.Done()
+	var last *Job
 	for ctx.Err() == nil {
 		job, err := c.fetchJob(ctx)
 		if err != nil {
 			c.logf("work: %v", err)
 			c.lastErr.Store(friendlyError(err))
+			if last != nil {
+				// Keep working on the last job instead of standing idle: it
+				// stays valid until the tip moves, and a solution for a job
+				// that went stale is refused by the server, nothing worse.
+				// Then ask again.
+				jctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				c.mineJob(jctx, last)
+				cancel()
+				continue
+			}
 			select {
 			case <-ctx.Done():
 				return
@@ -206,6 +217,7 @@ func (c *Client) loop(ctx context.Context) {
 		}
 		c.lastErr.Store("")
 		c.height.Store(job.Height)
+		last = job
 		// Refresh the template regularly so new transactions and new tips are
 		// picked up; a solved job ends the round early.
 		jctx, cancel := context.WithTimeout(ctx, 20*time.Second)
