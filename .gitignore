@@ -35,3 +35,4 @@ peers.json
 .idea/
 .DS_Store
 Thumbs.db
+/brand/posts/
