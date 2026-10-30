@@ -1,0 +1,1791 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{HEAD}}
+<style>
+  .hero-card { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--sp-4); }
+  .hero-card .stat { padding: var(--sp-5); }
+  .controls { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); }
+  .threads-row { display: flex; align-items: center; gap: var(--sp-3); }
+  .threads-row output { min-width: 3ch; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .pill-list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .status-line { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-3); color: var(--ink-2); min-height: 20px; }
+  .balance-hero { padding: var(--sp-5); }
+  .peer-row td:first-child { max-width: 220px; }
+  .reveal { filter: blur(6px); user-select: none; transition: filter .2s; } .reveal.on { filter: none; user-select: text; }
+  .page { display: none; } .page.active { display: flex; flex-direction: column; gap: var(--sp-5); }
+  .nav-label { font-size: var(--fs-1); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 0 10px; margin-top: var(--sp-2); }
+  .input.invalid { border-color: var(--danger, #b3261e); }
+  /* token list: the browser app's .rowi rows, with a round mark */
+  .rowi { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: 14px var(--sp-4); border-top: 1px solid var(--hair); }
+  .rows > .rowi:first-child { border-top: 0; }
+  .rowi .ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font-weight: 700; font-size: 12px; letter-spacing: .02em; }
+  .rowi .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rowi .s { font-size: var(--fs-2); color: var(--ink-3); margin-top: 2px; }
+  .rowi .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .rowi .v .s { font-weight: 400; }
+  /* bridge activity: progress under each transfer */
+  .rowi .ic.in { background: var(--ok-bg); color: var(--ok); } .rowi .ic.out { background: var(--accent-soft); color: var(--accent-text); }
+  .rowi .ic .icon { width: 18px; height: 18px; }
+  .rowi .ic.tok { background: none; overflow: hidden; } .rowi .ic.tok img { width: 100%; height: 100%; display: block; }
+  .rowi .s a { color: var(--accent-text); font-weight: 600; }
+  .rowi .s.danger { color: var(--danger); }
+  .pbar { display: block; height: 4px; border-radius: 999px; background: var(--hair); overflow: hidden; margin: 6px 0 4px; max-width: 240px; }
+  .pbar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .3s var(--ease); }
+  @media (max-width: 960px) { .hero-card { grid-template-columns: 1fr; } .nav-label { display: none; } }
+  /* a long address in the Receive card must not widen the single column on phones */
+  @media (max-width: 600px) { .cols-2 { grid-template-columns: minmax(0, 1fr); } }
+  [hidden] { display: none !important; }
+  .code-in { height: 56px; text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .code-in::placeholder { letter-spacing: .12em; }
+  /* wallet home: backup and lock under the tokens; activity rows like the browser app's */
+  .w-sec { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--hair); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-1); }
+  .w-sec-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: var(--sp-3); }
+  .w-sec-row b { display: block; font-weight: 600; }
+  .w-sec-row small { display: block; font-size: var(--fs-2); color: var(--ink-3); }
+  .w-sec-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--sunken); color: var(--ink-2); }
+  .w-sec-ic svg.icon { width: 18px; height: 18px; }
+  .w-sec .words { margin: 0; }
+  @media (max-width: 639px) { .w-bal-v.long { font-size: 34px; } }
+  @media (max-width: 1023px) { .w-sec.off { display: none; } }
+  #page-wallet .swap-link { margin-top: calc(-1 * var(--sp-2)); }
+  .group-h { padding: var(--sp-3) var(--sp-3) var(--sp-1); font-size: var(--fs-2); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  #tab-activity .rowi { grid-template-columns: 40px minmax(0, 1fr) auto; padding: var(--sp-3); border-top: 0; border-radius: 12px; color: inherit; text-decoration: none; }
+  #tab-activity a.rowi:hover { background: var(--sunken); }
+  #tab-activity .rowi .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--sunken); color: var(--ink-2); }
+  #tab-activity .rowi .ic.in { background: var(--ok-bg); color: var(--ok); }
+  #tab-activity .rowi .ic.out { background: var(--danger-bg); color: var(--danger); }
+  #tab-activity .rowi .ic.mined, #tab-activity .rowi .ic.swap { background: var(--accent-soft); color: var(--accent-text); }
+  #tab-activity .empty { padding: var(--sp-6) var(--sp-4); }
+  .bitem .s.m { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); }
+  .bitem .pbar { width: 64px; flex: none; margin: 0; }
+  /* result of a payment: success and failure are unmistakable */
+  .w-res-ic { display: grid; place-items: center; width: 56px; height: 56px; margin-top: var(--sp-5); border-radius: 50%; }
+  .w-res-ic svg.icon { width: 26px; height: 26px; stroke-width: 2.25; }
+  .w-res-ic.ok { background: var(--ok-bg); color: var(--ok); } .w-res-ic.bad { background: var(--danger-bg); color: var(--danger); }
+  .w-res-t { font-size: var(--fs-6); letter-spacing: -0.01em; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="wordmark">{{MARK}}<span>{{BRAND}}</span><span class="badge net" id="netBadge">…</span></div>
+    <nav class="nav" aria-label="Sections">
+      <a href="#mine" data-page="mine" class="active"><i data-icon="pickaxe"></i>Mine</a>
+      <a href="#wallet" data-page="wallet"><i data-icon="wallet"></i>Wallet</a>
+      <a href="#history" data-page="history"><i data-icon="history"></i>History</a>
+      <a href="#network" data-page="network"><i data-icon="globe"></i>Network</a>
+    </nav>
+    <div class="nav-label">Links</div>
+    <nav class="nav" aria-label="Links">
+      <a href="{{DOCS_URL}}" target="_blank" rel="noopener"><i data-icon="layers"></i>Docs</a>
+      <a href="{{EXPLORER_URL}}" target="_blank" rel="noopener"><i data-icon="search"></i>Explorer</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="row between"><span>Theme</span><button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme"></button></div>
+      <div>{{BRAND}} app {{VERSION}}</div>
+      <div id="footSync" class="muted"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 id="pageTitle">Mine</h1>
+      <span class="spacer"></span>
+      <span class="status-text" id="chainText">Starting</span>
+      <span class="badge" title="Block height">height <b class="num" id="hHeight" style="margin-left:4px">–</b></span>
+      <span class="badge" title="Connected peers">peers <b class="num" id="hPeers" style="margin-left:4px">–</b></span>
+    </header>
+
+    <div class="content">
+      <div id="errorBanner" class="banner danger" style="display:none" role="alert"><i data-icon="alert"></i><div id="errorText"></div></div>
+
+      <!-- MINE -->
+      <section class="page active" id="page-mine">
+        <div class="card hero-card">
+          <div class="stat">
+            <span class="stat-label" id="rateLabel">Hashrate</span>
+            <span class="stat-value hero"><span class="num" id="hashrate">0</span><span class="stat-unit" id="rateUnit">H/s</span></span>
+            <div id="spark" style="margin-top:12px"></div>
+            <div class="stat-hint" id="rateHint">Not mining</div>
+          </div>
+          <div class="controls">
+            <div class="field">
+              <span class="label">Mode</span>
+              <div class="hint">Solo on this node. Every block you find pays its reward to your address (from block 300, less 1% for the treasury). The node this app runs for you must be synced. This app is a full node of the network; mining is what pays, a node on its own earns nothing.</div>
+            </div>
+            <div class="field">
+              <label class="label" for="threads">Threads <span class="optional" id="cpuNote"></span></label>
+              <div class="threads-row"><input class="range" type="range" id="threads" min="1" max="8" value="1"><output id="threadsOut">1</output></div>
+            </div>
+            <div class="row">
+              <button class="btn btn-primary btn-lg" id="btnMine"><i data-icon="play"></i><span>Start mining</span></button>
+              <label class="row" style="gap:8px;font-size:var(--fs-3);color:var(--ink-2)"><button class="switch" id="autostart" role="switch" aria-checked="false" aria-label="Start mining when the app opens"></button>Start when the app opens</label>
+            </div>
+            <div class="status-line" id="mineStatus"></div>
+          </div>
+        </div>
+
+        <div class="grid cols-4">
+          <div class="card stat"><span class="stat-label" id="foundLabel">Blocks found</span><span class="stat-value sm num" id="found">0</span><span class="stat-hint" id="foundHint">since start</span></div>
+          <div class="card stat"><span class="stat-label">Next block reward</span><span class="stat-value sm"><span class="num" id="reward">–</span><span class="stat-unit">{{ARG}}</span></span><span class="stat-hint">halves every 210,000 blocks</span></div>
+          <div class="card stat"><span class="stat-label">Network difficulty</span><span class="stat-value sm num" id="difficulty">–</span><span class="stat-hint">1.0 is the easiest allowed block</span></div>
+          <div class="card stat"><span class="stat-label">Total hashes</span><span class="stat-value sm num" id="hashes">0</span><span class="stat-hint">Argon2id, 8 MiB per hash</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Rewards go to</h2><button class="btn btn-ghost btn-sm" id="copyMining"><i data-icon="copy"></i>Copy</button></div>
+          <div class="card-body"><div class="addr block"><code id="miningAddr">–</code></div>
+          <p class="hint" style="margin-top:8px">This is the first address of your wallet. Coinbase rewards become spendable after 100 confirmations.</p></div>
+        </div>
+      </section>
+
+      <!-- WALLET -->
+      <section class="page" id="page-wallet">
+        <div class="w-home">
+          <div class="w-col">
+            <div class="w-hero">
+            <div class="w-head">
+              <button class="w-acct" id="acctChip" type="button" aria-label="Copy your address">
+                <span class="w-idn" id="acctIdn" aria-hidden="true"></span>
+                <span class="w-acct-t"><b>Account 1</b><small id="acctAddr">–</small></span>
+                <i data-icon="copy"></i>
+              </button>
+              <span class="w-pill" id="netPill" hidden></span>
+            </div>
+            <div class="w-bal">
+              <span class="w-bal-k">Total balance</span>
+              <div class="w-bal-v"><span class="num" id="balance">–</span><span class="w-bal-u">{{ARG}}</span></div>
+              <div class="w-bal-s num" id="balSub"></div>
+            </div>
+            <div class="w-acts" role="group" aria-label="Wallet actions">
+              <button class="w-act" id="actReceive" type="button"><span><i data-icon="receive"></i></span>Receive</button>
+              <button class="w-act" id="actSend" type="button"><span><i data-icon="send"></i></span>Send</button>
+              <button class="w-act" id="actSwap" type="button"><span><i data-icon="swap"></i></span>Swap</button>
+              <button class="w-act" id="actMine" type="button"><span><i data-icon="pickaxe"></i></span>Mine</button>
+            </div>
+            </div>
+            <button class="swap-link" id="actCode" type="button">Have a code?</button>
+            <button class="w-live" id="liveStrip" type="button" hidden><i data-icon="refresh"></i><span id="liveText"></span><i data-icon="chevronRight"></i></button>
+            <div class="w-tabs" role="tablist" aria-label="Wallet"><button role="tab" id="tabTok" aria-selected="true" aria-controls="tab-assets" data-tab="assets">Tokens</button><button role="tab" id="tabAct" aria-selected="false" aria-controls="tab-activity" data-tab="activity">Activity</button></div>
+            <div class="w-pane w-card" id="tab-assets" role="tabpanel" aria-labelledby="tabTok">
+              <h2 class="w-pane-h">Tokens</h2>
+              <div class="w-list" id="assetList"></div>
+            </div>
+            <div class="w-sec">
+              <div class="w-sec-row">
+                <span class="w-sec-ic"><i data-icon="key"></i></span>
+                <div><b>Recovery phrase</b><small>24 words that restore this wallet</small></div>
+                <button class="btn btn-secondary btn-sm" id="btnMnemonic" type="button"><i data-icon="eye"></i>Reveal</button>
+              </div>
+              <div class="words reveal" id="mnemonicBox" style="display:none"></div>
+              <div class="w-sec-row" id="lockRow" style="display:none">
+                <span class="w-sec-ic"><i data-icon="lock"></i></span>
+                <div><b>Wallet locked</b><small>Mining continues while locked</small></div>
+                <button class="btn btn-secondary btn-sm" id="btnUnlock" type="button"><i data-icon="unlock"></i>Unlock</button>
+              </div>
+            </div>
+          </div>
+          <div class="w-pane w-card w-side off" id="tab-activity" role="tabpanel" aria-labelledby="tabAct">
+            <h2 class="w-pane-h">Activity</h2>
+            <div id="actList"></div>
+            <div id="recentList"></div>
+            <div class="empty" id="actEmpty"><i data-icon="history" class="lg"></i><h3>No activity yet</h3><p>Coins you send, receive and swap show up here.</p></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- HISTORY -->
+      <section class="page" id="page-history">
+        <div class="card flush">
+          <div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Transactions</h2><span class="muted small" id="histCount"></span></div>
+          <div class="table-wrap">
+            <table class="table" id="histTable" style="display:none"><thead><tr><th>Block</th><th>When</th><th>Type</th><th class="num">Amount</th><th class="num">Fee</th><th>Transaction</th></tr></thead><tbody id="history"></tbody></table>
+            <div class="empty" id="histEmpty"><i data-icon="history" class="lg"></i><h3>No transactions yet</h3><p>Start mining and the first reward will show up here as soon as a block is found.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NETWORK -->
+      <section class="page" id="page-network">
+        <div class="grid cols-4">
+          <div class="card stat"><span class="stat-label">Best block</span><span class="stat-value sm num" id="nHeight">–</span><span class="stat-hint mono truncate" id="nHash"></span></div>
+          <div class="card stat"><span class="stat-label">Last block</span><span class="stat-value sm" id="nAgo">–</span><span class="stat-hint">target 10 minutes</span></div>
+          <div class="card stat"><span class="stat-label">Mempool</span><span class="stat-value sm num" id="nMempool">–</span><span class="stat-hint">unconfirmed transactions</span></div>
+          <div class="card stat"><span class="stat-label">Uptime</span><span class="stat-value sm" id="nUptime">–</span><span class="stat-hint" id="nVersion"></span></div>
+        </div>
+        <div class="card flush">
+          <div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Peers</h2><span class="muted small" id="peerCount"></span></div>
+          <div class="table-wrap">
+            <table class="table" id="peerTable" style="display:none"><thead><tr><th>Address</th><th>Direction</th><th>Client</th><th class="num">Height</th><th class="num">Ping</th><th class="num">Received</th><th class="num">Sent</th></tr></thead><tbody id="peers"></tbody></table>
+            <div class="empty" id="peersEmpty"><i data-icon="users" class="lg"></i><h3>No peers connected</h3><p>The node keeps looking. On a private test network, start a second node and connect to it.</p></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Wallet setup -->
+<div class="modal" id="setup" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+  <div class="modal-card">
+    <div class="modal-header"><h2 id="setupTitle">Set up your wallet</h2></div>
+    <div class="modal-body">
+      <div id="setupChoice" class="stack">
+        <p class="secondary">Mining rewards need somewhere to go. Create a new wallet, or restore one from its 24-word recovery phrase.</p>
+        <div class="row"><button class="btn btn-primary btn-lg" id="btnCreate">Create a new wallet</button><button class="btn btn-secondary btn-lg" id="btnRestoreShow">Restore from phrase</button></div>
+      </div>
+      <form id="createForm" class="stack" style="display:none" novalidate>
+        <div class="field"><label class="label" for="pw1">Password</label><input class="input" id="pw1" type="password" autocomplete="new-password"><span class="hint">At least 8 characters. It encrypts the wallet file on this computer.</span></div>
+        <div class="field"><label class="label" for="pw2">Repeat password</label><input class="input" id="pw2" type="password" autocomplete="new-password"></div>
+        <div class="row between"><button class="btn btn-ghost" type="button" id="btnBack1">Back</button><button class="btn btn-primary" type="submit" id="btnCreateGo">Create wallet</button></div>
+      </form>
+      <form id="restoreForm" class="stack" style="display:none" novalidate>
+        <div class="field"><label class="label" for="restoreWords">Recovery phrase</label><textarea class="textarea mono" id="restoreWords" placeholder="24 words separated by spaces" spellcheck="false" autocomplete="off"></textarea></div>
+        <div class="field"><label class="label" for="pw3">New password</label><input class="input" id="pw3" type="password" autocomplete="new-password"></div>
+        <div class="row between"><button class="btn btn-ghost" type="button" id="btnBack2">Back</button><button class="btn btn-primary" type="submit" id="btnRestoreGo">Restore wallet</button></div>
+      </form>
+      <div id="showWords" class="stack" style="display:none">
+        <div class="banner warn"><i data-icon="alert"></i><div><b>Write these 24 words down and keep them offline.</b> They are the only way to recover your coins if this computer is lost. Anyone who has them can spend your coins.</div></div>
+        <div class="words" id="newWords"></div>
+        <label class="row" style="gap:10px"><input type="checkbox" id="wordsSaved"> I have written them down in order</label>
+        <div class="row between"><button class="btn btn-secondary btn-sm" type="button" id="btnSaveWords"><i data-icon="download"></i>Save as file</button><button class="btn btn-primary" id="btnWordsDone" disabled>Continue</button></div>
+      </div>
+      <div id="verifyStep" class="stack" style="display:none">
+        <p class="secondary">Confirm your backup. Type the words at these positions exactly as you wrote them down.</p>
+        <div class="grid cols-2" id="verifyInputs"></div>
+        <div class="row between"><button class="btn btn-ghost" type="button" id="btnVerifyBack">Show the words again</button><button class="btn btn-primary" type="button" id="btnVerifyGo">Confirm backup</button></div>
+      </div>
+      <div class="error" id="setupErr" role="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Unlock -->
+<div class="modal" id="unlock" role="dialog" aria-modal="true" aria-labelledby="unlockTitle">
+  <div class="modal-card">
+    <div class="modal-header"><h2 id="unlockTitle">Unlock wallet</h2></div>
+    <form class="modal-body" id="unlockForm" novalidate>
+      <p class="secondary">Enter your password to see balances and send coins. Mining works without unlocking.</p>
+      <p class="hint" id="unlockWhy" style="display:none"></p>
+      <div class="field"><label class="label" for="pwUnlock">Password</label><input class="input" id="pwUnlock" type="password" autocomplete="current-password"></div>
+      <div class="error" id="unlockErr" role="alert"></div>
+    </form>
+    <div class="modal-foot"><button class="btn btn-ghost" id="btnUnlockSkip">Just mine</button><button class="btn btn-primary" id="btnUnlockGo">Unlock</button></div>
+  </div>
+</div>
+
+<!-- Confirm password (reveal recovery phrase) -->
+<div class="modal" id="pwModal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+  <div class="modal-card">
+    <div class="modal-header"><h2 id="pwTitle">Confirm your password</h2></div>
+    <form class="modal-body" id="pwForm" novalidate>
+      <p class="secondary">The recovery phrase is shown only after you confirm the wallet password. It hides again after two minutes.</p>
+      <div class="field"><label class="label" for="pwConfirm">Password</label><input class="input" id="pwConfirm" type="password" autocomplete="current-password"></div>
+      <div class="error" id="pwErr" role="alert"></div>
+    </form>
+    <div class="modal-foot"><button class="btn btn-ghost" id="btnPwNo">Cancel</button><button class="btn btn-primary" id="btnPwGo"><i data-icon="eye"></i>Reveal</button></div>
+  </div>
+</div>
+
+<!-- Wallet flows: a centred modal on wide screens, a full-screen page on phones. Every payment needs the wallet password. -->
+<div class="w-scrim" id="flowScrim"></div>
+<div class="w-flow" id="flSend" role="dialog" aria-modal="true" aria-labelledby="flSendT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flSendT">Send</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="form" data-title="Send">
+    <div class="w-body">
+      <div class="swap-label" id="sdToL">To</div>
+      <div class="swap-addr-row" id="sdToBox">
+        <span class="swap-who" aria-hidden="true"><i data-icon="user"></i></span>
+        <input id="sendTo" placeholder="{{BRAND}} address" spellcheck="false" autocomplete="off" autocapitalize="none" aria-labelledby="sdToL" aria-describedby="sdNote">
+        <button class="swap-more" id="sdPick" type="button" aria-label="Select an address"><i data-icon="chevronRight"></i></button>
+      </div>
+      <div class="swap-note" id="sdNote" aria-live="polite"></div>
+      <div class="swap-label" id="sdAmtL">Amount</div>
+      <div class="swap-box">
+        <div class="swap-main">
+          <span class="swap-cur" id="sdCur" hidden>$</span>
+          <input class="swap-amt" id="sendAmt" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false" aria-labelledby="sdAmtL">
+          <button class="swap-chip" id="sdChip" type="button" aria-label="Choose the coin to send"></button>
+        </div>
+        <div class="swap-foot">
+          <span class="swap-conv"><span id="sdUsd">$0.00</span><button class="swap-tgl" id="sdTgl" type="button" aria-pressed="false" aria-label="Enter the amount in dollars"><i data-icon="swap"></i></button></span>
+          <button class="swap-balbtn" id="sdBal" type="button" aria-label="Send the whole balance"><i data-icon="wallet"></i><span id="sdBalV">0.00</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="btnSend" type="button" disabled>Enter an address</button></div>
+  </div>
+  <div class="w-view" data-view="pick" data-title="Select token"><div class="w-body"><div class="swap-opts" role="listbox" data-list></div></div></div>
+  <div class="w-view" data-view="rv" data-title="Review send">
+    <div class="w-sheet-h"><h2>Review send</h2><button class="w-ib" type="button" data-back aria-label="Close"><i data-icon="x"></i></button></div>
+    <div class="w-body" id="sdRvBody"></div>
+    <form class="w-foot" id="sdRvForm" novalidate>
+      <div class="field"><label class="label" for="sdPw">Wallet password</label><input class="input" id="sdPw" type="password" autocomplete="current-password" aria-describedby="sdRvErr"></div>
+      <div class="error" id="sdRvErr" role="alert"></div>
+      <button class="btn btn-primary swap-go" id="sdRvGo" type="submit">Send</button>
+    </form>
+  </div>
+  <div class="w-view" data-view="res" data-title="Send">
+    <div class="w-body c" id="sdResBody"></div>
+    <div class="w-foot" id="sdResFoot"></div>
+  </div>
+</div>
+
+<div class="w-flow" id="flSwap" role="dialog" aria-modal="true" aria-labelledby="flSwapT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flSwapT">Swap</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="form" data-title="Swap">
+    <div class="w-body">
+      <div class="swap-pair">
+        <div class="swap-box">
+          <div class="swap-lbl"><label for="swPay">You pay</label></div>
+          <div class="swap-main">
+            <input class="swap-amt" id="swPay" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false">
+            <button class="swap-chip" id="swPayChip" type="button"></button>
+          </div>
+          <div class="swap-foot"><span id="swPayFoot"></span><span class="swap-bal" id="swPayBal"></span></div>
+        </div>
+        <button class="swap-flip" id="swFlip" type="button" aria-label="Switch what you pay and what you receive"><i data-icon="arrowDown"></i></button>
+        <div class="swap-box ro">
+          <div class="swap-lbl"><span>You receive</span></div>
+          <div class="swap-main">
+            <input class="swap-amt dim" id="swGet" readonly tabindex="-1" placeholder="0" aria-label="Amount you receive">
+            <button class="swap-chip" id="swGetChip" type="button"></button>
+          </div>
+          <div class="swap-foot"><span id="swGetFoot"></span></div>
+        </div>
+      </div>
+      <div class="swap" id="swOut">
+        <div class="swap-label" id="swToL">To</div>
+        <div class="swap-addr-row" id="swToBox">
+          <span class="swap-who" aria-hidden="true"><i data-icon="user"></i></span>
+          <input id="swTo" placeholder="0x… address" spellcheck="false" autocomplete="off" autocapitalize="none" aria-labelledby="swToL" aria-describedby="swToErr">
+          <button class="swap-more" id="swPaste" type="button" aria-label="Paste" hidden><i data-icon="clipboard"></i></button>
+        </div>
+        <div class="swap-note bad" id="swToErr" role="alert"></div>
+      </div>
+      <div class="w-conn" id="swConn" hidden><span class="w-conn-ic" id="swConnIc" aria-hidden="true"></span><span class="w-conn-t" id="swConnT"></span><button class="swap-inl" id="swDisc" type="button">Disconnect</button></div>
+      <div class="swap-note bad" id="swInErr" role="alert"></div>
+    </div>
+    <div class="w-foot">
+      <button class="w-sum" id="swSum" type="button" aria-expanded="false" aria-controls="swRows"><span id="swSumT"></span><i data-icon="chevronDown"></i></button>
+      <div class="swap-rows" id="swRows" hidden></div>
+      <button class="btn btn-primary swap-go" id="swGo" type="button" disabled>Enter an amount</button>
+      <button class="swap-link" id="swUseAddr" type="button" hidden>Use a deposit address</button>
+    </div>
+  </div>
+  <div class="w-view" data-view="pick" data-title="Select token"><div class="w-body"><div class="swap-opts" role="listbox" data-list></div></div></div>
+  <div class="w-view" data-view="rv" data-title="Review swap">
+    <div class="w-sheet-h"><h2 id="swRvH">Review swap</h2><button class="w-ib" type="button" data-back aria-label="Close"><i data-icon="x"></i></button></div>
+    <div class="w-body" id="swRvBody"></div>
+    <form class="w-foot" id="swRvForm" novalidate>
+      <div class="field"><label class="label" for="swPw">Wallet password</label><input class="input" id="swPw" type="password" autocomplete="current-password" aria-describedby="swRvErr"></div>
+      <div class="error" id="swRvErr" role="alert"></div>
+      <button class="btn btn-primary swap-go" id="swRvGo" type="submit">Swap</button>
+    </form>
+  </div>
+  <div class="w-view" data-view="prog" data-title="Swap">
+    <div class="w-body" id="swProgBody"></div>
+    <div class="w-foot" id="swProgFoot"></div>
+  </div>
+  <div class="w-view" data-view="dprog" data-title="Deposit">
+    <div class="w-body" id="swDpBody"></div>
+    <div class="w-foot" id="swDpFoot"></div>
+  </div>
+  <div class="w-view" data-view="dep" data-title="Deposit">
+    <div class="w-body c">
+      <button class="btn btn-secondary swap-go" id="swDepConn" type="button" hidden><i data-icon="wallet"></i>Connect wallet</button>
+      <div class="w-qr"><img id="swQR" alt="QR code of your deposit address" width="200" height="200"></div>
+      <span class="w-pill n" id="swDepNet"></span>
+      <div class="w-addr" id="swDepAddr"></div>
+      <div class="w-chip-warn" id="swDepWarn"><i data-icon="alert"></i><span></span></div>
+      <div class="w-steps"><ol class="swap-steps" id="swDepSteps"></ol></div>
+    </div>
+    <div class="w-foot"><div class="w-two"><button class="btn btn-secondary swap-go" id="swShare" type="button" hidden><i data-icon="share"></i>Share</button><button class="btn btn-primary swap-go" id="swCopy" type="button" disabled><i data-icon="copy"></i>Copy address</button></div></div>
+  </div>
+  <div class="w-view" data-view="res" data-title="Swap">
+    <div class="w-body c" id="swResBody"></div>
+    <div class="w-foot" id="swResFoot"></div>
+  </div>
+</div>
+
+<div class="w-flow" id="flRecv" role="dialog" aria-modal="true" aria-labelledby="flRecvT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flRecvT">Receive</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="form" data-title="Receive">
+    <div class="w-body c">
+      <div class="w-qr"><img id="recvQR" alt="QR code of your address" width="200" height="200"></div>
+      <div class="w-toks"><span class="w-toks-ic"><span data-tok="ARG"></span><span data-tok="uARG"></span><span data-tok="wARG"></span></span>ARG · uARG · wARG</div>
+      <div class="w-addr" id="recvAddrFmt"></div>
+      <span id="recvAddr" hidden>–</span>
+      <button class="swap-link" id="btnNewAddr" type="button">New address</button>
+    </div>
+    <div class="w-foot"><div class="w-two"><button class="btn btn-secondary swap-go" id="recvShare" type="button" hidden><i data-icon="share"></i>Share</button><button class="btn btn-primary swap-go" id="btnCopyRecv" type="button"><i data-icon="copy"></i>Copy address</button></div></div>
+  </div>
+</div>
+
+<div class="w-flow" id="flCode" role="dialog" aria-modal="true" aria-labelledby="flCodeT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flCodeT">Enter a code</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="form" data-title="Enter a code">
+    <form class="w-body" id="codeForm" novalidate>
+      <input class="input code-in" id="handoffCode" autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" maxlength="14" placeholder="K7M2Q-X9RT4" spellcheck="false" aria-label="Code" aria-describedby="handoffErr">
+      <div class="error" id="handoffErr" role="alert"></div>
+    </form>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="btnHandoff" type="button">Continue</button></div>
+  </div>
+</div>
+
+<script src="{{UIJS}}"></script>
+<script src="{{EVMJS}}"></script>
+<script>
+(function () {
+  const TOKEN = "{{TOKEN}}";
+  const EXPLORER = {{EXPLORER_JS}}.replace(/\/+$/, '');
+  const $ = id => document.getElementById(id);
+  const { fmt, toast, copy, icon, mountIcons } = UI;
+  const esc = UI.escapeHTML;
+  const api = (path, body) => UI.api('/api/' + path, body, { 'X-Token': TOKEN });
+  let actTimer = null; // declared first: the Wallet page can open before the activity code below runs
+  let st = null, askedUnlock = false, pendingSend = null, newPhrase = '', verifyIdx = [], uHeld = null, revealTimer = null, setupFlow = false;
+  let wHeld = null, wargID = '';  // the swap service's genuine wARG (held, and its id once the service named it)
+  let FL = null;                   // the open flow: Send, Swap, Receive or the code from the phone
+  // The swap service (ARG, wARG, uARG): its pairs and rates, refreshed every 15 s while Swap is open.
+  const nat = { info: null, err: '', at: 0, timer: 0, quote: null, quoteTimer: 0, busy: '' };
+  let bridgeInfo = null, bridgeLoading = false; // the bridge's chains and tokens, fetched when the Wallet page opens
+  let wasUnlocked = false, sendInFlight = false, lastPing = 0;
+
+  // ---- routing ----
+  const titles = { mine: 'Mine', wallet: 'Wallet', history: 'History', network: 'Network' };
+  function show(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+    document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+    $('pageTitle').textContent = titles[page] || 'Mine';
+    if (page === 'history') loadHistory();
+    if (page === 'network') loadPeers();
+    if (page === 'wallet') { loadBridgeChains(); loadActivity(); if (!nat.info) loadNative(); }
+  }
+  // The bridge page links here as #withdraw?amount=…&chain=…&token=…&to=… to fill the Swap screen
+  // (uARG out). A link never sends anything: it still goes through Review, the full address and the password.
+  let bridgeLink = null;
+  function route() {
+    const m = /^#withdraw\?(.*)$/.exec(location.hash);
+    if (m) {
+      const q = new URLSearchParams(m[1]);
+      const h = { kind: 'redeem', amount: q.get('amount') || '', chain_id: q.get('chain') || '', token: q.get('token') || '', to: q.get('to') || '' };
+      history.replaceState(null, '', '#wallet');
+      const ok = /^\d{1,12}(\.\d{1,8})?$/.test(h.amount) && /^\d{1,12}$/.test(h.chain_id) && /^0x[0-9a-fA-F]{40}$/.test(h.token) && /^0x[0-9a-fA-F]{40}$/.test(h.to);
+      bridgeLink = ok ? h : null;
+      if (!ok) UI.toast('That swap link is incomplete. Fill in the Swap screen by hand.', 'warn');
+      show('wallet');
+      if (st) renderAssets(st);
+      return;
+    }
+    show(location.hash.slice(1) || 'mine');
+  }
+  window.addEventListener('hashchange', route);
+  route();
+  // Fills the Swap screen once the wallet is open and the bridge has named its uARG.
+  function applyBridgeLink(s) {
+    if (!bridgeLink || !s || !s.balance || !s.uargAsset) return;
+    const h = bridgeLink; bridgeLink = null;
+    if (!uHeld) { UI.toast('This wallet holds no uARG to swap.', 'warn'); return; }
+    fillRedeem(h, 'the bridge page').catch(e => toast(e.message, 'danger'));
+  }
+
+  // ---- helpers ----
+  const rateParts = h => { const u = ['H/s', 'kH/s', 'MH/s', 'GH/s']; let i = 0; h = Number(h) || 0; while (h >= 1000 && i < u.length - 1) { h /= 1000; i++; } return [i === 0 ? h.toFixed(h < 10 && h > 0 ? 1 : 0) : h.toFixed(2), u[i]]; };
+  function setErr(id, msg) { const el = $(id); el.innerHTML = msg ? icon('alert') + '<span>' + UI.escapeHTML(msg) + '</span>' : ''; }
+  function busy(btn, on) { btn.classList.toggle('is-loading', on); btn.disabled = on; }
+
+  // ---- status ----
+  async function refresh() {
+    try { st = await api('status'); } catch (e) { $('chainText').textContent = 'App unreachable'; $('chainText').className = 'status-text danger'; return; }
+    $('netBadge').textContent = st.network;
+    $('hHeight').textContent = fmt.int(st.height); $('hPeers').textContent = st.peers;
+    const live = st.peers > 0 || st.network === 'regtest';
+    $('chainText').className = 'status-text' + (st.ibd || !live ? ' warn' : '');
+    $('chainText').textContent = st.ibd ? 'Syncing chain' : live ? 'Synced' : 'Looking for peers';
+    $('footSync').textContent = st.walletSyncing ? 'Scanning wallet…' : (st.syncedHeight >= 0 ? 'Wallet synced to ' + fmt.int(st.syncedHeight) : '');
+    $('errorBanner').style.display = st.lastError ? '' : 'none'; $('errorText').textContent = st.lastError;
+
+    // mining
+    const [rv, ru] = rateParts(st.hashrate); $('hashrate').textContent = rv; $('rateUnit').textContent = ru;
+    UI.spark($('spark'), (st.rateHistory || []).slice(-120));
+    $('rateHint').textContent = st.mining ? 'Solo mining on this node · ' + st.threads + (st.threads > 1 ? ' threads' : ' thread') : 'Not mining';
+    $('found').textContent = fmt.int(st.blocksFound);
+    $('reward').textContent = fmt.coin(st.nextSubsidy);
+    $('difficulty').textContent = Number(st.difficulty).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    $('hashes').textContent = fmt.int(st.hashes);
+    $('miningAddr').textContent = st.miningAddress || '–';
+    if (document.activeElement !== $('threads')) { $('threads').value = st.threads; $('threadsOut').value = st.threads; }
+    $('threads').max = st.cpus; $('cpuNote').textContent = 'of ' + st.cpus + ' cores';
+    $('autostart').setAttribute('aria-checked', st.autostart ? 'true' : 'false');
+    $('btnMine').innerHTML = st.mining ? icon('stop') + '<span>Stop mining</span>' : icon('play') + '<span>Start mining</span>';
+    $('btnMine').className = 'btn btn-lg ' + (st.mining ? 'btn-danger' : 'btn-primary');
+    $('btnMine').disabled = !st.walletExists;
+    $('mineStatus').innerHTML = !st.walletExists ? icon('info') + 'Create a wallet to start mining.' : st.mining ? esc('Running on ' + Number(st.threads) + (st.threads > 1 ? ' threads' : ' thread')) : '';
+
+    // wallet
+    $('balance').textContent = st.balance ? fmt.coin(st.balance.spendable) : st.walletExists ? '· · ·' : '–';
+    $('balance').parentNode.classList.toggle('long', $('balance').textContent.length > 11);
+    $('lockRow').style.display = (st.walletExists && !st.unlocked) ? '' : 'none';
+    if (st.unlocked && $('recvAddr').textContent === '–') $('recvAddr').textContent = st.miningAddress;
+    renderAssets(st);
+
+    // network
+    $('nHeight').textContent = fmt.int(st.height); $('nHash').textContent = st.bestHash; $('nHash').title = st.bestHash;
+    $('nAgo').textContent = st.height ? fmt.ago(st.tipTime) : 'genesis'; $('nMempool').textContent = st.mempool;
+    $('nUptime').textContent = fmt.duration(st.uptime); $('nVersion').textContent = st.brand + ' ' + st.version;
+
+    // The setup dialog stays open while the new phrase is being backed up and checked, even though the wallet file already exists.
+    if (!st.walletExists) $('setup').classList.add('show'); else if (!setupFlow) $('setup').classList.remove('show');
+    if (wasUnlocked && st.walletExists && !st.unlocked) onLocked();
+    // Unlocked (now, or already when the page opened): the activity and the swap service's coins.
+    if (st.unlocked && !wasUnlocked) { if (location.hash === '#wallet') loadActivity(); if (!nat.info) loadNative(); }
+    wasUnlocked = !!st.unlocked;
+    if (st.walletExists && !st.unlocked && !askedUnlock) { askedUnlock = true; $('unlock').classList.add('show'); setTimeout(() => $('pwUnlock').focus(), 50); }
+  }
+
+  // ---- idle lock ----
+  // The app locks the wallet after a while without activity (mining goes on). Open dialogs that
+  // need the keys close, the phrase hides, and the unlock prompt says why.
+  function minutes(sec) { const m = Math.round(sec / 60); return m >= 1 ? m + (m === 1 ? ' minute' : ' minutes') : sec + ' seconds'; }
+  function onLocked() {
+    closeFlow(true); pendingSend = null; lastSend = null;
+    $('pwModal').classList.remove('show'); $('pwConfirm').value = ''; hideMnemonic();
+    const why = st.idleLocked && st.autolock ? 'Locked after ' + minutes(st.autolock) + ' without activity. Mining continues.' : 'The wallet was locked. Mining continues.';
+    $('unlockWhy').textContent = why; $('unlockWhy').style.display = '';
+    if (!setupFlow) { setErr('unlockErr', ''); $('unlock').classList.add('show'); setTimeout(() => $('pwUnlock').focus(), 50); }
+    toast(why, 'warn', 8000);
+  }
+  // The page's own polling does not count as activity; keys and clicks do. They are reported at
+  // most once a minute (more often only with a very short -autolock).
+  function ping() {
+    if (!st || !st.unlocked) return;
+    const now = Date.now(), every = Math.min(60000, Math.max(1000, (st.autolock || 900) * 250));
+    if (now - lastPing < every) return;
+    lastPing = now; api('activity', {}).catch(() => { });
+  }
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, ping, { capture: true, passive: true }));
+
+  async function loadHistory() {
+    if (!st || !st.unlocked) { $('histTable').style.display = 'none'; $('histEmpty').style.display = ''; $('histEmpty').querySelector('h3').textContent = st && st.walletExists ? 'Wallet is locked' : 'No transactions yet'; return; }
+    let h; try { h = await api('wallet/history'); } catch (e) { return; }
+    $('histCount').textContent = h.length ? h.length + ' transaction' + (h.length > 1 ? 's' : '') : '';
+    $('histTable').style.display = h.length ? '' : 'none'; $('histEmpty').style.display = h.length ? 'none' : '';
+    const tb = $('history'); tb.innerHTML = '';
+    h.slice().reverse().forEach(r => {
+      const tr = document.createElement('tr');
+      const when = r.height ? esc(fmt.when(r.time)) : '<span class="badge badge-warn">pending</span>';
+      const assets = Object.entries(r.assets || {});
+      let type = r.sent === 0 ? (r.fee === 0 && r.received === st.nextSubsidy ? 'Mining reward' : 'Received') : 'Sent';
+      if (assets.length) type = (assets.every(([, n]) => n >= 0) ? 'Received ' : 'Sent ') + assetName(assets[0][0]);
+      const lines = assets.map(([id, n]) => '<span class="' + (n >= 0 ? 'pos' : 'neg') + '">' + esc((n >= 0 ? '+' : '−') + fmt.coin(Math.abs(n)) + ' ' + assetName(id)) + '</span>');
+      if (!assets.length || Math.abs(r.net) !== r.fee) lines.push('<span class="' + (r.net >= 0 ? 'pos' : 'neg') + '">' + esc((r.net >= 0 ? '+' : '−') + fmt.coin(Math.abs(r.net)) + (assets.length ? ' ' + st.coin : '')) + '</span>');
+      tr.innerHTML = '<td class="num">' + esc(r.height || '–') + '</td><td>' + when + '</td><td>' + esc(type) + '</td><td class="num">' + lines.join('<br>') + '</td><td class="num muted">' + (r.fee ? esc(fmt.coin(r.fee)) : '') + '</td><td class="mono"><span title="' + esc(r.txid) + '">' + esc(fmt.short(r.txid, 12, 8)) + '</span></td>';
+      tb.appendChild(tr);
+    });
+  }
+  async function loadPeers() {
+    let ps; try { ps = await api('peers'); } catch (e) { return; }
+    $('peerCount').textContent = ps.length ? ps.length + ' connected' : '';
+    $('peerTable').style.display = ps.length ? '' : 'none'; $('peersEmpty').style.display = ps.length ? 'none' : '';
+    const tb = $('peers'); tb.innerHTML = '';
+    ps.forEach(p => {
+      const tr = document.createElement('tr'); tr.className = 'peer-row';
+      tr.innerHTML = '<td class="mono truncate">' + esc(p.Addr) + '</td><td>' + (p.Inbound ? 'inbound' : 'outbound') + '</td><td class="muted">' + esc(p.UserAgent || '') + '</td><td class="num">' + esc(fmt.int(p.StartHeight)) + '</td><td class="num">' + (p.PingMs ? esc(Number(p.PingMs) + ' ms') : '–') + '</td><td class="num">' + esc(fmt.bytes(p.BytesIn)) + '</td><td class="num">' + esc(fmt.bytes(p.BytesOut)) + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  // ---- mining controls ----
+  $('threads').oninput = () => { $('threadsOut').value = $('threads').value; };
+  $('threads').onchange = async () => { try { await api('settings', { threads: Number($('threads').value) }); if (st && st.mining) await api('mining/start', { threads: Number($('threads').value) }); } catch (e) { toast(e.message, 'danger'); } };
+  $('autostart').onclick = async () => { const on = $('autostart').getAttribute('aria-checked') !== 'true'; $('autostart').setAttribute('aria-checked', String(on)); try { await api('settings', { autostart: on }); } catch (e) { toast(e.message, 'danger'); } };
+  $('btnMine').onclick = async () => {
+    const btn = $('btnMine'); busy(btn, true);
+    try {
+      if (st.mining) { await api('mining/stop', {}); toast('Mining stopped', 'ok'); }
+      else {
+        await api('mining/start', { threads: Number($('threads').value) || 0 });
+        toast('Mining started', 'ok');
+      }
+    } catch (e) { toast(e.message, 'danger'); }
+    busy(btn, false); refresh();
+  };
+  $('copyMining').onclick = () => copy($('miningAddr').textContent, 'Mining address');
+
+  // ---- home: account chip, balance, tokens ----
+  // A small identicon drawn from the address: a mirrored 5 by 5 grid in one hue.
+  function identicon(a) {
+    let h = 2166136261; a = String(a || '');
+    for (let i = 0; i < a.length; i++) { h ^= a.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    const hue = h % 360, bits = Math.imul(h ^ 0x9e3779b9, 2654435761) >>> 0; let cells = '';
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) {
+      if ((bits >>> (y * 3 + x)) & 1) { cells += '<rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="1" height="1"/>'; if (x < 2) cells += '<rect x="' + (5 - x) + '" y="' + (y + 1) + '" width="1" height="1"/>'; }
+    }
+    return '<svg viewBox="0 0 7 7" shape-rendering="crispEdges"><rect width="7" height="7" fill="hsl(' + hue + ',45%,88%)"/><g fill="hsl(' + hue + ',55%,42%)">' + cells + '</g></svg>';
+  }
+  function assetName(id) { return (st && st.assetNames && st.assetNames[id]) || (id.slice(0, 8) + '…'); }
+  // One token row: a 40px logo, the name with a subtitle, the amount with its
+  // dollar value where there is one. Only ARG, the bridge's uARG and the swap
+  // service's wARG wear their logos; anything else gets letters.
+  function tokRow(logo, mark, name, sub, amount, usd) {
+    return '<div class="w-tok"><span class="w-tok-ic">' + (logo || esc(mark)) + '</span><div class="w-tok-n"><b>' + esc(name) + '</b><small>' + esc(sub) + '</small></div>' +
+      '<div class="w-tok-v"><b>' + esc(amount) + '</b>' + (usd ? '<small>' + esc(usd) + '</small>' : '') + '</div></div>';
+  }
+  // An asset that calls itself uARG, wARG or ARG but is not that coin; or
+  // whose genuine id is not known yet (the bridge or the swap service has not
+  // answered).
+  function notGenuine(a, s) {
+    const u = String(a.symbol || '').toUpperCase();
+    if (u === 'UARG') return s.uargAsset ? 'Not the genuine uARG' : 'Not confirmed by the bridge';
+    if (u === 'WARG') return wargID ? 'Not the genuine wARG' : 'Not confirmed by the swap service';
+    return 'Not the genuine ' + (s.coin || 'ARG');
+  }
+  function renderAssets(s) {
+    const held = s.assets || [], b = s.balance;
+    $('acctIdn').innerHTML = s.miningAddress ? identicon(s.miningAddress) : '';
+    $('acctAddr').textContent = s.miningAddress ? fmt.short(s.miningAddress, 9, 6) : '–';
+    $('netPill').hidden = !s.network || s.network === 'mainnet'; $('netPill').textContent = s.network || '';
+    if (!b) { $('assetList').innerHTML = ''; $('balSub').textContent = s.walletExists ? 'Unlock the wallet to see balances' : ''; uHeld = null; wHeld = null; return; }
+    uHeld = held.find(a => a.uarg) || null; wHeld = held.find(a => a.warg) || null;
+    $('balSub').textContent = uHeld ? fmt.coin(uHeld.confirmed, 2) + ' uARG · $' + fmt.coin(uHeld.confirmed, 2) : '';
+    let html = tokRow(UI.token('ARG'), 'ARG', s.coin, b.immature ? netName() + ' · ' + fmt.coin(b.immature) + ' maturing' : netName(), fmt.coin(b.spendable) + ' ' + s.coin, '');
+    held.forEach(a => {
+      const logo = a.uarg ? UI.token('uARG') : a.warg ? UI.token('wARG') : '';
+      let sub = a.uarg ? 'Dollar token' : a.warg ? 'Wrapped ARG' : 'asset ' + fmt.short(a.asset, 8, 6);
+      if (a.unverified) sub = notGenuine(a, s) + ' · ' + fmt.short(a.asset, 8, 6);
+      if (a.locked) sub += ' · ' + fmt.coin(a.locked) + ' pending';
+      html += tokRow(logo, (a.unverified ? a.symbol : a.display).slice(0, 4), a.display, sub, fmt.coin(a.confirmed) + ' ' + (a.unverified ? a.symbol : a.display), a.usd ? '$' + fmt.coin(a.confirmed, 2) : '');
+    });
+    $('assetList').innerHTML = html;
+    if (FL && FL.name === 'send') renderSend();
+    if (FL && FL.name === 'swap' && !swBusy()) renderSwap();
+    applyBridgeLink(s);
+  }
+  $('acctChip').onclick = () => { if (st && st.miningAddress) copy(st.miningAddress, 'Address'); };
+  document.querySelectorAll('.w-tabs [role=tab]').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.w-tabs [role=tab]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+      $('tab-assets').classList.toggle('off', b.dataset.tab !== 'assets'); $('tab-activity').classList.toggle('off', b.dataset.tab !== 'activity');
+      document.querySelector('#page-wallet .w-sec').classList.toggle('off', b.dataset.tab !== 'assets');
+    };
+  });
+  $('liveStrip').onclick = () => { document.querySelector('.w-tabs [data-tab="activity"]').click(); $('tab-activity').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+
+  // ---- the bridge: chains and tokens it pays out and takes in ----
+  // Returns the fetch in flight, so a caller that needs the list can wait for it.
+  function loadBridgeChains() {
+    if (bridgeLoading) return bridgeLoading;
+    bridgeLoading = (async () => {
+      try { bridgeInfo = await api('bridge/chains'); } catch (e) { bridgeInfo = { chains: [], error: e.message }; }
+      bridgeLoading = false;
+      if (FL && FL.name === 'swap' && !swBusy()) renderSwap();
+      if (st && st.balance) refresh(); // the token rows follow the bridge: which asset is uARG
+    })();
+    return bridgeLoading;
+  }
+  function bridgeChains() { return (bridgeInfo && bridgeInfo.chains) || []; }
+  // Every token on every chain is one route: "USDC · Ethereum Sepolia".
+  function routes() { const out = []; bridgeChains().forEach(c => (c.tokens || []).forEach(t => out.push({ c, t, key: c.chain_id + ':' + String(t.address).toLowerCase() }))); return out; }
+  function routeBy(chainId, token) {
+    token = String(token || '').toLowerCase();
+    return routes().find(r => String(r.c.chain_id) === String(chainId) && (r.t.address.toLowerCase() === token || r.t.symbol.toLowerCase() === token)) || null;
+  }
+
+  // ---- amounts: exact, in BigInt units ----
+  const TEN = 10n;
+  function toUnits(s, dec) {
+    const m = /^(\d*)(?:\.(\d*))?$/.exec(String(s || '').replace(/[,\s]/g, ''));
+    if (!m || (!m[1] && !m[2]) || (m[2] || '').length > dec) return null;
+    return BigInt(m[1] || '0') * TEN ** BigInt(dec) + BigInt((m[2] || '').padEnd(dec, '0') || '0');
+  }
+  // units with dec decimals -> text with at most maxFrac and at least minFrac fraction digits.
+  function fmtTok(units, dec, maxFrac, minFrac, plain) {
+    let s = String(units === null || units === undefined ? 0 : units), neg = s[0] === '-'; if (neg) s = s.slice(1);
+    if (!/^\d+$/.test(s)) s = '0';
+    while (s.length <= dec) s = '0' + s;
+    let w = s.slice(0, s.length - dec), fr = s.slice(s.length - dec).slice(0, maxFrac === undefined ? 8 : maxFrac).replace(/0+$/, '');
+    while (fr.length < (minFrac || 0)) fr += '0';
+    if (!plain) w = w.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return (neg ? '-' : '') + w + (fr ? '.' + fr : '');
+  }
+  const fmtU = (u, min) => fmtTok(u, 8, 8, min === undefined ? 2 : min);   // ARG, uARG, wARG: two to eight decimals
+  const fmt2 = (v, dec) => fmtTok(v, dec, 2, 2);                           // stablecoins: two decimals
+  const plainU = u => fmtTok(u, 8, 8, 0, true);
+  function argToTok(u, dec) { dec = Number(dec) || 0; return dec >= 8 ? u * TEN ** BigInt(dec - 8) : u / TEN ** BigInt(8 - dec); }
+  function tokToArg(v, dec) { dec = Number(dec) || 0; return dec >= 8 ? v / TEN ** BigInt(dec - 8) : v * TEN ** BigInt(8 - dec); }
+  function big(v) { try { return BigInt(String(v === null || v === undefined || v === '' ? 0 : v)); } catch (e) { return 0n; } }
+  // The smallest uARG amount that pays a token's minimum withdrawal
+  // (tokens[].min_release, gross token units), converted as the bridge does
+  // (argToTok); 0n when the bridge names none.
+  function minOut(t) { const r = big(t && t.min_release), dec = Number(t && t.decimals) || 0; if (r <= 0n) return 0n; if (dec >= 8) { const st = TEN ** BigInt(dec - 8); return (r + st - 1n) / st; } return r * TEN ** BigInt(8 - dec); }
+  function pct(bps) { return (Number(bps) / 100).toFixed(2).replace(/\.?0+$/, '') + '%'; }
+  function feeOf(v, bps) { let b = BigInt(Math.max(0, Math.min(10000, Number(bps) || 0))); return v * b / 10000n; }
+  // How long things take, the way the bridge page says it.
+  const blockTime = { 1: 12, 11155111: 12, 17000: 12, 8453: 2, 84532: 2, 56: 3, 97: 3, 42161: 0.25, 421614: 0.25, 137: 2, 80002: 2, 31337: 1 };
+  const finalMin = { 1: 15, 11155111: 15, 17000: 15, 560048: 15, 8453: 20, 84532: 20, 10: 20, 11155420: 20, 42161: 20, 421614: 20, 56: 1, 97: 1, 137: 2, 80002: 2 };
+  function depEta(c) {
+    let m = Math.max(1, Math.round((Number(c.confirmations || 0) * (blockTime[c.chain_id] || 12) + 120) / 60));
+    if (c.finality === 'finalized' && finalMin[c.chain_id]) m = Math.max(m, finalMin[c.chain_id] + 2);
+    return 'about ' + m + ' min';
+  }
+  function tiers() { return (bridgeInfo && Array.isArray(bridgeInfo.l1_confirmation_tiers)) ? bridgeInfo.l1_confirmation_tiers : []; }
+  function outDepth(u) {
+    const base = Number((bridgeInfo && bridgeInfo.l1_confirmations) || 0), t = tiers();
+    for (let i = 0; i < t.length; i++) if (u === null || u <= big(t[i].up_to)) return Math.max(base, Number(t[i].confirmations));
+    return base;
+  }
+  function outMax() { const t = tiers(); return t.length ? big(t[t.length - 1].up_to) : null; }
+  function outEta(u) { const m = outDepth(u) * 10 + 5; return m >= 90 ? 'about ' + Math.round(m / 60) + ' hours' : m >= 45 ? 'about 1 hour' : 'about ' + m + ' min'; }
+  function shortEta(s) { return String(s).replace(/^about /, '~').replace(/ hours?$/, ' h'); }
+
+  // ---- token marks and chips ----
+  function tokIc(sym, lg, logo) {
+    const s = String(sym || ''), u = s.toUpperCase(), cls = 'swap-ic' + (lg ? ' lg' : '');
+    if (logo && UI.token) { const img = UI.token(s); if (img) return '<span class="' + cls + ' tok" aria-hidden="true">' + img + '</span>'; }
+    return '<span class="' + cls + (u === 'USDC' ? ' usdc' : u === 'USDT' ? ' usdt' : '') + '" aria-hidden="true">' + esc(u === 'USDC' ? '$' : u === 'USDT' ? 'T' : (u[0] || '?')) + '</span>';
+  }
+  function chipHTML(sym, net, pick, logo) { return tokIc(sym, false, logo) + '<span class="swap-tok"><b>' + esc(sym) + '</b><small>' + esc(net) + '</small></span>' + (pick ? icon('chevronDown') : ''); }
+  function netName() { return (st && st.brand ? st.brand : 'Argonmine') + (st && st.network && st.network !== 'mainnet' ? ' ' + st.network : ''); }
+  function note(id, msg, kind) { const el = $(id); el.className = 'swap-note' + (kind ? ' ' + kind : ''); el.innerHTML = msg ? icon(kind === 'bad' ? 'alert' : kind === 'ok' ? 'check' : 'info') + '<span>' + esc(msg) + '</span>' : ''; }
+  function setGo(btn, label, on) { btn.textContent = label; btn.disabled = !on; }
+  function argSpendable() { return st && st.balance ? big(st.balance.spendable) : 0n; }
+  const evmRe = /^0x[0-9a-fA-F]{40}$/;
+  // innerHTML only when it changed: the balance lines are redrawn every two
+  // seconds and must not swallow a click on Max.
+  function setHTML(el, html) { if (el._h !== html) { el._h = html; el.innerHTML = html; } }
+  function kvTo(label, a) { return '<dt>' + esc(label) + '</dt><dd class="wide"><div class="swap-addr">' + esc(a) + '</div></dd>'; }
+  function amtRow(k, units, sym, n, logo) { return '<div class="swap-rv-amt"><div><div class="k">' + esc(k) + '</div><div class="v">' + esc(units) + '<small>' + esc(sym) + '</small></div>' + (n ? '<div class="n">' + esc(n) + '</div>' : '') + '</div>' + tokIc(sym, true, logo) + '</div>'; }
+  function step(kind, title, sub) { return '<li class="swap-step ' + kind + '"><span class="swap-dot">' + (kind === 'done' ? icon('check') : kind === 'bad' ? icon('alert') : '') + '</span><div><div class="t">' + esc(title) + '</div>' + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div></li>'; }
+  function link(url, text) { return url && /^https?:\/\//i.test(url) ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(text) + '</a>' : esc(text); }
+  function txURL(base, tx) { return base && tx ? String(base).replace(/\/+$/, '') + '/tx/' + encodeURIComponent(String(tx)) : ''; }
+  // "…; nothing was sent, try again shortly" reads as an outcome; before a send it is just the reason.
+  function cleanMsg(m) { m = String(m || '').replace(/;\s*nothing was sent.*$/i, '').replace(/,\s*so nothing was sent.*$/i, ''); return m ? m.charAt(0).toUpperCase() + m.slice(1) + '.' : ''; }
+
+  // ---- flows: Send, Swap, Receive, Code ----
+  // One flow is open at a time, as a centred modal on wide screens and a
+  // full-screen page on phones. A flow is a stack of views; the back arrow
+  // pops one and closes the flow at the first. On phones a review opens as a
+  // bottom sheet over the form. Esc closes; Tab stays inside the flow.
+  const FLOWS = { send: 'flSend', swap: 'flSwap', receive: 'flRecv', code: 'flCode' };
+  const isPhone = () => window.matchMedia && window.matchMedia('(max-width: 639px)').matches;
+  function openFlow(name, view) {
+    if (name !== 'receive' && name !== 'code' && st && st.walletExists && !st.unlocked) { $('unlock').classList.add('show'); setTimeout(() => $('pwUnlock').focus(), 50); return false; }
+    if (FL) closeFlow(true);
+    const el = $(FLOWS[name]);
+    FL = { name, el, stack: [], back: document.activeElement };
+    el.classList.add('show'); $('flowScrim').classList.add('show'); document.body.style.overflow = 'hidden';
+    showView(view || 'form', true);
+    return true;
+  }
+  function closeFlow(quiet) {
+    if (!FL) return;
+    const f = FL; FL = null;
+    f.el.classList.remove('show', 'sheet-on'); $('flowScrim').classList.remove('show'); document.body.style.overflow = '';
+    f.el.querySelectorAll('.w-view').forEach(v => v.classList.remove('on', 'sheet'));
+    f.el.querySelectorAll('input[type=password]').forEach(i => { i.value = ''; });
+    stopSwapTimers(); clearInterval(nat.quoteTimer);
+    if (!quiet && f.back && f.back.focus) f.back.focus();
+  }
+  // showView(v): push v; showView(v, true): v alone; showView(v, base): base, then v.
+  function showView(v, base) {
+    const el = FL.el, sheet = isPhone() && v === 'rv';
+    if (base === true) FL.stack = []; else if (typeof base === 'string') FL.stack = [base];
+    if (FL.stack[FL.stack.length - 1] !== v) FL.stack.push(v);
+    const under = sheet ? FL.stack[FL.stack.length - 2] : null;
+    el.querySelectorAll('.w-view').forEach(x => {
+      const n = x.dataset.view;
+      x.classList.toggle('on', n === v || n === under);
+      x.classList.toggle('sheet', sheet && n === v);
+    });
+    el.classList.toggle('sheet-on', sheet);
+    const top = el.querySelector('.w-view[data-view="' + (under || v) + '"]');
+    el.querySelector('.w-flow-t').textContent = top ? top.dataset.title : '';
+    setTimeout(() => { const f = firstFocus(); if (f) f.focus(); }, 30);
+  }
+  function backView() {
+    if (!FL) return;
+    if (FL.stack.length <= 1) { closeFlow(); return; }
+    FL.stack.pop(); const prev = FL.stack.pop(); showView(prev);
+  }
+  function trapRoot() { return FL ? (FL.el.classList.contains('sheet-on') ? FL.el.querySelector('.w-view.sheet') : FL.el) : null; }
+  function focusables() {
+    const root = trapRoot(); if (!root) return [];
+    return Array.from(root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]):not([readonly])')).filter(e => e.offsetParent !== null && !e.closest('[hidden]'));
+  }
+  function firstFocus() {
+    const root = trapRoot(); if (!root) return null;
+    const view = root.classList.contains('w-view') ? root : root.querySelector('.w-view.on');
+    const pw = view && view.querySelector('input[type=password]');
+    if (pw) return pw;
+    const inp = view && view.querySelector('input:not([readonly]):not([disabled])');
+    if (inp && !isPhone()) return inp;
+    const fs = focusables(); return view ? (fs.find(e => view.contains(e)) || fs[0]) : fs[0];
+  }
+  document.addEventListener('keydown', e => {
+    if (!FL) return;
+    // Esc leaves a review sheet or a picker for the form under it, and closes the flow from anywhere else.
+    if (e.key === 'Escape') { e.preventDefault(); if (FL.el.classList.contains('sheet-on') || FL.stack[FL.stack.length - 1] === 'pick') backView(); else closeFlow(); return; }
+    if (e.key !== 'Tab') return;
+    const fs = focusables(); if (!fs.length) return;
+    const i = fs.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); fs[fs.length - 1].focus(); }
+    else if (!e.shiftKey && (i === -1 || i === fs.length - 1)) { e.preventDefault(); fs[0].focus(); }
+  });
+  $('flowScrim').onclick = () => closeFlow();
+  Object.keys(FLOWS).forEach(n => {
+    const el = $(FLOWS[n]);
+    el.querySelectorAll('[data-back]').forEach(b => { b.onclick = backView; });
+    el.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => closeFlow(); });
+    el.addEventListener('click', e => { if (e.target === el && el.classList.contains('sheet-on')) backView(); });
+  });
+  // The token picker is a view of the flow that asked for it.
+  let pickCb = null;
+  function openPicker(title, items, cb, empty) {
+    const view = FL.el.querySelector('.w-view[data-view="pick"]'), list = view.querySelector('[data-list]');
+    view.dataset.title = title; pickCb = cb;
+    list.innerHTML = items.length ? items.map(i => {
+      if (i.head) return '<div class="swap-opt-h">' + esc(i.head) + '</div>';
+      return '<button type="button" class="swap-opt" role="option" data-key="' + esc(i.key) + '" aria-selected="' + (i.sel ? 'true' : 'false') + '"' + (i.off ? ' aria-disabled="true" disabled' : '') + '>' +
+        i.html + '<span><b>' + esc(i.title) + '</b><small>' + esc(i.sub) + '</small></span><span class="swap-opt-r">' + (i.sel ? icon('check') : esc(i.right || '')) + '</span></button>';
+    }).join('') : '<div class="empty" style="padding:var(--sp-5)"><p>' + esc(empty || 'Nothing to choose right now.') + '</p></div>';
+    showView('pick');
+  }
+  document.querySelectorAll('.w-view[data-view="pick"] [data-list]').forEach(list => {
+    list.addEventListener('click', e => { const b = e.target.closest('.swap-opt'); if (!b || b.disabled) return; const k = b.dataset.key; backView(); if (pickCb) pickCb(k); });
+  });
+  function share(text, label) { if (navigator.share) navigator.share({ text }).catch(() => { }); else copy(text, label); }
+  // 0x… and Argonmine addresses in balanced lines of at most 22 characters.
+  function addrLines(a) { a = String(a || ''); const n = Math.max(1, Math.ceil(a.length / 22)), w = Math.ceil(a.length / n), out = []; for (let i = 0; i < a.length; i += w) out.push('<span>' + esc(a.slice(i, i + w)) + '</span>'); return out.join(''); }
+  // A result view: done, or failed with a way back.
+  function showRes(flowKey, ok, title, text, txid, retry) {
+    const P = flowKey === 'send' ? 'sd' : 'sw';
+    $(P + 'ResBody').innerHTML = '<span class="w-res-ic ' + (ok ? 'ok' : 'bad') + '">' + icon(ok ? 'check' : 'alert') + '</span><h2 class="w-res-t">' + esc(title) + '</h2><div class="w-muted">' + esc(text) + '</div>' +
+      (txid ? '<div class="swap-addr" style="align-self:stretch;text-align:center">' + esc(txid) + '</div>' + (EXPLORER ? '<a class="swap-link" href="' + esc(txURL(EXPLORER, txid)) + '" target="_blank" rel="noopener">View in the explorer</a>' : '') : '');
+    $(P + 'ResFoot').innerHTML = ok ? '<button class="btn btn-primary swap-go" type="button" data-res="done">Done</button>'
+      : '<div class="w-two"><button class="btn btn-secondary swap-go" type="button" data-res="done">Close</button><button class="btn btn-primary swap-go" type="button" data-res="retry">Try again</button></div>';
+    $(P + 'ResFoot').querySelectorAll('[data-res]').forEach(b => { b.onclick = () => { if (b.dataset.res === 'retry' && retry) retry(); else closeFlow(); }; });
+    FL.el.querySelector('.w-view[data-view="res"]').dataset.title = FL.el.querySelector('.w-view[data-view="form"]').dataset.title;
+    showView('res', 'form');
+  }
+
+  // ---- home actions ----
+  $('actReceive').onclick = () => { if (openFlow('receive')) renderReceive(); };
+  $('actSend').onclick = () => { if (openFlow('send')) { loadBridgeChains(); renderSend(); } };
+  $('actSwap').onclick = () => { if (!FL) $('swPay').value = ''; openSwap(); };
+  $('actMine').onclick = () => { location.hash = '#mine'; };
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    $('swPaste').hidden = false;
+    $('swPaste').onclick = () => navigator.clipboard.readText().then(t => { $('swTo').value = String(t || '').trim(); $('swTo').dispatchEvent(new Event('input')); }).catch(() => toast('The browser did not allow pasting. Type the address instead.', 'warn'));
+  }
+
+  // ---- Receive ----
+  // One address for ARG, uARG and wARG.
+  function renderReceive() {
+    if ($('recvAddr').textContent === '–' && st && st.miningAddress) $('recvAddr').textContent = st.miningAddress;
+    const a = $('recvAddr').textContent;
+    $('recvAddrFmt').innerHTML = a && a !== '–' ? addrLines(a) : '–';
+    if (a && a !== '–') $('recvQR').src = '/qr.svg?d=' + encodeURIComponent(a);
+    $('recvShare').hidden = !navigator.share;
+  }
+  $('btnNewAddr').onclick = async () => { try { $('recvAddr').textContent = await api('wallet/newaddress', {}); renderReceive(); toast('New address ready', 'ok'); } catch (e) { toast(e.message, 'danger'); } };
+  $('btnCopyRecv').onclick = () => copy($('recvAddr').textContent, 'Address');
+  $('recvShare').onclick = () => share($('recvAddr').textContent, 'Address');
+
+  // ---- Send: uARG or ARG to a person's Argonmine address ----
+  // Send moves coins between Argonmine addresses only; anything to another
+  // chain is Swap. uARG and ARG can be sent; wARG once the swap service has
+  // named the genuine wARG and the wallet holds some. A swap address (it pays
+  // out on another chain) is refused here and on the server.
+  const sd = { check: null, seq: 0, timer: 0, usd: false, coin: 'uarg' };
+  function sendCoin() {
+    if (sd.coin === 'arg') return { id: '', sym: st ? st.coin : 'ARG', bal: argSpendable(), arg: true };
+    if (sd.coin === 'warg') return { id: wHeld ? wHeld.asset : '', sym: 'wARG', bal: wHeld ? big(wHeld.confirmed) : 0n };
+    return { id: uHeld ? uHeld.asset : '', sym: 'uARG', bal: uHeld ? big(uHeld.confirmed) : 0n };
+  }
+  function renderSend() {
+    if (!st) return;
+    if (sd.coin === 'warg' && !(wHeld && big(wHeld.confirmed) > 0n)) sd.coin = 'uarg';
+    const coin = sendCoin(), u = toUnits($('sendAmt').value, 8), usdOK = sd.coin === 'uarg';
+    if (!usdOK) sd.usd = false;
+    $('sdUsd').parentNode.style.visibility = usdOK ? '' : 'hidden';
+    setHTML($('sdChip'), chipHTML(coin.sym, netName(), true, true));
+    $('sendTo').placeholder = (st.brand || 'Argonmine') + ' address';
+    $('sdCur').hidden = !sd.usd; $('sdTgl').setAttribute('aria-pressed', String(sd.usd));
+    $('sdTgl').setAttribute('aria-label', sd.usd ? 'Enter the amount in uARG' : 'Enter the amount in dollars');
+    // uARG is worth one dollar: the line under the amount shows the other unit.
+    $('sdUsd').textContent = sd.usd ? fmtTok(u || 0n, 8, 8, 0) + ' uARG' : '$' + fmtTok(u || 0n, 8, 2, 2);
+    $('sdBalV').textContent = (sd.usd ? '$' : '') + fmtU(coin.bal);
+    $('sdBal').disabled = coin.bal <= 0n;
+    sendNote();
+  }
+  function sendProblem() {
+    const coin = sendCoin(), to = $('sendTo').value.trim(), raw = $('sendAmt').value.trim(), u = toUnits(raw, 8), c = sd.check;
+    if (!to) return ['Enter an address'];
+    if (!c || c.addr !== to.toLowerCase()) return ['Checking the address'];
+    if (!c.valid) return ['Enter a valid address'];
+    if (c.error || c.swap) return ['Cannot send to this address'];
+    if (to.toLowerCase() === String(st.miningAddress || '').toLowerCase()) return ['Enter another address', 'That is this wallet\'s own address.'];
+    if (raw && u === null) return ['Enter an amount', 'Enter a number with up to 8 decimals.'];
+    if (!u) return ['Enter an amount'];
+    if ((!coin.arg && !coin.id) || u > coin.bal) return ['Insufficient ' + coin.sym];
+    if (argSpendable() <= 0n) return ['Not enough ' + st.coin + ' for the network fee'];
+    return null;
+  }
+  function sendNote() {
+    const to = $('sendTo').value.trim(), c = sd.check;
+    $('sdToBox').classList.remove('bad');
+    if (!to || !c || c.addr !== to.toLowerCase()) note('sdNote', '');
+    else if (!c.valid) { if (to.length >= String(st.hrp || '').length + 60) { $('sdToBox').classList.add('bad'); note('sdNote', 'Not a valid ' + netName() + ' address.', 'bad'); } else note('sdNote', ''); }
+    else if (c.error) { $('sdToBox').classList.add('bad'); note('sdNote', cleanMsg(c.error), 'bad'); }
+    else if (c.swap) {
+      // Send is between Argonmine addresses only; a swap address belongs to Swap.
+      $('sdToBox').classList.add('bad');
+      $('sdNote').className = 'swap-note bad';
+      $('sdNote').innerHTML = icon('alert') + '<span>This is a swap address. Use Swap to move uARG to another chain. <button type="button" class="swap-inl" data-open-swap>Open Swap</button></span>';
+    } else note('sdNote', '');
+    const p = sendProblem();
+    setGo($('btnSend'), p ? p[0] : 'Continue', !p);
+    if (p && p[1]) note('sdNote', p[1], 'bad');
+  }
+  function checkSendTo() {
+    clearTimeout(sd.timer);
+    const to = $('sendTo').value.trim().toLowerCase();
+    if (!to) { sd.check = null; sendNote(); return; }
+    sd.timer = setTimeout(async () => {
+      const seq = ++sd.seq;
+      let r; try { r = await api('wallet/validate', { address: to }); } catch (e) { r = { valid: false }; }
+      if (seq !== sd.seq) return;
+      sd.check = Object.assign({ addr: to }, r); sendNote();
+    }, 200);
+  }
+  $('sendTo').addEventListener('input', () => { sd.check = null; sendNote(); checkSendTo(); });
+  $('sdNote').addEventListener('click', e => {
+    if (!e.target.closest('[data-open-swap]') || !sd.check || !sd.check.swap) return;
+    const w = sd.check.swap;
+    const amt = $('sendAmt').value.trim();
+    $('sendTo').value = ''; sd.check = null;
+    fillRedeem({ amount: amt, chain_id: w.chain_id, token: w.token || w.symbol, to: w.to }, 'the swap address').catch(err => toast(err.message, 'danger'));
+  });
+  $('sendAmt').addEventListener('input', renderSend);
+  [$('sendAmt'), $('sendTo')].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!$('btnSend').disabled) $('btnSend').click(); } }));
+  $('sdTgl').onclick = () => { sd.usd = !sd.usd; renderSend(); $('sendAmt').focus(); };
+  $('sdBal').onclick = () => { $('sendAmt').value = plainU(sendCoin().bal); renderSend(); $('sendAmt').focus(); };
+  $('sdChip').onclick = () => {
+    const ub = uHeld ? big(uHeld.confirmed) : 0n, wb = wHeld ? big(wHeld.confirmed) : 0n;
+    openPicker('Select token', [
+      { key: 'uarg', html: tokIc('uARG', true, true), title: 'uARG', sub: 'Dollar token', right: fmtU(ub, 0), sel: sd.coin === 'uarg' },
+      { key: 'arg', html: tokIc('ARG', true, true), title: st.coin, sub: netName(), right: fmtU(argSpendable(), 0), sel: sd.coin === 'arg' },
+      { key: 'warg', html: tokIc('wARG', true, true), title: 'wARG', sub: wargID ? 'Wrapped ARG' : 'Launching soon', right: fmtU(wb, 0), off: !(wargID && wb > 0n), sel: sd.coin === 'warg' },
+    ], k => { sd.coin = k; renderSend(); setTimeout(() => $('sendAmt').focus(), 40); });
+  };
+  // Addresses this computer sent to (kept in this browser only), and the clipboard.
+  function recent() { try { const r = JSON.parse(localStorage.getItem('send.recent') || '[]'); return Array.isArray(r) ? r.filter(a => typeof a === 'string' && /^[a-z0-9]{8,90}$/.test(a)).slice(0, 5) : []; } catch (e) { return []; } }
+  function remember(a) { try { localStorage.setItem('send.recent', JSON.stringify([a].concat(recent().filter(x => x !== a)).slice(0, 5))); } catch (e) { } }
+  $('sdPick').onclick = () => {
+    const items = [];
+    if (navigator.clipboard && navigator.clipboard.readText) items.push({ key: 'paste', html: '<span class="swap-who" aria-hidden="true">' + icon('clipboard') + '</span>', title: 'Paste', sub: 'From the clipboard' });
+    recent().forEach(a => items.push({ key: 'r:' + a, html: '<span class="w-idn" aria-hidden="true" style="width:40px;height:40px">' + identicon(a) + '</span>', title: fmt.short(a, 12, 8), sub: 'Recent' }));
+    openPicker('Select address', items, k => {
+      if (k === 'paste') navigator.clipboard.readText().then(t => { $('sendTo').value = String(t || '').trim(); $('sendTo').dispatchEvent(new Event('input')); $('sendAmt').focus(); }).catch(() => toast('The browser did not allow pasting. Type the address instead.', 'warn'));
+      else if (k.startsWith('r:')) { $('sendTo').value = k.slice(2); $('sendTo').dispatchEvent(new Event('input')); setTimeout(() => $('sendAmt').focus(), 40); }
+    }, 'Addresses you send to show up here.');
+  };
+  // The network fee rate (units per byte) is paid in ARG; 1 is the usual rate.
+  let feeRate = '1';
+  function feeRow(P) { return '<dt>Network fee</dt><dd><span id="' + P + 'FeeTxt">' + esc(feeRate) + ' unit' + (feeRate === '1' ? '' : 's') + ' per byte · paid in ' + esc(st ? st.coin : 'ARG') + '</span> <button type="button" class="lnk" id="' + P + 'FeeEdit">Change</button><input class="input num" id="' + P + 'Fee" value="' + esc(feeRate) + '" inputmode="numeric" aria-label="Fee rate in units per byte" style="display:none;height:32px;width:96px;margin-left:auto"></dd>'; }
+  function wireFeeRow(P) {
+    $(P + 'FeeEdit').onclick = () => { $(P + 'FeeEdit').style.display = 'none'; $(P + 'FeeTxt').style.display = 'none'; $(P + 'Fee').style.display = 'block'; $(P + 'Fee').focus(); };
+    $(P + 'Fee').oninput = () => { feeRate = /^\d{1,7}$/.test($(P + 'Fee').value.trim()) && Number($(P + 'Fee').value) >= 1 ? String(Number($(P + 'Fee').value)) : '1'; };
+  }
+  $('btnSend').onclick = () => {
+    if (sendProblem()) return;
+    const coin = sendCoin(), to = $('sendTo').value.trim().toLowerCase(), u = toUnits($('sendAmt').value, 8);
+    const amount = plainU(u);
+    pendingSend = coin.arg ? { kind: 'wallet/send', to, amount } : { kind: 'wallet/send-asset', asset: coin.id, to, amount };
+    pendingSend.view = { amount, unit: coin.sym, to };
+    $('sdRvBody').innerHTML = amtRow('You send', fmtU(u), coin.sym, '', true) + '<dl class="swap-kv">' + kvTo('To', to) + feeRow('sd') + '</dl>';
+    wireFeeRow('sd'); setErr('sdRvErr', ''); $('sdPw').value = '';
+    showView('rv');
+  };
+  $('sdPw').oninput = () => setErr('sdRvErr', '');
+  $('sdRvForm').onsubmit = e => { e.preventDefault(); confirmPay('send'); };
+
+  // ---- paying: the password, then the payment ----
+  // Every payment asks for the wallet password; it is never kept for a retry.
+  const PW_ERR = /^(wrong password|enter your wallet password)/i;
+  let lastSend = null;
+  async function confirmPay(flowKey) {
+    const P = flowKey === 'send' ? 'sd' : 'sw';
+    if (sendInFlight || !pendingSend) return;
+    const pw = $(P + 'Pw').value;
+    if (!pw) { setErr(P + 'RvErr', 'Enter your wallet password to confirm.'); $(P + 'Pw').focus(); return; }
+    sendInFlight = true; const btn = $(P + 'RvGo'); busy(btn, true); setErr(P + 'RvErr', '');
+    const job = pendingSend, view = job.view; lastSend = job;
+    const req = Object.assign({}, job, { password: pw, feerate: feeRate }), path = req.kind; delete req.kind; delete req.view;
+    try {
+      const r = await api(path, req); $(P + 'Pw').value = ''; lastSend = null;
+      if (path === 'wallet/swap') {
+        startProgress(Object.assign({}, view, { txid: r.txid, address: r.address, chain_id: r.chain_id, token: r.token, since: Math.floor(Date.now() / 1000) }));
+        $('swPay').value = ''; $('swTo').value = '';
+      } else if (path === 'swap/native-execute') {
+        nativeProgress(Object.assign({}, view, { txid: r.txid }));
+        $('swPay').value = '';
+      } else {
+        remember(view.to);
+        $('sendAmt').value = ''; $('sendTo').value = ''; sd.check = null;
+        showRes('send', true, 'Sent', view.amount + ' ' + view.unit + ' to ' + fmt.short(view.to, 12, 6) + '. Final once it is in a block.', r.txid);
+      }
+      loadHistory(); refresh(); setTimeout(loadActivity, 1500);
+    } catch (e) {
+      const msg = e.message || String(e);
+      if (PW_ERR.test(msg)) {
+        setErr(P + 'RvErr', /^wrong/i.test(msg) ? 'Wrong password. Nothing was sent; try again.' : 'Enter your wallet password to confirm.');
+        $(P + 'Pw').value = ''; $(P + 'Pw').focus();
+      } else {
+        $(P + 'Pw').value = '';
+        showRes(flowKey, false, flowKey === 'send' ? 'Not sent' : 'Swap not made', msg.replace(/^\w/, c => c.toUpperCase()).replace(/\.?$/, '.'), '', () => { if (lastSend) { pendingSend = lastSend; showView('rv', 'form'); } else showView('form', true); });
+      }
+    }
+    busy(btn, false); sendInFlight = false;
+  }
+
+  // ---- Swap ----
+  // Each side is a coin: "n:ARG", "n:UARG", "n:WARG" on Argonmine, or
+  // "e:<chain>:<token>" on another chain. Their kinds decide the swap:
+  //   uARG -> USDC/USDT    out: uARG to a swap address, paid out by the bridge
+  //   USDC/USDT -> uARG    in: the user's EVM wallet deposits to this wallet
+  //   ARG, wARG, uARG      native: one transaction with the swap service
+  const sw = { pay: 'n:UARG', get: '', locked: false, dep: {}, depSeq: 0, depTimer: 0, depSince: 0, prog: null, progTimer: 0, details: false, inGo: null, dp: null };
+  try { const k = localStorage.getItem('swap.route'); if (k) sw.get = 'e:' + k; } catch (e) { }
+  const NATIVE = { ARG: 'ARG', UARG: 'uARG', WARG: 'wARG' };
+  const isN = s => String(s).startsWith('n:'), isE = s => String(s).startsWith('e:');
+  const nSym = s => String(s).slice(2), eKey = s => String(s).slice(2);
+  // No coin to receive yet (a link or code named a chain and token the bridge no longer lists): swap out, token to choose.
+  function mode() { return isN(sw.pay) && (isE(sw.get) || !sw.get) ? 'out' : isE(sw.pay) && isN(sw.get) ? 'in' : 'native'; }
+  function swRoute() { const s = isE(sw.get) ? sw.get : isE(sw.pay) ? sw.pay : ''; if (!s) return null; const k = eKey(s); return routes().find(r => r.key === k) || null; }
+  // Keeps the pair possible: an EVM token pairs only with uARG, and a coin never with itself.
+  function normalize(changed) {
+    if (isE(sw.pay) && isE(sw.get)) { if (changed === 'pay') sw.get = 'n:UARG'; else sw.pay = 'n:UARG'; }
+    if (isE(sw.get) && isN(sw.pay) && nSym(sw.pay) !== 'UARG') { if (changed === 'pay') sw.get = 'n:UARG'; else sw.pay = 'n:UARG'; }
+    if (isE(sw.pay) && isN(sw.get) && nSym(sw.get) !== 'UARG') { if (changed === 'get') sw.pay = 'n:UARG'; else sw.get = 'n:UARG'; }
+    if (sw.pay === sw.get) { if (changed === 'pay') sw.get = nSym(sw.pay) === 'UARG' ? 'n:ARG' : 'n:UARG'; else sw.pay = nSym(sw.get) === 'UARG' ? 'n:ARG' : 'n:UARG'; }
+  }
+  function pickDefault() {
+    if (!sw.get && !sw.locked) { const r = routes().find(x => !x.c.unavailable) || routes()[0]; sw.get = r ? 'e:' + r.key : 'n:ARG'; }
+    if (isE(sw.get) && !swRoute() && routes().length && !sw.locked) { const r = routes().find(x => !x.c.unavailable) || routes()[0]; sw.get = 'e:' + r.key; }
+  }
+  function swBusy() { return !!(FL && FL.name === 'swap' && FL.stack.some(v => v !== 'form' && v !== 'pick')); }
+  function openSwap(view) {
+    if (!openFlow('swap', view)) return false;
+    loadBridgeChains(); loadNative(); renderSwap();
+    clearInterval(nat.timer); nat.timer = setInterval(() => { if (FL && FL.name === 'swap') loadNative(); else clearInterval(nat.timer); }, 15000);
+    return true;
+  }
+  function coinBal(sym) { return sym === 'ARG' ? argSpendable() : sym === 'UARG' ? (uHeld ? big(uHeld.confirmed) : 0n) : (wHeld ? big(wHeld.confirmed) : 0n); }
+  function nChip(sym, pick) { return chipHTML(NATIVE[sym], netName(), pick, true); }
+  function renderSwap() {
+    if (!st) return;
+    pickDefault();
+    const m = mode(), r = swRoute(), loading = !bridgeInfo || bridgeLoading;
+    const eChip = r ? chipHTML(r.t.symbol, r.c.name, true) : '<span class="swap-tok"><b>' + (loading ? 'Loading' : 'Select token') + '</b></span>' + icon('chevronDown');
+    setHTML($('swPayChip'), isN(sw.pay) ? nChip(nSym(sw.pay), true) : eChip); $('swPayChip').classList.toggle('empty', isE(sw.pay) && !r);
+    setHTML($('swGetChip'), isN(sw.get) ? nChip(nSym(sw.get), true) : eChip); $('swGetChip').classList.toggle('empty', isE(sw.get) && !r);
+    $('swOut').hidden = m !== 'out';
+    $('swTo').placeholder = r ? '0x… address on ' + r.c.name : '0x… address';
+    computeSwap();
+  }
+  function natPair(from, to) { const i = nat.info; return i && Array.isArray(i.pairs) ? i.pairs.find(p => p.from === from && p.to === to) || null : null; }
+  function rateUnits(s) { return toUnits(String(s || '0'), 8) || 0n; }
+  function natReason(e) {
+    const m = String(e || '');
+    if (/not available in this build/i.test(m)) return 'Not available';
+    if (/different uARG|another network|wARG id/i.test(m)) return 'Service mismatch';
+    if (/unreachable|fetch|connect|timeout|deadline|refused/i.test(m)) return 'Service unreachable';
+    return m.length > 28 ? m.slice(0, 27) + '…' : m || 'Unavailable';
+  }
+  async function loadNative() {
+    try { nat.info = await api('swap/native-info'); nat.err = ''; if (nat.info && nat.info.warg) wargID = String(nat.info.warg).toLowerCase(); }
+    catch (e) { nat.info = null; nat.err = e.message || 'Unavailable'; }
+    nat.at = Date.now();
+    if (FL && FL.name === 'swap' && FL.stack[FL.stack.length - 1] === 'form') computeSwap();
+  }
+  function swapProblem() {
+    const m = mode(), r = swRoute(), raw = $('swPay').value.trim(), u = toUnits(raw, 8), to = $('swTo').value.trim();
+    if (m === 'native') {
+      const from = nSym(sw.pay), toS = nSym(sw.get), p = natPair(from, toS);
+      if (!nat.info) return nat.err ? natReason(nat.err) : 'Loading';
+      if (!p) return 'This pair is not traded';
+      if (raw && u === null) return 'Enter a valid amount';
+      if (!u) return 'Enter an amount';
+      if (u > coinBal(from)) return 'Insufficient ' + NATIVE[from];
+      if (p.min && u < big(p.min)) return 'Minimum ' + fmtU(big(p.min)) + ' ' + NATIVE[from];
+      if (p.max && u > big(p.max)) return 'At most ' + fmtU(big(p.max)) + ' ' + NATIVE[from];
+      const out = u * rateUnits(p.rate) / 100000000n;
+      if (p.available !== undefined && out > big(p.available)) return 'At most ' + fmtU(big(p.available)) + ' ' + NATIVE[toS] + ' available';
+      return '';
+    }
+    if (!bridgeInfo || bridgeLoading) return 'Loading';
+    if (!bridgeChains().length) return 'Bridge unreachable';
+    if (!r) return 'Select a token';
+    if (r.c.unavailable) return r.c.name + ' is unavailable';
+    if (m === 'in') { const a = inState(); return a.off ? a.label : ''; }
+    if (raw && u === null) return 'Enter a valid amount';
+    if (!u) return 'Enter an amount';
+    const bal = uHeld ? big(uHeld.confirmed) : 0n;
+    if (u > bal) return 'Insufficient uARG';
+    const mo = minOut(r.t); if (mo > 0n && u < mo) return 'The smallest withdrawal of ' + r.t.symbol + ' on ' + r.c.name + ' is ' + fmtU(mo) + ' uARG';
+    if (u > big(r.t.reserve_units)) return 'At most ' + fmtU(big(r.t.reserve_units)) + ' ' + r.t.symbol + ' available';
+    if (r.t.available_now && argToTok(u, r.t.decimals) > big(r.t.available_now)) return 'At most ' + fmt2(big(r.t.available_now), r.t.decimals) + ' ' + r.t.symbol + ' available now';
+    const mx = outMax(); if (mx !== null && u > mx) return 'At most ' + fmtU(mx) + ' uARG per swap';
+    if (argSpendable() <= 0n) return 'Not enough ' + st.coin + ' for the network fee';
+    if (!evmRe.test(to)) return 'Enter the address to pay';
+    return '';
+  }
+  function computeSwap() {
+    const m = mode(), r = swRoute(), raw = $('swPay').value.trim(), rows = [];
+    let sum = '';
+    if (m === 'native') {
+      const from = nSym(sw.pay), toS = nSym(sw.get), p = natPair(from, toS), u = toUnits(raw, 8), bal = coinBal(from);
+      setHTML($('swPayFoot'), u && from === 'UARG' ? '$' + esc(fmtTok(u, 8, 2, 2)) : '');
+      setHTML($('swPayBal'), '<span>Balance ' + esc(fmtU(bal, 0)) + '</span><button class="swap-max" type="button" data-max' + (bal > 0n ? '' : ' disabled') + '>Max</button>');
+      const out = p && u ? u * rateUnits(p.rate) / 100000000n : null;
+      $('swGet').value = out === null ? '' : fmtU(out); $('swGet').classList.toggle('sm', $('swGet').value.length > 12);
+      $('swGetFoot').textContent = out !== null && toS === 'UARG' ? '$' + fmtTok(out, 8, 2, 2) : '';
+      if (p) {
+        sum = '1 ' + NATIVE[from] + ' = ' + fmtTok(rateUnits(p.rate), 8, 8, 0) + ' ' + NATIVE[toS] + ' · Network fee paid by the service';
+        rows.push(['Rate', '1 ' + NATIVE[from] + ' = ' + fmtTok(rateUnits(p.rate), 8, 8, 0) + ' ' + NATIVE[toS]]);
+        if (p.min) rows.push(['Minimum', fmtU(big(p.min)) + ' ' + NATIVE[from]]);
+        if (p.max) rows.push(['Maximum', fmtU(big(p.max)) + ' ' + NATIVE[from]]);
+        if (p.available !== undefined) rows.push(['Available', fmtU(big(p.available)) + ' ' + NATIVE[toS]]);
+        rows.push(['Network fee', 'Paid by the swap service']);
+        rows.push(['Arrives', 'Next block']);
+      } else if (nat.err) sum = natReason(nat.err);
+      const pr = swapProblem(); setGo($('swGo'), pr || 'Review swap', !pr); sw.inGo = null;
+    } else if (m === 'out') {
+      const u = toUnits(raw, 8), bal = uHeld ? big(uHeld.confirmed) : 0n;
+      let get = null, fee = 0n;
+      setHTML($('swPayFoot'), u ? '$' + esc(fmtTok(u, 8, 2, 2)) : '');
+      setHTML($('swPayBal'), '<span>Balance ' + esc(fmtU(bal, 0)) + '</span><button class="swap-max" type="button" data-max' + (bal > 0n ? '' : ' disabled') + '>Max</button>');
+      if (r && u) { const gross = argToTok(u, r.t.decimals); fee = feeOf(gross, r.c.release_fee_bps); get = gross - fee; }
+      $('swGet').value = get === null ? '' : fmt2(get, r.t.decimals); $('swGet').classList.toggle('sm', $('swGet').value.length > 12);
+      $('swGetFoot').textContent = get === null ? '' : '$' + fmt2(get, r.t.decimals);
+      if (r) {
+        sum = '1 uARG = 1 ' + r.t.symbol + ' · Fee ' + (Number(r.c.release_fee_bps) ? pct(r.c.release_fee_bps) : 'none') + ' · ' + shortEta(outEta(u));
+        rows.push(['Rate', '1 uARG = 1 ' + r.t.symbol]);
+        rows.push(['Fee', Number(r.c.release_fee_bps) ? pct(r.c.release_fee_bps) + (u ? ' · ' + fmt2(fee, r.t.decimals) + ' ' + r.t.symbol : '') : 'None']);
+        if (minOut(r.t) > 0n) rows.push(['Minimum', fmtU(minOut(r.t)) + ' uARG']);
+        rows.push(['Network', r.c.name]);
+        rows.push(['Arrives', outEta(u)]);
+      }
+      const pr = swapProblem(); setGo($('swGo'), pr || 'Review swap', !pr); sw.inGo = null;
+    } else {
+      const dec = r ? Number(r.t.decimals) || 0 : 6, v = r ? toUnits(raw, Math.min(dec, 8)) : null, vt = v === null ? null : v * TEN ** BigInt(Math.max(0, dec - 8));
+      const bps = r ? Number(r.c.deposit_fee_bps) || 0 : 0, f = vt === null ? 0n : feeOf(vt, bps), min = r ? big(r.t.min_deposit) : 0n;
+      setHTML($('swPayBal'), r && wal.bal !== null ? '<span>Balance ' + esc(fmt2(wal.bal, dec)) + '</span><button class="swap-max" type="button" data-max' + (wal.bal > 0n ? '' : ' disabled') + '>Max</button>' : wal.err && r ? '<span>' + esc(wal.err) + '</span>' : '');
+      setHTML($('swPayFoot'), vt ? '$' + esc(fmt2(vt, dec)) : '');
+      $('swGet').value = vt ? '≈ ' + fmtU(tokToArg(vt - f, dec)) : ''; $('swGet').classList.toggle('sm', $('swGet').value.length > 12);
+      $('swGetFoot').textContent = vt ? '$' + fmt2(vt - f, dec) : '';
+      if (r) {
+        sum = '1 ' + r.t.symbol + ' = 1 uARG · Fee ' + (bps ? pct(bps) : 'none') + ' · ' + shortEta(depEta(r.c));
+        rows.push(['Rate', '1 ' + r.t.symbol + ' = 1 uARG']);
+        rows.push(['Fee', bps ? pct(bps) + (vt ? ' · ' + fmt2(f, dec) + ' ' + r.t.symbol : '') : 'None']);
+        if (min > 0n) rows.push(['Minimum', fmt2(min, dec) + ' ' + r.t.symbol]);
+        rows.push(['Network', r.c.name]);
+        rows.push(['Arrives', depEta(r.c)]);
+      }
+      const st0 = swapProblem(), a = st0 ? { label: st0, off: true } : inState(); setGo($('swGo'), a.label, !a.off); sw.inGo = a.go || null;
+    }
+    renderConn();
+    $('swUseAddr').hidden = m !== 'in' || !EVM.has() || !r;
+    $('swSumT').textContent = sum; $('swSum').hidden = !sum;
+    $('swRows').innerHTML = rows.map(x => '<div><span>' + esc(x[0]) + '</span><span>' + esc(x[1]) + '</span></div>').join('');
+    $('swRows').hidden = !sw.details || !rows.length; $('swSum').setAttribute('aria-expanded', String(sw.details && !!rows.length));
+  }
+  $('swSum').onclick = () => { sw.details = !sw.details; computeSwap(); };
+  // One picker for both sides: Argonmine's coins, then each network's tokens.
+  function swPicker(side) {
+    const cur = side === 'pay' ? sw.pay : sw.get, off = nat.info ? '' : natReason(nat.err);
+    const items = [{ head: (st && st.brand) || 'Argonmine' }];
+    ['ARG', 'WARG', 'UARG'].forEach(s => {
+      const native = s !== 'UARG' && !nat.info;
+      items.push({ key: 'n:' + s, html: tokIc(NATIVE[s], true, true), title: NATIVE[s], sub: s === 'UARG' ? 'Dollar token' : s === 'WARG' ? 'Wrapped ARG' : netName(), right: native ? (nat.err ? off : 'Loading') : fmtU(coinBal(s), 0), off: native, sel: cur === 'n:' + s });
+    });
+    let last = '';
+    routes().forEach(r => {
+      if (r.c.name !== last) { items.push({ head: r.c.name }); last = r.c.name; }
+      items.push({ key: 'e:' + r.key, html: tokIc(r.t.symbol, true), title: r.t.symbol, sub: r.c.name, right: r.c.unavailable ? 'Unavailable' : '', off: r.c.unavailable, sel: cur === 'e:' + r.key });
+    });
+    openPicker('Select token', items, k => {
+      if (side === 'pay') sw.pay = k; else sw.get = k;
+      sw.locked = false;
+      if (isE(k)) { try { localStorage.setItem('swap.route', eKey(k)); } catch (e) { } }
+      normalize(side); note('swToErr', ''); wal.key = ''; renderSwap();
+    });
+  }
+  $('swPayChip').onclick = () => swPicker('pay');
+  $('swGetChip').onclick = () => swPicker('get');
+  $('swFlip').onclick = () => { const p = sw.pay; sw.pay = sw.get; sw.get = p; $('swPay').value = ''; note('swToErr', ''); $('swToBox').classList.remove('bad'); wal.key = ''; renderSwap(); $('swPay').focus(); };
+  $('swPay').addEventListener('input', computeSwap);
+  $('swPayBal').addEventListener('click', e => {
+    if (!e.target.closest('[data-max]')) return;
+    const m = mode(), r = swRoute();
+    if (m === 'in') { if (r && wal.bal !== null) $('swPay').value = fmtTok(wal.bal, r.t.decimals, Math.min(r.t.decimals, 8), 0, true); }
+    else if (m === 'native') $('swPay').value = plainU(coinBal(nSym(sw.pay)));
+    else $('swPay').value = plainU(uHeld ? big(uHeld.confirmed) : 0n);
+    computeSwap(); $('swPay').focus();
+  });
+  $('swTo').addEventListener('input', () => { const v = $('swTo').value.trim(), bad = v.length >= 42 && !evmRe.test(v); $('swToBox').classList.toggle('bad', bad); note('swToErr', bad ? 'Not a valid 0x address.' : '', 'bad'); computeSwap(); });
+  $('swTo').addEventListener('blur', () => { const v = $('swTo').value.trim(); if (v && !evmRe.test(v)) { $('swToBox').classList.add('bad'); note('swToErr', 'Not a valid 0x address.', 'bad'); } });
+  [$('swPay'), $('swTo')].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!$('swGo').disabled) $('swGo').click(); } }));
+  $('swGo').onclick = async () => {
+    const m = mode();
+    if (m === 'in') { if (sw.inGo && !$('swGo').disabled) sw.inGo(); return; }
+    if (swapProblem()) return;
+    if (m === 'native') { prepareNative(); return; }
+    const r = swRoute(), to = $('swTo').value.trim(), u = toUnits($('swPay').value.trim(), 8);
+    // A mixed-case address carries an EIP-55 checksum; a wrong one means a typo.
+    try { const v = await api('bridge/checkaddress', { address: to }); if (!v.valid) { $('swToBox').classList.add('bad'); note('swToErr', cleanMsg(v.error || 'not a valid EVM address'), 'bad'); return; } } catch (e) { }
+    const gross = argToTok(u, r.t.decimals), fee = feeOf(gross, r.c.release_fee_bps), amount = plainU(u);
+    pendingSend = { kind: 'wallet/swap', amount, evm: to, chain_id: String(r.c.chain_id), token: r.t.address };
+    pendingSend.view = { amount, unit: 'uARG', to, units: u, get: fmt2(gross - fee, r.t.decimals), sym: r.t.symbol, chain: r.c.name, explorer: r.c.explorer, key: r.key };
+    $('swRvH').textContent = 'Review swap'; FL.el.querySelector('.w-view[data-view="rv"]').dataset.title = 'Review swap';
+    $('swRvBody').innerHTML = amtRow('You pay', fmtU(u), 'uARG', '', true) + amtRow('You receive', fmt2(gross - fee, r.t.decimals), r.t.symbol, 'on ' + r.c.name) +
+      '<dl class="swap-kv">' + kvTo('To', to) + '<dt>Network</dt><dd>' + esc(r.c.name) + '</dd>' +
+      '<dt>Fee</dt><dd>' + esc(Number(r.c.release_fee_bps) ? pct(r.c.release_fee_bps) + ' · ' + fmt2(fee, r.t.decimals) + ' ' + r.t.symbol : 'None') + '</dd>' +
+      '<dt>Arrives</dt><dd>' + esc(outEta(u)) + '</dd>' + feeRow('sw') + '</dl>';
+    wireFeeRow('sw'); setErr('swRvErr', ''); $('swPw').value = ''; $('swRvGo').disabled = false; $('swRvGo').textContent = 'Swap';
+    showView('rv');
+  };
+  $('swPw').oninput = () => setErr('swRvErr', '');
+  $('swRvForm').onsubmit = e => { e.preventDefault(); if (pendingSend && pendingSend.kind === 'swap/native-execute' && nat.quote && nat.quote.expires <= Date.now() / 1000) { prepareNative(); return; } confirmPay('swap'); };
+
+  // ---- native swaps: a binding quote, then one transaction ----
+  async function prepareNative() {
+    const from = nSym(sw.pay), toS = nSym(sw.get), u = toUnits($('swPay').value.trim(), 8);
+    const btn = FL.stack[FL.stack.length - 1] === 'rv' ? $('swRvGo') : $('swGo');
+    busy(btn, true); setErr('swRvErr', '');
+    let q;
+    try { q = await api('swap/native-prepare', { from, to: toS, amount: plainU(u) }); }
+    catch (e) { busy(btn, false); if (btn === $('swGo')) { note('swInErr', cleanMsg(e.message), 'bad'); computeSwap(); } else setErr('swRvErr', cleanMsg(e.message)); return; }
+    busy(btn, false);
+    nat.quote = q;
+    const inU = toUnits(q.amount_in, 8) || 0n, outU = toUnits(q.amount_out, 8) || 0n;
+    pendingSend = { kind: 'swap/native-execute', quote_id: q.quote_id };
+    pendingSend.view = { amount: q.amount_in, unit: NATIVE[from], from, to: toS, inU, outU };
+    $('swRvH').textContent = 'Review swap'; FL.el.querySelector('.w-view[data-view="rv"]').dataset.title = 'Review swap';
+    $('swRvBody').innerHTML = amtRow('You pay', fmtU(inU), NATIVE[from], '', true) + amtRow('You receive', fmtU(outU), NATIVE[toS], netName(), true) +
+      '<dl class="swap-kv"><dt>Rate</dt><dd>1 ' + esc(NATIVE[from]) + ' = ' + esc(fmtTok(rateUnits(q.rate), 8, 8, 0)) + ' ' + esc(NATIVE[toS]) + '</dd>' +
+      '<dt>Network fee</dt><dd>Paid by the swap service</dd></dl><div class="w-muted" id="nQuoteT"></div>';
+    setErr('swRvErr', ''); $('swPw').value = '';
+    if (FL.stack[FL.stack.length - 1] !== 'rv') showView('rv');
+    tickQuote();
+    clearInterval(nat.quoteTimer); nat.quoteTimer = setInterval(tickQuote, 1000);
+  }
+  function tickQuote() {
+    const q = nat.quote, el = $('nQuoteT'); if (!q || !el) { clearInterval(nat.quoteTimer); return; }
+    const left = Math.floor(Number(q.expires) - Date.now() / 1000);
+    if (left <= 0) { el.innerHTML = 'This quote has expired'; $('swRvGo').textContent = 'Refresh quote'; clearInterval(nat.quoteTimer); return; }
+    el.innerHTML = 'Quote valid for <b class="num">' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') + '</b>';
+    $('swRvGo').textContent = 'Swap';
+  }
+  // One Argonmine transaction: sent, confirmed in a block, done.
+  function nativeProgress(p) {
+    clearInterval(nat.quoteTimer);
+    sw.prog = Object.assign({ native: true }, p);
+    $('swProgBody').innerHTML = ''; showView('prog', 'form');
+    renderNative(0, 0); pollNative();
+  }
+  function renderNative(height, confs) {
+    const p = sw.prog; if (!p || !p.native) return;
+    const done = confs >= 1, txl = EXPLORER ? ' · ' + link(txURL(EXPLORER, p.txid), 'View') : '';
+    let html = amtRow('You pay', fmtU(p.inU), NATIVE[p.from], '', true) + amtRow('You receive', fmtU(p.outU), NATIVE[p.to], netName(), true) + '<div class="w-steps"><ol class="swap-steps">';
+    html += step('done', 'Sent', esc(fmt.short(p.txid, 8, 6)) + txl);
+    html += step(done ? 'done' : 'now', 'Confirming', esc(done ? '1 of 1 block' : '0 of 1 block'));
+    html += step(done ? 'done' : 'wait', 'Done', done ? esc(fmtU(p.outU) + ' ' + NATIVE[p.to] + ' in your wallet') : '');
+    html += '</ol></div>';
+    $('swProgBody').innerHTML = html;
+    $('swProgFoot').innerHTML = '<button class="btn ' + (done ? 'btn-primary' : 'btn-secondary') + ' swap-go" type="button" data-pg>Done</button>';
+    $('swProgFoot').querySelector('[data-pg]').onclick = progDone;
+    return done;
+  }
+  async function pollNative() {
+    clearTimeout(sw.progTimer); const p = sw.prog; if (!p || !p.native) return;
+    let v = null; try { v = await api('swap/native-status', { txid: p.txid }); } catch (e) { }
+    if (sw.prog !== p) return;
+    const done = v ? renderNative(Number(v.height) || 0, Number(v.confirmations) || 0) : false;
+    if (done) { refresh(); loadHistory(); }
+    else if (FL && FL.name === 'swap') sw.progTimer = setTimeout(pollNative, 4000);
+  }
+  function progDone() { clearTimeout(sw.progTimer); sw.prog = null; showView('form', true); renderSwap(); }
+
+  // ---- swap out: progress until the bridge pays ----
+  function startProgress(p) {
+    sw.prog = p; showView('prog', 'form');
+    renderProgress(null, 0, 0); pollProgress();
+  }
+  function renderProgress(r, tip, height) {
+    const p = sw.prog; if (!p || p.native) return false;
+    const need = Number((r && r.confirmations) || outDepth(p.units)) || 0, h = Number((r && r.height) || height) || 0;
+    const have = h && tip >= h ? Math.min(tip - h + 1, need) : 0, conf = r && (r.status !== 'pending' || (need && have >= need));
+    const txl = EXPLORER ? ' · ' + link(txURL(EXPLORER, p.txid), 'View') : '';
+    let html = amtRow('You pay', fmtU(p.units), 'uARG', '', true) + amtRow('You receive', p.get, p.sym, 'on ' + p.chain + ' to ' + fmt.short(p.to, 6, 4)) + '<div class="w-steps"><ol class="swap-steps">';
+    html += step('done', 'Sent', esc(fmtU(p.units) + ' uARG') + txl);
+    html += step(conf ? 'done' : 'now', 'Confirming on ' + netName(), esc((conf ? need : have) + ' of ' + need + ' blocks') + (conf ? '' : '<span class="swap-bar"><i style="width:' + (need ? Math.round(have / need * 100) : 0) + '%"></i></span>'));
+    const scan = r && r.evm_tx && p.explorer ? ' · ' + link(txURL(p.explorer, r.evm_tx), 'View') : '';
+    if (r && r.status === 'confirmed') html += step('done', 'Paid on ' + p.chain, esc(fmt2(big(r.token_paid || r.token_amount), r.decimals) + ' ' + (r.token_symbol || p.sym) + ' to ' + fmt.short(r.to || p.to, 6, 4)) + scan);
+    else if (r && r.status === 'released') html += step('now', 'Paying on ' + p.chain, esc('Sending ' + fmt2(big(r.token_paid || r.token_amount), r.decimals) + ' ' + (r.token_symbol || p.sym)) + scan);
+    else if (r && r.status === 'unreleasable') html += step('bad', 'Needs a manual payout', esc('The guardians could not pay this one automatically. Keep this id: ' + fmt.short(p.txid, 8, 6)));
+    else html += step(conf ? 'now' : 'wait', 'Paid on ' + p.chain, conf ? 'Signing the payout' : '');
+    html += '</ol></div>';
+    $('swProgBody').innerHTML = html;
+    const done = !!(r && (r.status === 'confirmed' || r.status === 'unreleasable'));
+    $('swProgFoot').innerHTML = '<button class="btn ' + (done ? 'btn-primary' : 'btn-secondary') + ' swap-go" type="button" data-pg>Done</button>';
+    $('swProgFoot').querySelector('[data-pg]').onclick = progDone;
+    return done;
+  }
+  async function pollProgress() {
+    clearTimeout(sw.progTimer); const p = sw.prog; if (!p || p.native) return;
+    let v = null; try { v = await api('bridge/redemption', { txid: p.txid, address: p.address, to: p.to, chain_id: String(p.chain_id), token: p.token, since: p.since }); } catch (e) { }
+    if (sw.prog !== p) return;
+    const done = v ? renderProgress(v.redemption, Number(v.tip) || 0, Number(v.height) || 0) : false;
+    if (v && v.redemption && !p.listed) { p.listed = true; loadActivity(); }
+    if (!done && FL && FL.name === 'swap') sw.progTimer = setTimeout(pollProgress, 8000);
+  }
+
+  // ---- swap in with the user's EVM wallet: connect, approve, deposit ----
+  // The wallet pays vault.deposit(token, amount, this wallet's address) on the
+  // chosen chain; the guardians issue the uARG here. Every read goes through
+  // the wallet (ui/evm.js). Without a wallet the deposit address is the way.
+  const wal = { bal: null, alw: null, key: '', seq: 0, err: '', busy: '' };
+  function loadWal() {
+    const r = swRoute(); wal.err = '';
+    if (!r || !EVM.connected || EVM.chainId !== r.c.chain_id) { wal.bal = wal.alw = null; wal.key = ''; return; }
+    const k = EVM.account + ':' + r.key; if (wal.key === k) return;
+    wal.key = k; wal.bal = wal.alw = null; const seq = ++wal.seq;
+    Promise.all([EVM.balanceOf(r.t.address, EVM.account), EVM.allowance(r.t.address, EVM.account, r.c.vault)]).then(x => {
+      if (seq !== wal.seq) return; wal.bal = x[0]; wal.alw = x[1]; computeSwap();
+    }).catch(() => { if (seq !== wal.seq) return; wal.err = 'Balance unavailable'; computeSwap(); });
+  }
+  EVM.on(() => { wal.key = ''; if (FL && FL.name === 'swap' && mode() === 'in') { loadWal(); computeSwap(); } });
+  function inState() {
+    const r = swRoute(), raw = $('swPay').value.trim(), dec = Number(r.t.decimals) || 0, v = toUnits(raw, Math.min(dec, 8)), vt = v === null ? null : v * TEN ** BigInt(Math.max(0, dec - 8)), min = big(r.t.min_deposit), sym = r.t.symbol;
+    if (wal.busy) return { label: wal.busy, off: true };
+    if (raw && v === null) return { label: 'Enter a valid amount', off: true };
+    if (!EVM.has() || !r.c.vault) return { label: 'Continue', go: showDeposit };
+    if (!EVM.connected) return { label: 'Connect wallet', go: connectWallet };
+    if (EVM.chainId !== r.c.chain_id) return { label: 'Switch to ' + r.c.name, go: switchChain };
+    loadWal();
+    if (wal.bal === null) return { label: wal.err || 'Loading balance', off: true };
+    if (!vt) return { label: 'Enter an amount', off: true };
+    if (vt > wal.bal) return { label: 'Insufficient ' + sym, off: true };
+    if (min > 0n && vt < min) return { label: 'Minimum ' + fmt2(min, dec) + ' ' + sym, off: true };
+    return { label: wal.alw !== null && wal.alw >= vt ? 'Deposit' : 'Approve and deposit', go: startDeposit };
+  }
+  function renderConn() {
+    const on = mode() === 'in' && EVM.connected, r = swRoute();
+    $('swConn').hidden = !on;
+    if (!on) return;
+    const w = EVM.wallets().find(x => x.info && x.info.name === EVM.name), ic = w ? EVM.icon(w) : '';
+    setHTML($('swConnIc'), ic ? '<img alt="" src="' + esc(ic) + '">' : '<span class="w-idn">' + identicon(EVM.account) + '</span>');
+    $('swConnT').textContent = (EVM.name ? EVM.name + ' · ' : '') + fmt.short(EVM.account, 6, 4) + (r && EVM.chainId !== r.c.chain_id ? ' · other network' : '');
+  }
+  function inBusy(label) { wal.busy = label || ''; computeSwap(); }
+  function inErr(m) { note('swInErr', m || '', 'bad'); }
+  function connectWallet() {
+    inErr('');
+    const list = EVM.wallets();
+    const go = () => {
+      inBusy('Waiting for ' + (EVM.name || 'your wallet'));
+      EVM.connect().then(() => { inBusy(''); const r = swRoute(); if (r && EVM.chainId !== r.c.chain_id) return switchChain(); })
+        .catch(e => { inBusy(''); if (String(e && e.message) === 'Choose a wallet') pickWallet(go); else inErr(EVM.why(e)); });
+    };
+    if (list.length > 1 && !EVM.name) { pickWallet(go); return; }
+    go();
+  }
+  function pickWallet(then) {
+    const list = EVM.wallets();
+    openPicker('Connect a wallet', list.map((w, i) => {
+      const ic = EVM.icon(w);
+      return { key: String(i), html: '<span class="w-wal-ic">' + (ic ? '<img alt="" src="' + esc(ic) + '">' : esc(String(w.info.name || '?').slice(0, 2))) + '</span>', title: w.info.name || 'Wallet', sub: 'Installed' };
+    }), k => { EVM.use(list[Number(k)]); then(); });
+  }
+  function switchChain() {
+    const r = swRoute(); if (!r) return; inErr('');
+    inBusy('Switching to ' + r.c.name);
+    return EVM.ensureChain(r.c).then(() => { inBusy(''); wal.key = ''; loadWal(); computeSwap(); }).catch(e => { inBusy(''); inErr(EVM.why(e)); });
+  }
+  $('swDisc').onclick = () => { EVM.disconnect(); wal.key = ''; inErr(''); computeSwap(); };
+  $('swUseAddr').onclick = () => showDeposit();
+  $('swDepConn').onclick = () => { backView(); connectWallet(); };
+  function startDeposit() {
+    const r = swRoute(), c = r.c, t = r.t, dec = Number(t.decimals) || 0, v = toUnits($('swPay').value.trim(), Math.min(dec, 8)) * TEN ** BigInt(Math.max(0, dec - 8));
+    const dp = { r, v, approve: !(wal.alw !== null && wal.alw >= v), st: {}, sub: {}, hash: '', block: null, status: '', err: '', amount: null, issue: '' };
+    dp.st = { approve: dp.approve ? 'now' : 'skip', deposit: dp.approve ? 'wait' : 'now', conf: 'wait', done: 'wait' };
+    sw.dp = dp; inErr('');
+    FL.el.querySelector('.w-view[data-view="dprog"]').dataset.title = 'Deposit ' + t.symbol;
+    showView('dprog', 'form'); renderDp();
+    (async () => {
+      let at = dp.approve ? 'approve' : 'deposit';
+      try {
+        await EVM.ensureChain(c);
+        if (dp.approve) {
+          dp.sub.approve = 'Confirm in your wallet'; renderDp();
+          const h1 = await EVM.approve(t.address, c.vault, v);
+          dp.sub.approve = 'Approving ' + t.symbol; renderDp();
+          const rc1 = await EVM.receipt(h1);
+          if (rc1.status !== '0x1') throw new Error('The approval failed on ' + c.name + '. Nothing was taken.');
+          dp.st.approve = 'done'; dp.sub.approve = fmt2(v, dec) + ' ' + t.symbol; dp.st.deposit = 'now';
+        }
+        at = 'deposit'; dp.sub.deposit = 'Confirm in your wallet'; renderDp();
+        const h = await EVM.deposit(c.vault, t.address, v, st.miningAddress);
+        dp.hash = String(h); dp.sub.deposit = 'Sending'; renderDp();
+        const rc = await EVM.receipt(h);
+        if (rc.status !== '0x1') throw new Error('The deposit failed on ' + c.name + '. Nothing was taken.');
+        dp.block = BigInt(rc.blockNumber); dp.st.deposit = 'done'; dp.sub.deposit = ''; dp.st.conf = 'now'; renderDp();
+        wal.key = ''; $('swPay').value = '';
+        watchDeposit(dp);
+      } catch (e) {
+        if (sw.dp !== dp) return;
+        dp.st[at] = 'bad'; dp.err = EVM.why(e); renderDp();
+      }
+    })();
+  }
+  function renderDp() {
+    const dp = sw.dp; if (!dp) return;
+    const c = dp.r.c, t = dp.r.t, dec = Number(t.decimals) || 0, net = dp.v - feeOf(dp.v, c.deposit_fee_bps), need = Number(c.confirmations) || 0;
+    const tx = dp.hash && c.explorer && /^0x[0-9a-fA-F]{64}$/.test(dp.hash) ? ' · ' + link(txURL(c.explorer, dp.hash), 'View') : '';
+    let html = amtRow('You pay', fmt2(dp.v, dec), t.symbol, 'on ' + c.name) + amtRow('You receive', fmtU(dp.amount !== null ? dp.amount : tokToArg(net, dec)), 'uARG', netName(), true) + '<div class="w-steps"><ol class="swap-steps">';
+    if (dp.approve) html += step(dp.st.approve, 'Approve ' + t.symbol, esc(dp.st.approve === 'bad' ? dp.err : dp.sub.approve || ''));
+    html += step(dp.st.deposit, 'Deposit', dp.st.deposit === 'bad' ? esc(dp.err) : esc(dp.sub.deposit || '') + (dp.st.deposit === 'done' ? esc(fmt.short(dp.hash, 6, 4)) + tx : ''));
+    html += step(dp.st.conf, 'Confirming on ' + c.name, dp.st.conf === 'now' ? esc((dp.confs || 0) + ' of ' + need) + '<span class="swap-bar"><i style="width:' + (need ? Math.round(Math.min(dp.confs || 0, need) / need * 100) : 0) + '%"></i></span>' : dp.st.conf === 'bad' ? esc(dp.err) : '');
+    html += step(dp.st.done, 'uARG in your wallet', dp.st.done === 'done' ? esc(fmtU(dp.amount !== null ? dp.amount : tokToArg(net, dec)) + ' uARG') + (dp.issue && EXPLORER ? ' · ' + link(txURL(EXPLORER, dp.issue), 'View') : '') : dp.st.done === 'now' ? 'Issuing' : '');
+    html += '</ol></div>';
+    $('swDpBody').innerHTML = html;
+    const done = dp.st.done === 'done', bad = !!dp.err;
+    $('swDpFoot').innerHTML = bad ? '<div class="w-two"><button class="btn btn-secondary swap-go" type="button" data-dp="close">Close</button><button class="btn btn-primary swap-go" type="button" data-dp="retry">Try again</button></div>'
+      : '<button class="btn ' + (done ? 'btn-primary' : 'btn-secondary') + ' swap-go" type="button" data-dp="close">Done</button>';
+  }
+  $('swDpFoot').addEventListener('click', e => {
+    const b = e.target.closest('[data-dp]'); if (!b) return;
+    if (b.dataset.dp === 'retry') { const dp = sw.dp; sw.dp = null; if (dp) $('swPay').value = fmtTok(dp.v, dp.r.t.decimals, Math.min(dp.r.t.decimals, 8), 0, true); showView('form', true); computeSwap(); return; }
+    sw.dp = null; showView('form', true); renderSwap(); loadActivity();
+  });
+  // Follows the deposit: confirmations from the wallet's chain, then the
+  // bridge's record (through this app) until the uARG is issued.
+  async function watchDeposit(dp) {
+    if (sw.dp !== dp || !FL || FL.name !== 'swap') return;
+    const c = dp.r.c;
+    let head = null; try { if (EVM.chainId === c.chain_id) head = await EVM.blockNumber(); } catch (e) { }
+    let d = null; try { d = await api('bridge/deposit', { tx: dp.hash }); } catch (e) { }
+    if (sw.dp !== dp) return;
+    if (head !== null && dp.block !== null) dp.confs = head >= dp.block ? Number(head - dp.block) + 1 : 0;
+    if (d && d.status) {
+      dp.status = d.status; if (Number(d.amount)) dp.amount = big(d.amount); if (/^[0-9a-f]{64}$/.test(String(d.issue_tx || ''))) dp.issue = d.issue_tx;
+      if (d.status === 'issued') { dp.st.conf = 'done'; dp.st.done = 'now'; }
+      if (d.status === 'confirmed') { dp.st.conf = 'done'; dp.st.done = 'done'; }
+      if (d.status === 'reorged' || d.status === 'unclaimable') { dp.st.conf = 'bad'; dp.err = d.error || 'This deposit cannot be issued. Its transaction is ' + fmt.short(dp.hash, 10, 6) + '.'; }
+    }
+    renderDp();
+    if (dp.st.done !== 'done' && !dp.err) setTimeout(() => watchDeposit(dp), 4000);
+    else { refresh(); loadActivity(); }
+  }
+
+  // ---- swap in without a wallet: this wallet's deposit address ----
+  function stopSwapTimers() { clearTimeout(sw.depTimer); sw.depTimer = 0; sw.depSeq++; clearTimeout(sw.progTimer); sw.progTimer = 0; clearInterval(nat.timer); }
+  // stage: 0 waiting, 1 received, 2 confirming, 3 issuing, 4 arrived.
+  function depSteps(stage, info) {
+    info = info || {};
+    const k = n => stage > n ? 'done' : stage === n ? 'now' : 'wait';
+    $('swDepSteps').innerHTML = step(k(0), 'Waiting for deposit', '') +
+      step(k(1), 'Received', info.recv ? esc(info.recv) : '') +
+      step(info.bad ? 'bad' : k(2), 'Confirming', info.bad ? esc(info.bad) : info.conf || '') +
+      step(stage >= 4 ? 'done' : stage === 3 ? 'now' : 'wait', 'uARG in your wallet', info.done || (stage === 3 ? 'Issuing' : ''));
+  }
+  async function showDeposit() {
+    const r = swRoute(); if (!r) return;
+    const c = r.c, id = String(c.chain_id), seq = ++sw.depSeq, syms = (c.tokens || []).map(t => t.symbol).join(' or ');
+    FL.el.querySelector('.w-view[data-view="dep"]').dataset.title = 'Deposit ' + r.t.symbol;
+    $('swDepNet').textContent = c.name;
+    $('swDepWarn').querySelector('span').textContent = 'Send only ' + syms + ' on ' + c.name;
+    $('swShare').hidden = !navigator.share; $('swDepConn').hidden = !EVM.has();
+    $('swCopy').disabled = true; $('swQR').removeAttribute('src');
+    $('swDepAddr').innerHTML = '<span class="skeleton" style="width:200px">&nbsp;</span><span class="skeleton" style="width:200px;margin-top:4px">&nbsp;</span>';
+    depSteps(0);
+    showView('dep');
+    let d = sw.dep[id];
+    if (!d) {
+      try { d = await api('bridge/deposit-address', { chain_id: id }); }
+      catch (e) {
+        if (seq !== sw.depSeq) return;
+        $('swDepAddr').textContent = '–';
+        $('swDepSteps').innerHTML = step('bad', 'No deposit address right now', esc(cleanMsg(e.message)));
+        sw.depTimer = setTimeout(() => { if (FL && FL.name === 'swap' && seq === sw.depSeq) showDeposit(); }, 15000);
+        return;
+      }
+      if (!d || !evmRe.test(d.address)) return;
+      sw.dep[id] = d; if (!sw.depSince) sw.depSince = Math.floor(Date.now() / 1000);
+    }
+    if (seq !== sw.depSeq) return;
+    $('swDepAddr').innerHTML = addrLines(d.address); $('swQR').src = '/qr.svg?d=' + encodeURIComponent(d.address); $('swCopy').disabled = false;
+    pollDeposit(seq);
+  }
+  async function pollDeposit(seq) {
+    const r = swRoute(); if (!r || seq !== sw.depSeq || !FL || FL.name !== 'swap') return;
+    const c = r.c, since = sw.depSince - 600;
+    let s = null; try { s = await api('bridge/deposit-status', { chain_id: String(c.chain_id) }); } catch (e) { }
+    if (seq !== sw.depSeq) return;
+    if (s) {
+      const dep = (s.deposits || []).find(x => Number(x.created) >= since), bal = (s.balances || []).find(b => big(b.amount) > 0n);
+      const sweep = (s.sweeps || []).find(x => Number(x.created) >= since && (x.status === 'pending' || x.status === 'sent'));
+      if (dep) {
+        const recv = fmt2(big(dep.token_amount) + big(dep.token_fee), dep.decimals) + ' ' + dep.token_symbol;
+        const need = Number(s.confirmations) || 0, have = Number(s.head) >= Number(dep.block) ? Math.min(Number(s.head) - Number(dep.block) + 1, need) : 0;
+        if (dep.status === 'confirmed') depSteps(4, { recv, done: esc(fmtU(big(dep.amount)) + ' uARG') + (dep.issue_tx && EXPLORER ? ' · ' + link(txURL(EXPLORER, dep.issue_tx), 'View') : '') });
+        else if (dep.status === 'issued') depSteps(3, { recv, conf: esc(need + ' of ' + need) });
+        else if (dep.status === 'pending') depSteps(2, { recv, conf: esc(have + ' of ' + need) + '<span class="swap-bar"><i style="width:' + (need ? Math.round(have / need * 100) : 0) + '%"></i></span>' });
+        else depSteps(2, { recv, bad: dep.error || 'The bridge could not issue this deposit' });
+      } else if (bal || sweep) {
+        const below = bal && big(bal.min_deposit) > big(bal.amount);
+        depSteps(below ? 1 : 2, { recv: bal ? fmt2(big(bal.amount), bal.decimals) + ' ' + bal.symbol + (below ? ' · below the minimum of ' + fmt2(big(bal.min_deposit), bal.decimals) : '') : '', conf: below ? '' : esc('On ' + c.name) });
+      } else depSteps(0);
+    }
+    sw.depTimer = setTimeout(() => pollDeposit(seq), 10000);
+  }
+  $('swCopy').onclick = () => { const r = swRoute(), d = r && sw.dep[String(r.c.chain_id)]; if (d) copy(d.address, 'Deposit address'); };
+  $('swShare').onclick = () => { const r = swRoute(), d = r && sw.dep[String(r.c.chain_id)]; if (d) share(d.address, 'Deposit address'); };
+
+  // ---- hand-off from the phone, and links from the bridge page ----
+  // The browser app on a phone cannot sign, so it prepares what it wants done
+  // and shows a short code the bridge keeps for 15 minutes. The code fills
+  // the matching screen here: a "redeem" hand-off (uARG out to a stablecoin)
+  // the Swap screen, a "send" hand-off the Send screen. Review and the
+  // password are the same as for a screen filled in by hand.
+  // "9.90000000" -> "9.9" for the input.
+  function trimAmount(s) { s = String(s || '').trim(); return s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s; }
+  $('actCode').onclick = () => { if (st && st.walletExists && !st.unlocked) { $('unlock').classList.add('show'); setTimeout(() => $('pwUnlock').focus(), 50); return; } $('handoffCode').value = ''; setErr('handoffErr', ''); openFlow('code'); };
+  async function fillFromPhone() {
+    const code = $('handoffCode').value.replace(/[\s-]+/g, '').toUpperCase();
+    setErr('handoffErr', '');
+    if (!/^[0-9A-Z]{6,12}$/.test(code)) { setErr('handoffErr', 'Enter the code, for example K7M2Q-X9RT4'); $('handoffCode').focus(); return; }
+    const btn = $('btnHandoff'); busy(btn, true);
+    try {
+      const h = await api('bridge/handoff', { code });
+      if (!h || typeof h !== 'object' || !h.amount || !h.to) throw new Error('The bridge sent an incomplete hand-off');
+      const kind = h.kind || 'redeem';
+      if (kind !== 'send' && kind !== 'redeem') throw new Error('That code is for something this app cannot do yet (' + kind + ')');
+      const sendAsset = String(h.asset || 'uARG').toUpperCase();
+      if (kind === 'send' && sendAsset !== 'UARG' && sendAsset !== 'ARG') throw new Error('That code sends a coin this app cannot send yet (' + h.asset + ')');
+      if (kind === 'send' && sendAsset === 'UARG' && !uHeld) throw new Error('This wallet holds no uARG to send');
+      if (kind === 'send') {
+        const v = await api('wallet/validate', { address: String(h.to).trim().toLowerCase() });
+        if (v.swap) throw new Error('This code sends to a swap address. Use Swap to move uARG to another chain.');
+        if (!v.valid || v.error) throw new Error(cleanMsg(v.error) || 'This code names an address that is not valid here');
+      }
+      busy(btn, false);
+      if (kind === 'send') fillSend(h); else await fillRedeem(h);
+      return;
+    } catch (e) { setErr('handoffErr', e.message); }
+    busy(btn, false);
+  }
+  $('codeForm').onsubmit = e => { e.preventDefault(); fillFromPhone(); };
+  $('btnHandoff').onclick = () => fillFromPhone();
+  $('handoffCode').oninput = () => setErr('handoffErr', '');
+  // Swap out, filled in: from a code ("redeem") or from a #withdraw link.
+  // A chain and token the bridge does not list are never swapped for others.
+  async function fillRedeem(h, src = 'the code') {
+    if (!bridgeChains().length) await loadBridgeChains();
+    sw.prog = null;
+    const r = routeBy(h.chain_id, h.token);
+    sw.pay = 'n:UARG';
+    if (r) sw.get = 'e:' + r.key; else { sw.get = ''; sw.locked = true; }
+    if (!openSwap()) return;
+    $('swPay').value = trimAmount(h.amount); $('swTo').value = String(h.to).trim();
+    renderSwap();
+    $('swTo').dispatchEvent(new Event('input'));
+    if (!r) note('swToErr', h.chain_id || h.token ? 'That chain and token are no longer offered. Choose the token to receive.' : 'Choose the token to receive.', 'bad');
+    else if (src !== 'the swap address') toast('Filled in from ' + src + '. Check the address, then review.', 'ok', 5000);
+  }
+  // A transfer: the Send screen. The code names its coin: ARG, or uARG (codes
+  // made before coins were named carry none and mean uARG).
+  function fillSend(h) {
+    const arg = String(h.asset || 'uARG').toUpperCase() === 'ARG';
+    if (!arg && !uHeld) throw new Error('You hold no uARG to send');
+    sd.coin = arg ? 'arg' : 'uarg';
+    if (!openFlow('send')) return;
+    $('sendTo').value = String(h.to).trim(); $('sendAmt').value = trimAmount(h.amount);
+    renderSend(); sd.check = null; checkSendTo();
+    toast('Filled in from the code. Check the address, then review.', 'ok', 5000);
+  }
+
+  // ---- activity: swaps in flight, then recent transactions ----
+  // Static logo slots: <span data-tok="ARG"> gets the token's image.
+  if (UI.token) document.querySelectorAll('[data-tok]').forEach(el => { const img = UI.token(el.dataset.tok); if (img) el.innerHTML = img; });
+  function tokAmount(units, dec) { return fmt2(big(units), dec); }
+  // Everything here comes from the bridge: text is escaped, links are http(s)
+  // only, and the caller passes plainHTML already escaped (it may hold a link).
+  function bridgeRow(kind, bad, busy, title, pct, plainHTML, value) {
+    const bar = busy && pct !== null && pct < 100 ? '<span class="pbar"><i style="width:' + Math.max(0, Math.min(100, Math.round(Number(pct) || 0))) + '%"></i></span>' : '';
+    return '<div class="rowi bitem"><span class="ic ' + (bad ? 'out' : kind) + '">' + icon(bad ? 'alert' : 'swap') + '</span>' +
+      '<div><div class="t">' + esc(title) + '</div><div class="s m' + (bad ? ' danger' : '') + '">' + bar + '<span>' + plainHTML + '</span></div></div>' + value + '</div>';
+  }
+  function dayLabel(t) {
+    const d = new Date(Number(t) * 1000), now = new Date(), same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    if (!t) return 'Pending';
+    if (same(d, now)) return 'Today';
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (same(d, y)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  // A wallet transaction: mined, received, sent or swapped (coins out and others in).
+  function histRow(r) {
+    const assets = Object.entries(r.assets || {}).filter(([, n]) => n);
+    const argMove = !assets.length || Math.abs(r.net) !== r.fee;
+    const moves = assets.map(([id, n]) => ({ unit: assetName(id), n }));
+    if (argMove) moves.push({ unit: st.coin, n: r.net });
+    const mined = !assets.length && r.sent === 0 && r.fee === 0 && r.received === st.nextSubsidy;
+    const ins = moves.filter(m => m.n > 0), outs = moves.filter(m => m.n < 0);
+    let kind = 'in', title;
+    if (mined) { kind = 'mined'; title = 'Mined block ' + fmt.int(r.height); }
+    else if (ins.length && outs.length) { kind = 'swap'; title = 'Swapped ' + outs[0].unit + ' to ' + ins[0].unit; }
+    else if (outs.length) { kind = 'out'; title = 'Sent ' + outs.map(m => m.unit).join(', '); }
+    else title = 'Received ' + ins.map(m => m.unit).join(', ');
+    const lines = moves.map(m => '<div class="' + (m.n >= 0 ? 'pos' : 'neg') + '">' + esc((m.n >= 0 ? '+' : '−') + fmt.coin(Math.abs(m.n)) + ' ' + m.unit) + '</div>').join('');
+    const confs = r.height && st.height >= r.height ? st.height - r.height + 1 : 0;
+    const sub = (r.time ? new Date(r.time * 1000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) + ' · ' : '') + (confs ? fmt.int(confs) + (confs === 1 ? ' confirmation' : ' confirmations') : 'Waiting for a block');
+    const href = EXPLORER && /^[0-9a-f]{64}$/.test(String(r.txid)) ? txURL(EXPLORER, r.txid) : '';
+    return (href ? '<a class="rowi" href="' + esc(href) + '" target="_blank" rel="noopener" title="' + esc(r.txid) + '">' : '<div class="rowi">') +
+      '<span class="ic ' + kind + '">' + icon(kind === 'mined' ? 'pickaxe' : kind === 'in' ? 'receive' : kind === 'swap' ? 'swap' : 'send') + '</span>' +
+      '<div><div class="t">' + esc(title) + '</div><div class="s">' + esc(sub) + '</div></div><div class="v">' + lines + '</div>' + (href ? '</a>' : '</div>');
+  }
+  async function loadActivity() {
+    clearTimeout(actTimer);
+    if (!st || !st.unlocked) { $('actList').innerHTML = ''; $('recentList').innerHTML = ''; $('actEmpty').style.display = ''; $('liveStrip').hidden = true; return; }
+    let a = null, h = null;
+    try { a = await api('bridge/activity'); } catch (e) { }
+    try { h = await api('wallet/history'); } catch (e) { }
+    if (!st || !st.unlocked) return;
+    const rows = [];
+    if (a) {
+      const chains = a.chains || [], byId = id => chains.find(c => c.chain_id === id);
+      (Array.isArray(a.deposits) ? a.deposits : []).forEach(d => {
+        const c = byId(d.chain_id), need = Number((c && c.confirmations) || 0), block = Number(d.block) || 0, have = c && c.head >= block ? Math.min(c.head - block + 1, need) : 0;
+        const bad = d.status !== 'pending' && d.status !== 'issued' && d.status !== 'confirmed', busy = d.status === 'pending' || d.status === 'issued';
+        let plain, pct = null;
+        if (d.status === 'pending') { plain = esc(have + ' of ' + need + ' confirmations'); pct = need ? have / need * 100 : 0; }
+        else if (d.status === 'issued') plain = 'Issuing uARG';
+        else if (d.status === 'confirmed') plain = 'Done' + (d.issue_tx && EXPLORER ? ' · ' + link(txURL(EXPLORER, d.issue_tx), 'View') : '');
+        else plain = esc(d.error || 'Cannot be issued');
+        const strip = 'Swap to ' + fmt.coin(d.amount || 0) + ' uARG · ' + (d.status === 'pending' ? have + ' of ' + need + ' confirmations' : 'issuing');
+        rows.push({ busy, t: Number(d.updated || d.created) || 0, strip, html: bridgeRow('in', bad, busy, (d.token_symbol || 'USDC') + ' to uARG · ' + (d.chain || 'chain ' + d.chain_id), pct, plain, '<div class="v' + (bad ? '' : ' pos') + '">+' + esc(fmt.coin(d.amount || 0)) + ' uARG</div>') });
+      });
+      (Array.isArray(a.redemptions) ? a.redemptions : []).forEach(r => {
+        const c = byId(r.chain_id), need = Number(r.confirmations || a.l1_confirmations) || 0, height = Number(r.height) || 0, have = height && a.tip >= height ? Math.min(a.tip - height + 1, need) : 0;
+        const bad = r.status === 'unreleasable', busy = r.status === 'pending' || r.status === 'released', ex = txURL(c && c.explorer, r.evm_tx);
+        let plain, pct = null;
+        if (r.status === 'pending') { plain = esc(need && have >= need ? 'Signing the payout' : have + ' of ' + need + ' confirmations'); pct = need ? have / need * 100 : 0; }
+        else if (r.status === 'released') plain = 'Paying on ' + esc(r.chain || 'the chain') + (ex ? ' · ' + link(ex, 'View') : '');
+        else if (r.status === 'confirmed') plain = esc('Paid ' + tokAmount(r.token_paid || r.token_amount, r.decimals) + ' ' + (r.token_symbol || '')) + (ex ? ' · ' + link(ex, 'View') : '');
+        else plain = esc(r.error || 'Cannot be paid out');
+        const strip = 'Swap of ' + fmt.coin(r.amount || 0) + ' uARG · ' + (r.status === 'pending' ? (need && have >= need ? 'signing' : have + ' of ' + need + ' confirmations') : 'paying');
+        rows.push({ busy, t: Number(r.updated || r.created) || 0, strip, html: bridgeRow('out', bad, busy, 'uARG to ' + (r.token_symbol || 'USDC') + ' · ' + (r.chain || 'chain ' + r.chain_id), pct, plain, '<div class="v' + (bad ? '' : ' neg') + '">−' + esc(fmt.coin(r.amount || 0)) + ' uARG</div>') });
+      });
+    }
+    rows.sort((x, y) => (y.busy - x.busy) || (y.t - x.t));
+    $('actList').innerHTML = rows.length ? '<div class="group-h">Swaps</div>' + rows.slice(0, 8).map(r => r.html).join('') : '';
+    const live = rows.filter(r => r.busy);
+    $('liveStrip').hidden = !live.length;
+    $('liveText').textContent = !live.length ? '' : live.length === 1 ? live[0].strip : live.length + ' swaps in progress · ' + live[0].strip;
+    if (h) {
+      let out = '', last = '';
+      h.slice().reverse().slice(0, 8).forEach(r => { const l = r.height ? dayLabel(r.time) : 'Pending'; if (l !== last) { out += '<div class="group-h">' + esc(l) + '</div>'; last = l; } out += histRow(r); });
+      $('recentList').innerHTML = out;
+    }
+    $('actEmpty').style.display = rows.length || (h && h.length) ? 'none' : '';
+    if (location.hash === '#wallet') actTimer = setTimeout(loadActivity, live.length ? 10000 : 30000);
+  }
+
+  // ---- backup and lock ----
+  // The phrase is revealed only after the password is confirmed again, and hides itself after two minutes.
+  function hideMnemonic() { const box = $('mnemonicBox'); box.style.display = 'none'; box.classList.remove('on'); box.innerHTML = ''; $('btnMnemonic').innerHTML = icon('eye') + 'Reveal'; clearTimeout(revealTimer); }
+  $('btnMnemonic').onclick = () => {
+    if ($('mnemonicBox').style.display !== 'none') { hideMnemonic(); return; }
+    setErr('pwErr', ''); $('pwConfirm').value = ''; $('pwModal').classList.add('show'); setTimeout(() => $('pwConfirm').focus(), 50);
+  };
+  const revealMnemonic = async () => {
+    const btn = $('btnPwGo'); busy(btn, true); setErr('pwErr', '');
+    try {
+      const words = (await api('wallet/mnemonic', { password: $('pwConfirm').value })).split(' ');
+      $('pwModal').classList.remove('show'); $('pwConfirm').value = '';
+      const box = $('mnemonicBox'); box.innerHTML = words.map(w => '<span>' + UI.escapeHTML(w) + '</span>').join(''); box.style.display = ''; setTimeout(() => box.classList.add('on'), 50);
+      $('btnMnemonic').innerHTML = icon('eyeOff') + 'Hide'; clearTimeout(revealTimer); revealTimer = setTimeout(hideMnemonic, 120000);
+    } catch (e) { setErr('pwErr', e.message); }
+    busy(btn, false);
+  };
+  $('btnPwGo').onclick = revealMnemonic; $('pwForm').onsubmit = e => { e.preventDefault(); revealMnemonic(); };
+  $('btnPwNo').onclick = () => { $('pwModal').classList.remove('show'); $('pwConfirm').value = ''; };
+  $('btnUnlock').onclick = () => { $('unlock').classList.add('show'); setTimeout(() => $('pwUnlock').focus(), 50); };
+
+  // ---- setup & unlock ----
+  const swap = (hide, showEl) => { hide.forEach(id => $(id).style.display = 'none'); $(showEl).style.display = ''; setErr('setupErr', ''); };
+  $('btnCreate').onclick = () => { swap(['setupChoice', 'restoreForm'], 'createForm'); $('pw1').focus(); };
+  $('btnRestoreShow').onclick = () => { swap(['setupChoice', 'createForm'], 'restoreForm'); $('restoreWords').focus(); };
+  $('btnBack1').onclick = $('btnBack2').onclick = () => swap(['createForm', 'restoreForm'], 'setupChoice');
+  $('createForm').onsubmit = async e => {
+    e.preventDefault(); setErr('setupErr', '');
+    if ($('pw1').value.length < 8) { setErr('setupErr', 'Use at least 8 characters.'); return; }
+    if ($('pw1').value !== $('pw2').value) { setErr('setupErr', 'The passwords do not match.'); return; }
+    const btn = $('btnCreateGo'); busy(btn, true);
+    try { const r = await api('wallet/create', { password: $('pw1').value }); newPhrase = r.mnemonic; setupFlow = true; $('createForm').style.display = 'none'; $('newWords').innerHTML = r.mnemonic.split(' ').map(w => '<span>' + UI.escapeHTML(w) + '</span>').join(''); $('showWords').style.display = ''; askedUnlock = true; }
+    catch (err) { setErr('setupErr', err.message); }
+    busy(btn, false);
+  };
+  $('wordsSaved').onchange = () => { $('btnWordsDone').disabled = !$('wordsSaved').checked; };
+  $('btnSaveWords').onclick = () => {
+    const text = (st ? st.brand : 'Argonmine') + ' recovery phrase\n\n' + newPhrase + '\n\nAnyone with these 24 words controls the coins. Keep this file offline and delete it from any cloud or shared folder.\n';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' })); a.download = 'argonmine-recovery-phrase.txt';
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Saved as a text file. Move it somewhere offline.', 'ok', 5000);
+  };
+  // Backup check: four words at random positions must be typed back before the wallet is used.
+  $('btnWordsDone').onclick = () => {
+    const picks = new Set(); while (picks.size < 4) picks.add(Math.floor(Math.random() * 24));
+    verifyIdx = [...picks].sort((a, b) => a - b);
+    $('verifyInputs').innerHTML = verifyIdx.map((i, n) => '<div class="field"><label class="label" for="vw' + n + '">Word ' + (i + 1) + '</label><input class="input mono" id="vw' + n + '" autocomplete="off" autocapitalize="none" spellcheck="false"></div>').join('');
+    setErr('setupErr', ''); $('showWords').style.display = 'none'; $('verifyStep').style.display = ''; $('vw0').focus();
+  };
+  $('verifyInputs').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('btnVerifyGo').click(); } });
+  $('btnVerifyBack').onclick = () => { setErr('setupErr', ''); $('verifyStep').style.display = 'none'; $('showWords').style.display = ''; };
+  $('btnVerifyGo').onclick = () => {
+    const words = newPhrase.split(' ');
+    const wrong = verifyIdx.map((i, n) => $('vw' + n).value.trim().toLowerCase() === words[i] ? 0 : i + 1).filter(Boolean);
+    verifyIdx.forEach((i, n) => $('vw' + n).classList.toggle('invalid', wrong.includes(i + 1)));
+    if (wrong.length) { setErr('setupErr', 'Word ' + wrong.join(', ') + (wrong.length > 1 ? ' do' : ' does') + ' not match your backup. Check it and try again.'); return; }
+    newPhrase = ''; setupFlow = false; $('newWords').innerHTML = ''; $('verifyInputs').innerHTML = ''; $('verifyStep').style.display = 'none'; $('setup').classList.remove('show');
+    toast('Backup confirmed. Your wallet is ready; you can start mining.', 'ok', 5000); refresh();
+  };
+  $('restoreForm').onsubmit = async e => {
+    e.preventDefault(); setErr('setupErr', '');
+    const btn = $('btnRestoreGo'); busy(btn, true);
+    try { await api('wallet/restore', { mnemonic: $('restoreWords').value, password: $('pw3').value }); $('setup').classList.remove('show'); askedUnlock = true; toast('Wallet restored. Scanning the chain for your coins…', 'ok', 5000); refresh(); }
+    catch (err) { setErr('setupErr', err.message); }
+    busy(btn, false);
+  };
+  const doUnlock = async () => {
+    setErr('unlockErr', ''); const btn = $('btnUnlockGo'); busy(btn, true);
+    try { await api('wallet/unlock', { password: $('pwUnlock').value }); $('unlock').classList.remove('show'); $('pwUnlock').value = ''; $('unlockWhy').style.display = 'none'; toast('Wallet unlocked', 'ok'); refresh().then(loadHistory); }
+    catch (err) { setErr('unlockErr', err.message); }
+    busy(btn, false);
+  };
+  $('btnUnlockGo').onclick = doUnlock; $('unlockForm').onsubmit = e => { e.preventDefault(); doUnlock(); };
+  $('btnUnlockSkip').onclick = () => $('unlock').classList.remove('show');
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.defaultPrevented && !FL && st && st.walletExists) $('unlock').classList.remove('show'); });
+
+  mountIcons();
+  refresh(); setInterval(refresh, 2000); setInterval(() => { if (location.hash === '#history') loadHistory(); if (location.hash === '#network') loadPeers(); }, 10000);
+})();
+</script>
+</body>
+</html>

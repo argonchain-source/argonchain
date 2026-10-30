@@ -1,0 +1,1564 @@
+<!doctype html>
+<html lang="en"><head>{{HEAD}}
+<style>
+  [hidden] { display: none !important; }
+  :root { --card-shadow: 0 1px 2px rgba(11,11,11,.04), 0 12px 32px -10px rgba(11,11,11,.16), 0 0 0 1px rgba(11,11,11,.03); --sheet-shadow: -8px 0 32px rgba(11,11,11,.14); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 18px 44px -10px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05); --sheet-shadow: -8px 0 40px rgba(0,0,0,.6); } }
+  :root[data-theme="dark"] { --card-shadow: 0 1px 2px rgba(0,0,0,.5), 0 18px 44px -10px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05); --sheet-shadow: -8px 0 40px rgba(0,0,0,.6); }
+  body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+  .topbar { padding: 10px 20px; min-height: 52px; gap: var(--sp-3); }
+  .topbar .wordmark { padding: 0; font-size: var(--fs-4); gap: 8px; }
+  .topbar .wordmark .sub { color: var(--ink-3); font-weight: 500; }
+  .netchip { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.danger { background: var(--danger); }
+  .stage { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 28px 16px 20px; }
+  .trade { width: 100%; max-width: 460px; background: var(--surface); border: 1px solid var(--hair); border-radius: 20px; box-shadow: var(--card-shadow); padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .trade > *, .view > * { min-width: 0; }
+
+  /* segmented control */
+  .seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; background: var(--sunken); border: 1px solid var(--hair); border-radius: 12px; padding: 3px; }
+  .seg .thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow-1); transition: transform .15s var(--ease); }
+  .seg[data-on="redeem"] .thumb { transform: translateX(100%); }
+  .seg button { position: relative; z-index: 1; height: 34px; background: none; border: 0; border-radius: 9px; font: inherit; font-size: var(--fs-4); font-weight: 600; color: var(--ink-3); cursor: pointer; transition: color .15s var(--ease); }
+  .seg button:hover { color: var(--ink-2); }
+  .seg button[aria-selected="true"] { color: var(--ink); }
+  .seg button:focus-visible { outline-offset: -2px; }
+
+  /* boxes */
+  .view { display: flex; flex-direction: column; gap: 12px; }
+  .pair { display: flex; flex-direction: column; gap: 4px; }
+  .box { background: var(--sunken); border: 1px solid var(--hair); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s var(--ease); min-width: 0; }
+  .box:focus-within { border-color: var(--border); }
+  .box-top, .box-mid, .box-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+  .box-top { min-height: 32px; }
+  .box-label { font-size: var(--fs-2); font-weight: 600; color: var(--ink-3); flex: none; }
+  .amount { flex: 1 1 0; width: 100%; min-width: 0; background: none; border: 0; outline: 0; padding: 0; margin: 0; font: inherit; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 36px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .amount::placeholder { color: var(--ink-3); opacity: 1; }
+  div.amount { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .box-foot { min-height: 18px; font-size: var(--fs-2); color: var(--ink-3); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .box-foot b { font-weight: 600; color: var(--ink-2); }
+  .box-foot .quiet { min-width: 0; line-height: 1.4; }
+
+  /* chips */
+  .chip { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 32px; max-width: 100%; padding: 0 8px 0 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--hair); font-size: var(--fs-3); font-weight: 600; color: var(--ink); white-space: nowrap; flex: 0 1 auto; min-width: 0; }
+  .chip .t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .chip .icon { width: 14px; height: 14px; color: var(--ink-3); flex: none; }
+  .chip.static { padding-right: 10px; }
+  .chip.pick { cursor: pointer; transition: border-color .15s var(--ease), background .15s var(--ease); }
+  .chip.pick:hover { border-color: var(--border); background: var(--page); }
+  .chip.pick:focus-visible, .chip.pick[aria-expanded="true"] { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .chip.pick select { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; pointer-events: none; font-size: 16px; }
+  .cm.logo, .disc.logo { background: none; border: 0; overflow: visible; }
+  .cm.logo img, .disc.logo img { width: 100%; height: 100%; display: block; transform: scale(1.3); }
+  /* the chain and token menu (replaces the browser's own select list) */
+  .pmenu { position: fixed; z-index: 60; min-width: 220px; max-width: calc(100vw - 16px); max-height: min(360px, calc(100vh - 24px)); overflow: auto; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--card-shadow); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .pmenu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 0 10px; border: 0; background: none; border-radius: 10px; font: inherit; font-size: var(--fs-3); font-weight: 600; color: var(--ink); cursor: pointer; text-align: left; }
+  .pmenu button:hover, .pmenu button.hi { background: var(--sunken); }
+  .pmenu .pm-mk { width: 24px; height: 24px; flex: none; display: grid; place-items: center; }
+  .pmenu .pm-mk img { width: 100%; height: 100%; transform: scale(1.3); }
+  .pmenu .pm-mk.txt { border-radius: 50%; background: var(--page); border: 1px solid var(--hair); font-size: 8px; font-weight: 800; color: var(--ink-2); }
+  .pmenu .pm-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pmenu .pm-tag { flex: none; font-size: var(--fs-2); font-weight: 500; color: var(--ink-3); }
+  .pmenu .pm-ok { flex: none; width: 16px; height: 16px; color: var(--accent-text); visibility: hidden; }
+  .pmenu button[aria-selected="true"] .pm-ok { visibility: visible; }
+  .chip.off { border-style: dashed; }
+  .chip .warnb { flex: none; font-size: 10px; font-weight: 700; color: var(--danger); background: var(--danger-bg); border-radius: 999px; padding: 1px 6px; letter-spacing: .01em; }
+  .cm { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 7.5px; font-weight: 800; letter-spacing: .01em; background: var(--page); border: 1px solid var(--hair); color: var(--ink-2); font-variant-numeric: normal; }
+  .cm svg.mark { width: 14px; height: 14px; }
+  .disc { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; line-height: 1; }
+  .disc.usdc { background: #2775ca; } .disc.usdt { background: #26a17b; font-size: 11px; } .disc.other { background: var(--ink-3); }
+  .disc.arg { background: var(--accent); color: var(--accent-ink); font-size: 12px; }
+  .disc.tok { background: none; object-fit: contain; }
+  .divider { display: flex; justify-content: center; margin: -14px 0; position: relative; z-index: 1; pointer-events: none; }
+  .divider span { width: 30px; height: 30px; border-radius: 50%; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow-1); display: grid; place-items: center; color: var(--ink-2); }
+  .divider .icon { width: 15px; height: 15px; }
+
+  /* controls */
+  .textbtn { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-size: var(--fs-2); font-weight: 600; color: var(--accent-text); cursor: pointer; border-radius: 4px; white-space: nowrap; }
+  .pcts { display: inline-flex; gap: 4px; margin-left: auto; }
+  .wp-card { width: min(440px, 100%); padding: 0; display: flex; flex-direction: column; overflow: hidden; max-height: min(640px, calc(100vh - 32px)); max-height: min(640px, calc(100dvh - 32px)); }
+  .wp-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 10px 20px; }
+  .wp-head h2 { font-size: var(--fs-5); letter-spacing: -0.01em; }
+  .wp-search { margin: 0 20px 6px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--hair); border-radius: 12px; background: var(--sunken); color: var(--ink-3); cursor: text; }
+  .wp-search:focus-within { border-color: var(--accent); }
+  .wp-search .icon { width: 16px; height: 16px; flex: none; }
+  .wp-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: var(--fs-3); outline: none; }
+  .wp-body { overflow-y: auto; overscroll-behavior: contain; padding: 2px 20px 18px; }
+  .wp-sec { font-size: var(--fs-1); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 12px 2px 8px; }
+  .wp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .wp-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 16px 6px 12px; border: 1px solid var(--hair); border-radius: 14px; background: var(--sunken); color: var(--ink); font: inherit; font-size: var(--fs-2); font-weight: 600; text-align: center; cursor: pointer; transition: border-color .12s var(--ease), background .12s var(--ease), transform .12s var(--ease); }
+  .wp-tile:hover, .wp-tile:focus-visible { border-color: var(--accent); background: var(--accent-soft); outline: none; }
+  .wp-tile:active, .wp-last:active { transform: scale(.98); }
+  .wp-tile .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wp-ic { width: 40px; height: 40px; border-radius: 11px; object-fit: contain; flex: none; }
+  .wp-ph { display: grid; place-items: center; background: var(--surface); border: 1px solid var(--hair); color: var(--ink-2); font-size: 13px; font-weight: 700; text-transform: uppercase; }
+  .wp-last { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--ink); font: inherit; font-weight: 600; text-align: left; cursor: pointer; transition: transform .12s var(--ease); }
+  .wp-last:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wp-last .wp-ic { width: 36px; height: 36px; border-radius: 10px; }
+  .wp-last small { margin-left: auto; font-size: var(--fs-2); font-weight: 600; color: var(--accent-text); }
+  .wp-empty { padding: 18px 0 4px; text-align: center; color: var(--ink-3); font-size: var(--fs-3); }
+  .wp-foot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 20px 14px; border-top: 1px solid var(--hair); font-size: var(--fs-2); color: var(--ink-3); text-align: center; }
+  .wp-foot a { color: var(--accent-text); font-weight: 600; }
+  @media (max-width: 420px) { .wp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .note a, .note .textbtn { color: var(--accent-text); font-weight: 600; }
+  .note .apps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 4px; }
+  .pct { font: inherit; font-size: var(--fs-1); font-weight: 600; line-height: 1; color: var(--ink-2); background: var(--sunken); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 8px; cursor: pointer; font-variant-numeric: tabular-nums; transition: border-color .12s var(--ease), color .12s var(--ease); }
+  .pct:hover { color: var(--accent-text); border-color: var(--accent); }
+  .pct:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .textbtn:hover:not(:disabled) { text-decoration: underline; }
+  .textbtn:disabled { opacity: .5; cursor: not-allowed; }
+  .field .label { font-size: var(--fs-2); }
+  .addr-in { position: relative; }
+  .addr-in .input { height: 42px; padding-right: 66px; border-radius: 12px; }
+  .addr-in .input.plain { padding-right: 12px; }
+  .addr-in .input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px var(--danger-bg); }
+  .addr-in .btn { position: absolute; right: 5px; top: 5px; height: 32px; padding: 0 10px; font-size: var(--fs-2); border-radius: 8px; }
+  .go { height: 48px; border-radius: 12px; font-size: 15px; width: 100%; }
+  .go.wait:disabled { opacity: .85; cursor: progress; }
+  .note { font-size: var(--fs-2); color: var(--ink-3); text-align: center; line-height: 1.45; overflow-wrap: anywhere; }
+  .note.err { color: var(--danger); } .note.warn { color: var(--warn); }
+  .note:empty { display: none; }
+
+  /* progress strip */
+  .prog { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .prog .step { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--hair); font-size: var(--fs-1); color: var(--ink-3); min-width: 0; transition: border-color .15s var(--ease); }
+  .prog .step b { display: flex; align-items: center; gap: 6px; font-size: var(--fs-2); font-weight: 600; color: var(--ink-3); white-space: nowrap; overflow: hidden; }
+  .prog .step .ic { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; }
+  .prog .step .ic .icon { width: 9px; height: 9px; stroke-width: 3.5; }
+  .prog .step > span { font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 20px; }
+  .prog .step.now { border-color: var(--accent); } .prog .step.now b { color: var(--ink); } .prog .step.now .ic { border-color: var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; }
+  .prog .step.done b { color: var(--ink-2); } .prog .step.done .ic { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+  /* success */
+  .done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 20px 8px 6px; }
+  .done .big { width: 56px; height: 56px; border-radius: 50%; background: var(--ok-bg); color: var(--ok); display: grid; place-items: center; margin-bottom: 10px; }
+  .done .big .icon { width: 26px; height: 26px; stroke-width: 2.25; }
+  .done h2 { font-size: var(--fs-6); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .done p { color: var(--ink-2); font-size: var(--fs-3); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .done .links { display: flex; gap: 16px; margin-top: 8px; font-size: var(--fs-3); }
+  .done .links .textbtn, .done .links a { font-size: var(--fs-3); color: var(--accent-text); font-weight: 600; }
+  .done .links a:hover { text-decoration: underline; }
+  .done .acts { display: flex; gap: 8px; margin-top: 16px; width: 100%; }
+  .done .acts .btn { flex: 1; height: 44px; border-radius: 12px; }
+
+  /* redeem steps */
+  .steps { border: 1px solid var(--hair); border-radius: 14px; padding: 2px 14px; }
+  .steps > div { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px 0; font-size: var(--fs-3); color: var(--ink-2); line-height: 1.45; align-items: start; }
+  .steps > div + div { border-top: 1px solid var(--hair); }
+  .steps .n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-weight: 700; font-size: var(--fs-2); display: grid; place-items: center; }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .memo { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 6px 6px 10px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--hair); min-width: 0; }
+  .memo code { flex: 1 1 auto; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-1); line-height: 1.45; overflow-wrap: anywhere; word-break: break-all; color: var(--ink); }
+  .memo code.empty { font-family: var(--font-sans); font-size: var(--fs-2); color: var(--ink-3); word-break: normal; }
+  .memo .btn-icon { width: 28px; height: 28px; flex: none; }
+
+  /* footer line */
+  .footline { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); font-size: var(--fs-2); color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; }
+  .footline b { color: var(--ink-2); font-weight: 600; }
+  .footline .sep { color: var(--border); }
+  .footline .fi { display: inline-flex; gap: 8px; white-space: nowrap; }
+  .footline .risk { flex-basis: 100%; max-width: 460px; margin: 0 auto; }
+  .footline .risk a { color: var(--accent-text); text-decoration: none; font-weight: 600; }
+
+  /* details sheet */
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 30; opacity: 0; transition: opacity .15s var(--ease); }
+  .backdrop.show { opacity: 1; }
+  .sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); background: var(--surface); border-left: 1px solid var(--hair); box-shadow: var(--sheet-shadow); z-index: 31; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .15s var(--ease); }
+  .sheet.show { transform: none; }
+  .sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 12px 20px; border-bottom: 1px solid var(--hair); flex: none; }
+  .sheet-h h2 { font-size: var(--fs-5); }
+  .sheet-b { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 20px 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .sec { padding: 16px 0; border-bottom: 1px solid var(--hair); }
+  .sec:last-child { border-bottom: 0; }
+  .sec h3 { font-size: var(--fs-1); font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .sec .sum { font-size: var(--fs-2); color: var(--ink-3); margin: -4px 0 10px; font-variant-numeric: tabular-nums; }
+  .sec .sum b { color: var(--ink-2); font-weight: 600; }
+  .emptyl { font-size: var(--fs-3); color: var(--ink-3); padding: 2px 0; }
+  .rsv { display: flex; flex-direction: column; gap: 12px; }
+  .rsv .ch { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: var(--fs-3); margin-bottom: 2px; min-width: 0; }
+  .rsv .ch .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rsv .ch .cm { width: 22px; height: 22px; font-size: 7px; }
+  .rsv .tk { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0 5px 2px; font-size: var(--fs-3); }
+  .rsv .tk .disc { width: 22px; height: 22px; font-size: 11px; }
+  .rsv .tk small { display: block; color: var(--ink-3); font-size: var(--fs-1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rsv .tk .amt { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
+  .rows { display: flex; flex-direction: column; }
+  .rowi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; padding: 8px 0; border-top: 1px solid var(--hair); font-size: var(--fs-3); align-items: center; }
+  .rowi:first-child { border-top: 0; padding-top: 2px; }
+  .rowi .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .rowi .l2 { grid-column: 1; color: var(--ink-3); font-size: var(--fs-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .rowi .l2 a { color: var(--ink-3); font-family: var(--font-mono); } .rowi .l2 a:hover { color: var(--accent-text); }
+  .rowi .r1 { grid-column: 2; grid-row: 1; font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
+  .rowi .r2 { grid-column: 2; grid-row: 2; text-align: right; }
+  .rowi .badge { height: 18px; font-size: 10px; padding: 0 6px; }
+  .track { display: flex; flex-direction: column; gap: 8px; }
+  .track .row2 { display: flex; gap: 6px; } .track .row2 .input { min-width: 0; flex: 1 1 auto; } .track .row2 .btn { flex: none; height: 38px; }
+  .trackOut { font-size: var(--fs-3); color: var(--ink-2); overflow-wrap: anywhere; line-height: 1.5; }
+  .trackOut b { color: var(--ink); } .trackOut .mono { font-size: var(--fs-2); }
+  .kv > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--hair); font-size: var(--fs-3); color: var(--ink-2); align-items: center; min-width: 0; }
+  .kv > div:first-child { border-top: 0; padding-top: 2px; }
+  .kv > div > span:first-child { flex: none; }
+  .kv .v { color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; min-width: 0; display: inline-flex; align-items: center; gap: 2px; }
+  .kv .v.mono { font-size: var(--fs-2); }
+  .kv .v a { color: var(--accent-text); }
+  .kv .btn-icon { width: 24px; height: 24px; }
+  .kv .btn-icon .icon { width: 14px; height: 14px; }
+  /* deposit address: no wallet needed */
+  .alt { display: flex; justify-content: center; margin-top: -4px; }
+  .da-lead { flex: 1 1 auto; min-width: 0; font-size: var(--fs-3); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .da-card { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 14px 14px; border-radius: 14px; background: var(--sunken); border: 1px solid var(--hair); min-width: 0; }
+  .da-card > * { max-width: 100%; }
+  .da-qr { display: block; width: 148px; height: 148px; padding: 8px; border-radius: 12px; background: #fff; border: 1px solid var(--hair); flex: none; }
+  .da-addr { display: block; width: 21.5ch; font-family: var(--font-mono); font-size: 19px; font-weight: 500; line-height: 1.4; letter-spacing: 0; color: var(--ink); text-align: center; word-break: break-all; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+  .da-acts { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .da-acts .btn { height: 36px; border-radius: 10px; gap: 6px; }
+  .da-acts .btn .icon { width: 15px; height: 15px; }
+  .da-acts a { font-size: var(--fs-3); font-weight: 600; color: var(--accent-text); }
+  .da-acts a:hover { text-decoration: underline; }
+  .da-facts { list-style: none; margin: 0; padding: 0 2px; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-3); color: var(--ink-2); line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .da-facts li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 6px; align-items: start; overflow-wrap: anywhere; }
+  .da-facts li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); margin: 7px 0 0 3px; }
+  .da-facts li.warn { color: var(--ink); font-weight: 600; }
+  .da-facts li.warn::before { background: var(--warn); }
+  .da-status { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--hair); transition: border-color .15s var(--ease); }
+  .da-status.da-now { border-color: var(--accent); }
+  .da-ic { width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; }
+  .da-ic .icon { width: 11px; height: 11px; stroke-width: 3.5; }
+  .da-status.da-now .da-ic { border-color: var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; }
+  .da-status.da-warn .da-ic { border-color: var(--warn); }
+  .da-status.da-done .da-ic { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .da-st { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .da-st b { font-size: var(--fs-4); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .da-st > span { font-size: var(--fs-2); color: var(--ink-3); line-height: 1.45; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .da-st > span.warn { color: var(--warn); }
+  .da-st a { color: var(--accent-text); font-weight: 600; white-space: nowrap; }
+  .da-st a:hover { text-decoration: underline; }
+  .da-back { display: flex; justify-content: center; gap: 8px 18px; flex-wrap: wrap; padding: 2px 0 4px; }
+  /* withdraw: the page prepares it, the wallet that holds the uARG signs it */
+  .lbl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .wd-sum { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 14px 16px; border-radius: 14px; background: var(--sunken); border: 1px solid var(--hair); text-align: center; min-width: 0; }
+  .wd-amts { display: flex; align-items: center; justify-content: center; gap: 8px 10px; flex-wrap: wrap; font-size: var(--fs-6); font-weight: 600; letter-spacing: -0.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .wd-amts .tokx { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .wd-amts .disc { width: 22px; height: 22px; font-size: 11px; }
+  .wd-amts .icon { width: 16px; height: 16px; color: var(--ink-3); flex: none; }
+  .wd-where { font-size: var(--fs-3); color: var(--ink-3); }
+  .wd-to { display: block; max-width: 22ch; font-family: var(--font-mono); font-size: var(--fs-4); line-height: 1.5; color: var(--ink); word-break: break-all; user-select: all; -webkit-user-select: all; }
+  a.btn.go { display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+  .da-addr.long { width: 22ch; font-size: 16px; }
+  #rLine.warn { color: var(--warn); font-weight: 600; }
+  .wd-send { display: flex; align-items: center; justify-content: center; gap: 4px 6px; flex-wrap: wrap; font-size: var(--fs-3); color: var(--ink-2); text-align: center; }
+  .wd-send b { color: var(--ink); font-weight: 600; font-size: var(--fs-4); font-variant-numeric: tabular-nums; }
+  .wd-cp { width: 30px; height: 30px; border-radius: 8px; }
+  .wd-cp .icon { width: 15px; height: 15px; }
+  .wd-memo { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 10px 10px 14px; border-radius: 12px; background: var(--surface); border: 1px dashed var(--border); }
+  .wd-memo-v { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .wd-memo .k { font-size: var(--fs-1); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .wd-memo code { font-family: var(--font-mono); font-size: 22px; font-weight: 600; letter-spacing: .08em; line-height: 1.3; color: var(--ink); white-space: nowrap; user-select: all; -webkit-user-select: all; }
+  .wd-memo .btn { height: 36px; border-radius: 10px; gap: 6px; flex: none; }
+  .wd-memo .btn .icon { width: 15px; height: 15px; }
+  .wd-hint { margin: 0; font-size: var(--fs-2); color: var(--ink-3); text-align: center; line-height: 1.45; }
+  .wd-steps { list-style: none; margin: 0; padding: 6px 14px; border: 1px solid var(--hair); border-radius: 14px; }
+  .wd-step { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 12px; padding: 9px 0; }
+  .wd-step:not(:last-child)::after { content: ""; position: absolute; left: 9px; top: 33px; bottom: -5px; width: 2px; border-radius: 1px; background: var(--hair); }
+  .wd-step.is-done:not(:last-child)::after { background: var(--ok); }
+  .wd-ic { position: relative; z-index: 1; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); display: grid; place-items: center; }
+  .wd-ic .icon { width: 11px; height: 11px; stroke-width: 3.5; }
+  .wd-step > div { min-width: 0; }
+  .wd-step b { display: block; font-size: var(--fs-3); font-weight: 600; line-height: 20px; color: var(--ink-3); }
+  .wd-step .sub { display: block; font-size: var(--fs-2); line-height: 1.45; color: var(--ink-3); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .wd-step .sub:empty { display: none; }
+  .wd-step .sub a { color: var(--accent-text); font-weight: 600; white-space: nowrap; }
+  .wd-step .sub a:hover { text-decoration: underline; }
+  .wd-step.is-now b, .wd-step.is-done b { color: var(--ink); }
+  .wd-step.is-now .sub { color: var(--ink-2); }
+  .wd-step.is-now .wd-ic { border-color: var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; }
+  .wd-step.is-hold .wd-ic { border-color: var(--warn); color: var(--warn); animation: none; }
+  .wd-step.is-done .wd-ic { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .wd-step.is-bad .wd-ic { border-color: var(--danger); color: var(--danger); animation: none; }
+  .wd-step.is-bad b { color: var(--danger); }
+  .wd-notes { display: flex; flex-direction: column; gap: 8px; }
+  .wd-notes:empty { display: none; }
+  .wd-notes .banner { font-size: var(--fs-2); line-height: 1.5; border-radius: 12px; }
+  .wd-notes .banner .icon { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+  .wd-notes .banner b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wd-pays { border: 1px solid var(--hair); border-radius: 14px; padding: 2px 14px; }
+  .wd-pays > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; font-size: var(--fs-2); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .wd-pays > div + div { border-top: 1px solid var(--hair); }
+  .wd-pays b { color: var(--ink); font-weight: 600; }
+  .wd-pays .r { text-align: right; overflow-wrap: anywhere; }
+  .wd-pays a { color: var(--accent-text); font-weight: 600; }
+  .wd-pays .bad { color: var(--danger); }
+  @media (max-width: 380px) { .wd-memo { flex-direction: column; align-items: stretch; text-align: center; } .wd-memo .btn { justify-content: center; } }
+  @media (max-width: 640px) {
+    .topbar { padding: 10px 16px; }
+    .stage { padding: 16px 16px 16px; }
+    .sheet { top: auto; left: 0; right: 0; width: 100%; max-height: 88vh; max-height: 88dvh; border-left: 0; border-top: 1px solid var(--hair); border-radius: 20px 20px 0 0; transform: translateY(100%); }
+    .sheet.show { transform: none; }
+  }
+</style></head>
+<body>
+<header class="topbar">
+  <span class="wordmark">{{MARK}}<span>{{BRAND}}</span><span class="sub">Bridge</span></span>
+  <span class="badge netchip" id="netChip" title="Connecting"><i class="dot" id="liveDot"></i>{{NETWORK}}</span>
+  <span class="spacer"></span>
+  <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme"></button>
+</header>
+<main class="stage">
+  <section class="trade" aria-label="{{BRAND}} bridge">
+    <div class="seg" id="seg" role="tablist" aria-label="Direction" data-on="deposit">
+      <span class="thumb" aria-hidden="true"></span>
+      <button role="tab" id="tab-deposit" aria-selected="true" aria-controls="viewDeposit" data-view="deposit">Deposit</button>
+      <button role="tab" id="tab-redeem" aria-selected="false" aria-controls="viewRedeem" data-view="redeem" tabindex="-1">Withdraw</button>
+    </div>
+
+    <div class="view" id="viewDeposit" role="tabpanel" aria-labelledby="tab-deposit">
+      <div class="view" id="depForm">
+        <div class="pair">
+          <div class="box">
+            <div class="box-top"><span class="box-label">You pay</span><span class="chip pick" id="chainChip"><span class="cm" id="chainMk">–</span><span class="t" id="chainT">Chain</span><i data-icon="chevronDown"></i><select id="chainSel" aria-label="Chain"></select></span></div>
+            <div class="box-mid"><input class="amount" id="amt" placeholder="0.00" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Amount to deposit"><span class="chip pick" id="tokChip"><span class="disc other" id="tokMk">$</span><span class="t" id="tokT">Token</span><i data-icon="chevronDown"></i><select id="tokSel" aria-label="Token"></select></span></div>
+            <div class="box-foot"><span id="balLine" hidden>Balance <b id="balVal">–</b></span><span class="pcts" id="pcts" hidden aria-label="Use part of the balance"><button class="pct" data-pct="25" type="button">25%</button><button class="pct" data-pct="50" type="button">50%</button><button class="pct" data-pct="75" type="button">75%</button><button class="pct" data-pct="100" type="button">All</button></span><span id="balNone"></span><button class="textbtn" id="faucet" type="button" hidden>Get 100 test USDC</button></div>
+          </div>
+          <div class="divider"><span><i data-icon="receive"></i></span></div>
+          <div class="box">
+            <div class="box-top"><span class="box-label">You receive</span><span class="chip static"><span class="cm">{{MARK}}</span><span class="t">{{BRAND}}</span></span></div>
+            <div class="box-mid"><div class="amount" id="amtOut">0.00</div><span class="chip static"><img class="disc tok" src="{{TOK_UARG}}" alt=""><span class="t">{{ASSET}}</span></span></div>
+            <div class="box-foot"><span class="quiet" id="feeLine"></span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="dest">{{BRAND}} address</label>
+          <div class="addr-in"><input class="input mono" id="dest" placeholder="{{HRP}}1…" spellcheck="false" autocomplete="off" autocapitalize="off"><button class="btn btn-secondary" id="pasteDest" type="button" data-paste="dest">Paste</button></div>
+          <span class="error" id="destErr"></span>
+        </div>
+        <button class="btn btn-primary go" id="go" type="button">Connect wallet</button>
+        <div class="alt" id="daAlt" hidden><button class="textbtn" id="daOpen" type="button">No wallet? Get a deposit address</button></div>
+        <div class="note" id="goHint"></div>
+        <div class="note" id="msg"></div>
+        <div class="prog" id="prog" hidden aria-live="polite">
+          <div class="step" id="s1"><b><span class="ic"></span>Approve</b><span id="s1b"></span></div>
+          <div class="step" id="s2"><b><span class="ic"></span>Deposit</b><span id="s2b"></span></div>
+          <div class="step" id="s3"><b><span class="ic"></span>Confirm</b><span id="s3b"></span></div>
+        </div>
+      </div>
+      <div class="done" id="depDone" hidden>
+        <span class="big"><i data-icon="check"></i></span>
+        <h2 id="doneTitle">Deposited</h2>
+        <p id="doneLine"></p>
+        <p id="doneStatus"></p>
+        <div class="links"><a id="doneExplorer" class="link" target="_blank" rel="noopener" hidden>Explorer</a><button class="textbtn" id="doneTrack" type="button">Track</button></div>
+        <div class="acts"><button class="btn btn-secondary" id="doneNew" type="button">New deposit</button></div>
+      </div>
+      <div class="view" id="depAddr" hidden>
+        <div class="box">
+          <div class="box-top"><span class="box-label">You send</span><span class="chip pick" id="daChainChip"><span class="cm" id="daChainMk">–</span><span class="t" id="daChainT">Chain</span><i data-icon="chevronDown"></i><select id="daChainSel" aria-label="Chain"></select></span></div>
+          <div class="box-mid"><span class="da-lead">From any wallet or exchange</span><span class="chip pick" id="daTokChip"><span class="disc other" id="daTokMk">$</span><span class="t" id="daTokT">Token</span><i data-icon="chevronDown"></i><select id="daTokSel" aria-label="Token"></select></span></div>
+          <div class="box-foot"><span class="quiet" id="daFeeLine"></span></div>
+        </div>
+        <div class="view" id="daForm">
+          <div class="field">
+            <label class="label" for="daDest">{{BRAND}} address</label>
+            <div class="addr-in"><input class="input mono" id="daDest" placeholder="{{HRP}}1…" spellcheck="false" autocomplete="off" autocapitalize="off"><button class="btn btn-secondary" type="button" data-paste="daDest">Paste</button></div>
+            <span class="error" id="daDestErr"></span>
+          </div>
+          <button class="btn btn-primary go" id="daGo" type="button">Show deposit address</button>
+        </div>
+        <div class="note" id="daMsg"></div>
+        <div class="view" id="daOut" hidden>
+          <div class="da-card">
+            <img class="da-qr" id="daQR" alt="QR code of the deposit address" width="148" height="148">
+            <code class="da-addr" id="daAddr"></code>
+            <div class="da-acts"><button class="btn btn-secondary" id="daCopy" type="button"><i data-icon="copy"></i>Copy address</button><a id="daExplorer" target="_blank" rel="noopener" hidden>Explorer</a></div>
+          </div>
+          <ul class="da-facts" id="daFacts"></ul>
+          <div class="da-status" id="daStatus" aria-live="polite"><span class="da-ic" id="daIc"></span><div class="da-st"><b id="daStTitle">Checking the address…</b><span id="daStSub"></span></div></div>
+        </div>
+        <div class="da-back"><button class="textbtn" id="daChange" type="button" hidden>Change address</button><button class="textbtn" id="daBack" type="button">Back to wallet deposit</button></div>
+      </div>
+    </div>
+
+    <div class="view" id="viewRedeem" role="tabpanel" aria-labelledby="tab-redeem" hidden>
+      <div class="view" id="wdForm">
+        <div class="field">
+          <div class="lbl-row"><label class="label" for="evm">Your EVM wallet address</label><button class="textbtn" id="useAcct" type="button" hidden>Use my wallet</button></div>
+          <div class="addr-in"><input class="input mono" id="evm" placeholder="0x…" spellcheck="false" autocomplete="off" autocapitalize="off"><button class="btn btn-secondary" id="pasteEvm" type="button" data-paste="evm">Paste</button></div>
+          <span class="error" id="evmErr"></span>
+        </div>
+        <div class="pair">
+          <div class="box">
+            <div class="box-top"><span class="box-label">You withdraw</span><span class="chip static"><span class="cm">{{MARK}}</span><span class="t">{{BRAND}}</span></span></div>
+            <div class="box-mid"><input class="amount" id="rAmt" placeholder="0.00" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Amount of {{ASSET}} to withdraw"><span class="chip static"><img class="disc tok" src="{{TOK_UARG}}" alt=""><span class="t">{{ASSET}}</span></span></div>
+          </div>
+          <div class="divider"><span><i data-icon="receive"></i></span></div>
+          <div class="box">
+            <div class="box-top"><span class="box-label">You get</span><span class="chip pick" id="rChainChip"><span class="cm" id="rChainMk">–</span><span class="t" id="rChainT">Chain</span><i data-icon="chevronDown"></i><select id="rChainSel" aria-label="Payout chain"></select></span></div>
+            <div class="box-mid"><div class="amount" id="rOut">0.00</div><span class="chip pick" id="rTokChip"><span class="disc other" id="rTokMk">$</span><span class="t" id="rTokT">Token</span><i data-icon="chevronDown"></i><select id="rTokSel" aria-label="Payout token"></select></span></div>
+            <div class="box-foot"><span class="quiet" id="rLine"></span></div>
+          </div>
+        </div>
+        <button class="btn btn-primary go" id="wdGo" type="button" disabled>Enter your address</button>
+        <div class="note" id="wdMsg"></div>
+        <div class="alt" id="wdResume" hidden><button class="textbtn" id="wdResumeBtn" type="button"></button></div>
+      </div>
+      <div class="view" id="wdNext" hidden>
+        <div class="wd-sum">
+          <div class="wd-amts"><span class="tokx"><img class="disc tok" src="{{TOK_UARG}}" alt=""><span id="wdIn"></span></span><i data-icon="chevronRight"></i><span class="tokx"><span id="wdOutMk"></span><span id="wdOut"></span></span></div>
+          <div class="wd-where" id="wdWhere"></div>
+          <code class="wd-to" id="wdTo"></code>
+        </div>
+        <div class="da-card" id="wdPay">
+          <div class="wd-send"><span id="wdSendPre">Send exactly</span> <b id="wdSendAmt"></b><button class="btn btn-ghost btn-icon wd-cp" id="wdCopyAmt" type="button" aria-label="Copy the amount"><i data-icon="copy"></i></button></div>
+          <img class="da-qr" id="wdQR" alt="QR code of the address to pay" width="148" height="148">
+          <code class="da-addr long" id="wdAddr"></code>
+          <div class="da-acts"><button class="btn btn-secondary" id="wdCopy" type="button"><i data-icon="copy"></i>Copy address</button></div>
+          <div class="wd-memo"><div class="wd-memo-v"><span class="k">Memo</span><code id="wdMemo"></code></div><button class="btn btn-secondary" id="wdCopyMemo" type="button"><i data-icon="copy"></i>Copy memo</button></div>
+          <p class="wd-hint">Add the memo to your payment so it is matched to this withdrawal. Send only {{ASSET}}: anything else sent here is lost.</p>
+        </div>
+        <ol class="wd-steps" id="wdSteps" aria-live="polite">
+          <li class="wd-step" id="ws1"><span class="wd-ic"></span><div><b>Waiting for deposit</b><span class="sub" id="ws1b"></span></div></li>
+          <li class="wd-step" id="ws2"><span class="wd-ic"></span><div><b>Deposit detected</b><span class="sub" id="ws2b"></span></div></li>
+          <li class="wd-step" id="ws3"><span class="wd-ic"></span><div><b>Processing withdrawal</b><span class="sub" id="ws3b"></span></div></li>
+          <li class="wd-step" id="ws4"><span class="wd-ic"></span><div><b>Completed</b><span class="sub" id="ws4b"></span></div></li>
+        </ol>
+        <div class="wd-notes" id="wdNotes"></div>
+        <div class="wd-pays" id="wdPays" hidden></div>
+        <div class="note" id="wdNextMsg"></div>
+        <div class="da-back"><button class="textbtn" id="wdBack" type="button">New withdrawal</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="footline"><span id="footGuard">– guardians</span><span class="fi"><span class="sep">·</span><button class="textbtn" id="openSheet" type="button">Details</button></span><span class="risk">Not externally audited. Bridge only what you can afford to lose. <a href="https://docs.argonmine.com/bridge#risks" target="_blank" rel="noopener">Risks</a></span></footer>
+
+<div class="modal" id="walletPick" role="dialog" aria-modal="true" aria-labelledby="wpTitle">
+  <div class="modal-card wp-card">
+    <div class="wp-head"><h2 id="wpTitle">Connect a wallet</h2><button class="btn btn-ghost btn-icon" id="wpClose" type="button" aria-label="Close"><i data-icon="x"></i></button></div>
+    <label class="wp-search" id="wpSearchRow" hidden><i data-icon="search"></i><input id="wpSearch" type="search" placeholder="Search wallets" autocomplete="off" spellcheck="false" aria-label="Search wallets"></label>
+    <div class="wp-body" id="wpBody">
+      <div id="wpLast"></div>
+      <div class="wp-sec" id="wpSecAll">Installed</div>
+      <div class="wp-grid" id="wpList"></div>
+      <p class="wp-empty" id="wpEmpty" hidden>No installed wallet matches.</p>
+    </div>
+    <div class="wp-foot" id="wpFoot"><button class="textbtn" id="wpNoWallet" type="button" hidden>No wallet? Deposit from any wallet or exchange</button><span id="wpLearn">New to wallets? <a href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noopener">Find one</a></span></div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-h"><h2 id="sheetTitle">Details</h2><button class="btn btn-ghost btn-icon" id="sheetClose" type="button" aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="sheet-b">
+    <div class="banner warn" id="errBanner" hidden role="status" style="margin-top:16px"><i data-icon="alert"></i><div id="errText"></div></div>
+    <section class="sec" id="secReserves"><h3>Reserves</h3><div class="sum" id="rsvSum"></div><div class="rsv" id="rsv"><div class="emptyl">Loading…</div></div></section>
+    <section class="sec" id="secDeposits"><h3>Recent deposits</h3><div class="rows" id="depRows"><div class="emptyl">Loading…</div></div></section>
+    <section class="sec" id="secRedemptions"><h3>Recent withdrawals</h3><div class="rows" id="redRows"><div class="emptyl">Loading…</div></div></section>
+    <section class="sec track" id="secTrack"><h3>Track</h3>
+      <select class="select" id="trackChain" aria-label="Chain"></select>
+      <div class="row2"><input class="input mono" id="trackId" placeholder="Deposit id, 0x hash or withdrawal memo" aria-label="Deposit id, transaction hash or withdrawal memo"><button class="btn btn-secondary" id="trackBtn" type="button">Check</button></div>
+      <div class="trackOut" id="trackOut"></div>
+    </section>
+    <section class="sec" id="secChain"><h3>On chain</h3><div class="kv" id="kv"><div><span>Loading…</span></div></div></section>
+  </div>
+</aside>
+<script src="{{UIJS}}"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); }, f = UI.fmt, esc = UI.escapeHTML, ic = UI.icon;
+  var SEL_APPROVE = '{{SEL_APPROVE}}', SEL_DEPOSIT = '{{SEL_DEPOSIT}}', SEL_MINT = '{{SEL_MINT}}', SEL_BALANCE = '{{SEL_BALANCE}}', SEL_ALLOWANCE = '{{SEL_ALLOWANCE}}', TOPIC_DEPOSIT = '0x{{TOPIC_DEPOSIT}}';
+  var HRP = '{{HRP}}', ASSET = '{{ASSET}}', BRAND = '{{BRAND}}';
+  var addrRe = new RegExp('^' + HRP + '1[02-9ac-hj-np-z]{59}$'), evmRe = /^0x[0-9a-fA-F]{40}$/;
+  var badge = { reorged: 'badge-danger', pending: 'badge-warn', issued: 'badge-accent', released: 'badge-accent', confirmed: 'badge-ok', unclaimable: 'badge-danger', unreleasable: 'badge-danger' };
+  function bridgePause() { return st && st.paused && st.paused.length ? st.paused[0] : null; }
+  function chainPaused(c) { return !!(c && (c.paused || c.vault_paused)); }
+  function badgeOf(status) { return Object.prototype.hasOwnProperty.call(badge, status) ? badge[status] : ''; }
+  var blockTime = { 1: 12, 11155111: 12, 17000: 12, 8453: 2, 84532: 2, 56: 3, 97: 3, 42161: 0.25, 421614: 0.25, 137: 2, 80002: 2, 31337: 1 };
+  var abbrs = { ethereum: 'ETH', eth: 'ETH', base: 'BASE', bnb: 'BNB', binance: 'BNB', bsc: 'BNB', arbitrum: 'ARB', polygon: 'POL', optimism: 'OP', avalanche: 'AVAX', anvil: 'ANV', local: 'LOC', hardhat: 'HH' };
+
+  var st = null, deps = [], reds = [], liveOk = true;
+  var chain = null, token = null, rChain = null, rToken = null, depKey = '';
+  var account = '', walletChain = null, bal = null, allowance = null;
+  var flow = null; // the deposit in progress: { c, t, v, dest, hash, id, block, confs, status, busy }
+
+  // ---- formatting ----
+  // fmtTok renders token units (decimal string or BigInt) with the token's
+  // decimals: at most maxFrac fraction digits (default 8, one uARG unit), at
+  // least minFrac, grouped with commas unless plain.
+  function fmtTok(units, dec, maxFrac, minFrac, plain) {
+    var s = String(units || 0), neg = s[0] === '-'; if (neg) s = s.slice(1);
+    if (!/^\d+$/.test(s)) s = '0';
+    while (s.length <= dec) s = '0' + s;
+    var w = s.slice(0, s.length - dec), fr = s.slice(s.length - dec).slice(0, maxFrac === undefined ? 8 : maxFrac).replace(/0+$/, '');
+    while (fr.length < (minFrac || 0)) fr += '0';
+    if (!plain) w = w.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return (neg ? '-' : '') + w + (fr ? '.' + fr : '');
+  }
+  function fmt2(units, dec) { return fmtTok(units, dec, 2, 2); }          // stablecoins: two decimals
+  function uarg(units) { return fmtTok(String(units), 8, 8, 2); }          // uARG: two to eight decimals
+  function fmtAmt(v, dec) { return fmtTok(v.toString(), dec, Math.min(dec, 8), 0); }
+  function pct(bps) { return (Number(bps) / 100).toFixed(2).replace(/\.?0+$/, '') + '%'; }
+  // eta is the chain's confirmation depth at its block time plus the guardians'
+  // issuance interval (two minutes), rounded to minutes.
+  var finalMin = { 1: 15, 11155111: 15, 17000: 15, 560048: 15, 8453: 20, 84532: 20, 10: 20, 11155420: 20, 42161: 20, 421614: 20, 56: 1, 97: 1, 137: 2, 80002: 2 };
+  function eta(c) {
+    var bt = blockTime[c.chain_id] || 12, m = Math.max(1, Math.round((Number(c.confirmations || 0) * bt + 120) / 60));
+    if (c.finality === 'finalized' && finalMin[c.chain_id]) m = Math.max(m, finalMin[c.chain_id] + 2);
+    return 'about ' + m + ' min';
+  }
+  function abbr(name) { var w = String(name || '').trim().split(/[\s(]+/)[0].toLowerCase(); return abbrs[w] || (w.slice(0, 3).toUpperCase() || '?'); }
+  function chainImg(c) { return c ? UI.chain(c.chain_id) : ''; }
+  function cmHTML(c) { var img = chainImg(c); return img ? '<span class="cm logo" aria-hidden="true">' + img + '</span>' : '<span class="cm" aria-hidden="true">' + esc(abbr(c && c.name)) + '</span>'; }
+  function discHTML(sym) { var img = UI.token(sym); if (img) return '<span class="disc logo" aria-hidden="true">' + img + '</span>'; var s = String(sym || '').toUpperCase(), cls = s === 'USDC' ? 'usdc' : s === 'USDT' ? 'usdt' : 'other', ch = s === 'USDC' ? '$' : s === 'USDT' ? 'T' : (s.charAt(0) || '?'); return '<span class="disc ' + cls + '" aria-hidden="true">' + esc(ch) + '</span>'; }
+  function txURL(c, h) { return c && c.explorer ? c.explorer.replace(/\/+$/, '') + '/tx/' + h : ''; }
+  function addrURL(c, a) { return c && c.explorer ? c.explorer.replace(/\/+$/, '') + '/address/' + a : ''; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  // ---- status ----
+  function chainById(id) { return ((st && st.chains) || []).filter(function (c) { return c.chain_id === Number(id); })[0] || null; }
+  function tokenOf(c, addr) { return ((c && c.tokens) || []).filter(function (t) { return t.address === String(addr).toLowerCase(); })[0] || null; }
+  function fillChains(sel) {
+    var html = (st.chains || []).map(function (c) { return '<option value="' + esc(c.chain_id) + '">' + esc(c.name) + (c.error ? ' (unreachable)' : '') + '</option>'; }).join('');
+    if (sel.dataset.sig === html) return;
+    var cur = sel.value; sel.innerHTML = html; sel.dataset.sig = html;
+    if (cur && chainById(cur)) sel.value = cur;
+  }
+  function fillTokens(sel, c) {
+    var html = ((c && c.tokens) || []).map(function (t) { return '<option value="' + esc(t.address) + '">' + esc(t.symbol) + '</option>'; }).join('');
+    if (sel.dataset.sig === html) return;
+    var cur = sel.value; sel.innerHTML = html; sel.dataset.sig = html;
+    if (cur && tokenOf(c, cur)) sel.value = cur;
+  }
+  function renderChips(p, c, t) {
+    var id = function (n) { return p ? p + n : n.charAt(0).toLowerCase() + n.slice(1); };
+    var mk = $(id('ChainMk')), tt = $(id('ChainT')), chip = $(id('ChainChip'));
+    var img = chainImg(c); mk.classList.toggle('logo', !!img);
+    if (img) mk.innerHTML = img; else mk.textContent = c ? abbr(c.name) : '–';
+    tt.textContent = c ? c.name : 'Chain';
+    chip.classList.toggle('off', !!(c && c.error)); chip.title = c && c.error ? c.error : '';
+    var old = chip.querySelector('.warnb'); if (old) old.remove();
+    if (c && c.error) { var w = document.createElement('span'); w.className = 'warnb'; w.textContent = 'unreachable'; tt.insertAdjacentElement('afterend', w); }
+    $(id('TokMk')).outerHTML = discHTML(t && t.symbol).replace('<span', '<span id="' + id('TokMk') + '"'); $(id('TokT')).textContent = t ? t.symbol : 'Token';
+  }
+  function setLive(kind, title) { liveOk = kind !== 'danger'; $('liveDot').className = 'dot ' + kind; $('netChip').title = title; }
+
+  async function refresh() {
+    var s;
+    try { s = await (await fetch('/api/status')).json(); } catch (e) { setLive('danger', 'Bridge unreachable'); updateGo(); return; }
+    st = s;
+    var bp = s.paused && s.paused.length ? s.paused[0] : null;
+    setLive(bp || s.last_error ? 'warn' : 'ok', bp ? 'Paused: ' + (bp.reason || bp.scope) : s.last_error ? 'Degraded: ' + s.last_error : 'Live');
+    $('errBanner').hidden = !s.last_error; $('errText').textContent = s.last_error || '';
+    fillChains($('chainSel')); fillRedeemChains(); fillChains($('trackChain')); fillDaChains();
+    pickDeposit(); pickRedeem();
+    $('wpNoWallet').hidden = !routerChains().length;
+    if (!$('depAddr').hidden) pickDa();
+    $('footGuard').textContent = s.threshold + ' of ' + (s.guardians || []).length + ' guardians';
+    renderReserves(); renderOnChain();
+    if (wd) wdRender(wd.v);
+    try {
+      var r = await Promise.all([fetch('/api/deposits').then(function (x) { return x.json(); }), fetch('/api/redemptions').then(function (x) { return x.json(); })]);
+      deps = r[0] || []; reds = r[1] || [];
+    } catch (e) { }
+    renderLists();
+  }
+
+  // ---- selections ----
+  function pickDeposit() {
+    chain = chainById($('chainSel').value); fillTokens($('tokSel'), chain); token = tokenOf(chain, $('tokSel').value);
+    renderChips('', chain, token);
+    $('daAlt').hidden = !(chain && chain.router && !chain.error);
+    $('faucet').hidden = !(token && token.mint); if (token) $('faucet').textContent = 'Get 100 test ' + token.symbol;
+    var key = chain && token ? chain.chain_id + ':' + token.address : '';
+    if (key !== depKey) { depKey = key; bal = null; allowance = null; renderBal(); loadWallet(); }
+    recalc();
+  }
+  // ---- withdraw liquidity ----
+  // A token can be withdrawn only while its vault on that chain holds
+  // enough of it (available_now, gross token units, read by the guardians
+  // every few seconds). One with none is listed as "no liquidity" and opens
+  // again by itself once the vault is funded.
+  function liq(t) { return t && /^\d+$/.test(String(t.available_now || '')) ? BigInt(t.available_now) : null; } // null: not read yet
+  function hasLiq(t) { var a = liq(t); return a === null || a > 0n; }
+  function chainLiq(c) { return !!c && !c.error && !chainPaused(c) && (c.tokens || []).some(hasLiq); }
+  var rPicked = false; // the user chose a chain or token: keep it
+  function fillRedeemChains() {
+    var sel = $('rChainSel');
+    var html = (st.chains || []).map(function (c) { return '<option value="' + esc(c.chain_id) + '">' + esc(c.name) + (c.error ? ' (unreachable)' : !chainLiq(c) ? ' · no liquidity' : '') + '</option>'; }).join('');
+    if (sel.dataset.sig === html) return;
+    var cur = sel.value; sel.innerHTML = html; sel.dataset.sig = html;
+    if (cur && chainById(cur)) sel.value = cur;
+  }
+  function fillRedeemTokens(c) {
+    var sel = $('rTokSel');
+    var html = ((c && c.tokens) || []).map(function (t) { return '<option value="' + esc(t.address) + '">' + esc(t.symbol) + (hasLiq(t) ? '' : ' · no liquidity') + '</option>'; }).join('');
+    if (sel.dataset.sig === html) return;
+    var cur = sel.value; sel.innerHTML = html; sel.dataset.sig = html;
+    if (cur && tokenOf(c, cur)) sel.value = cur;
+  }
+  function pickRedeem() {
+    // Until the user picks, start on a chain and token that can pay.
+    if (!rPicked && st) {
+      var c0 = chainById($('rChainSel').value);
+      if (!chainLiq(c0)) { var cl = (st.chains || []).filter(chainLiq)[0]; if (cl) $('rChainSel').value = String(cl.chain_id); }
+    }
+    rChain = chainById($('rChainSel').value); fillRedeemTokens(rChain);
+    if (!rPicked && rChain && !hasLiq(tokenOf(rChain, $('rTokSel').value))) { var tl = (rChain.tokens || []).filter(hasLiq)[0]; if (tl) $('rTokSel').value = tl.address; }
+    rToken = tokenOf(rChain, $('rTokSel').value);
+    renderChips('r', rChain, rToken); recalcRedeem();
+  }
+  $('chainSel').onchange = pickDeposit; $('tokSel').onchange = pickDeposit;
+  $('rChainSel').onchange = function () { rPicked = true; pickRedeem(); }; $('rTokSel').onchange = function () { rPicked = true; pickRedeem(); };
+
+  // ---- chain and token menus ----
+  // Each picker chip keeps its <select> as the value (the code above reads
+  // and fills it), but opens this menu instead of the browser's list, so
+  // every option shows its chain or token logo. A pick sets the select and
+  // fires its change event.
+  var pmenu = null;
+  function closeMenu(focusChip) {
+    if (!pmenu) return;
+    var chip = pmenu.chip; pmenu.el.remove(); pmenu = null;
+    chip.setAttribute('aria-expanded', 'false');
+    if (focusChip) chip.focus();
+  }
+  function openMenu(chip) {
+    var sel = chip.querySelector('select'); if (!sel || !sel.options.length) return;
+    closeMenu(false);
+    var isChain = /chain/i.test(sel.id), el = document.createElement('div');
+    el.className = 'pmenu'; el.setAttribute('role', 'listbox'); el.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+    el.innerHTML = Array.prototype.map.call(sel.options, function (o, i) {
+      var parts = o.textContent.split(/ · | \(/), label = parts[0], tag = parts.slice(1).join(' ').replace(/\)$/, '');
+      var img = isChain ? UI.chain(o.value) : UI.token(label);
+      var mk = img ? '<span class="pm-mk">' + img + '</span>' : '<span class="pm-mk txt">' + esc(isChain ? abbr(label) : label.charAt(0)) + '</span>';
+      return '<button type="button" role="option" data-i="' + i + '" aria-selected="' + (o.value === sel.value) + '">' + mk +
+        '<span class="pm-t">' + esc(label) + '</span>' + (tag ? '<span class="pm-tag">' + esc(tag) + '</span>' : '') + ic('check', 'pm-ok') + '</button>';
+    }).join('');
+    document.body.appendChild(el);
+    var r = chip.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+    var left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+    var top = r.bottom + 6 + h > window.innerHeight - 8 ? Math.max(8, r.top - 6 - h) : r.bottom + 6;
+    el.style.left = left + 'px'; el.style.top = top + 'px';
+    pmenu = { el: el, chip: chip, sel: sel };
+    chip.setAttribute('aria-expanded', 'true');
+    var cur = el.querySelector('[aria-selected="true"]') || el.querySelector('button');
+    if (cur) { cur.classList.add('hi'); cur.focus(); }
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-i]'); if (!b) return;
+      var o = sel.options[Number(b.dataset.i)], changed = o && o.value !== sel.value;
+      if (o) sel.value = o.value;
+      closeMenu(true);
+      if (changed) sel.dispatchEvent(new Event('change'));
+    });
+    el.addEventListener('keydown', function (e) {
+      var bs = Array.prototype.slice.call(el.querySelectorAll('button')), i = bs.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault(); var n = bs[(i + (e.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length];
+        bs.forEach(function (b) { b.classList.remove('hi'); }); n.classList.add('hi'); n.focus();
+      } else if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); }
+      else if (e.key === 'Tab') closeMenu(false);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.chip.pick'), function (chip) {
+    var sel = chip.querySelector('select'); if (!sel) return;
+    sel.tabIndex = -1;
+    chip.tabIndex = 0; chip.setAttribute('role', 'button'); chip.setAttribute('aria-haspopup', 'listbox'); chip.setAttribute('aria-expanded', 'false');
+    chip.addEventListener('click', function () { if (pmenu && pmenu.chip === chip) closeMenu(true); else openMenu(chip); });
+    chip.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); openMenu(chip); }
+    });
+  });
+  document.addEventListener('mousedown', function (e) { if (pmenu && !pmenu.el.contains(e.target) && !pmenu.chip.contains(e.target)) closeMenu(false); });
+  window.addEventListener('resize', function () { closeMenu(false); });
+  window.addEventListener('scroll', function (e) { if (pmenu && !pmenu.el.contains(e.target)) closeMenu(false); }, true);
+
+  // ---- segmented control ----
+  function setView(v) {
+    $('seg').dataset.on = v;
+    ['deposit', 'redeem'].forEach(function (x) { var b = $('tab-' + x); b.setAttribute('aria-selected', x === v ? 'true' : 'false'); b.tabIndex = x === v ? 0 : -1; });
+    $('viewDeposit').hidden = v !== 'deposit'; $('viewRedeem').hidden = v !== 'redeem';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#seg button'), function (b) {
+    b.onclick = function () { setView(b.dataset.view); };
+    b.onkeydown = function (e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { var v = b.dataset.view === 'deposit' ? 'redeem' : 'deposit'; setView(v); $('tab-' + v).focus(); e.preventDefault(); } };
+  });
+
+  // ---- amounts: quantized to the token's decimals and to 8 (one uARG unit) ----
+  function quant() { return token ? Math.min(token.decimals, 8) : 2; }
+  function parseAmt(s, dec, q) {
+    s = String(s || '').trim(); if (!/^\d*(\.\d*)?$/.test(s) || s === '' || s === '.') return null;
+    var p = s.split('.'), w = p[0] || '0', fr = p[1] || ''; if (fr.length > q) return null;
+    while (fr.length < dec) fr += '0'; return BigInt(w + fr);
+  }
+  function toUnits(amt, dec) { var d = BigInt(dec); return d > 8n ? amt / 10n ** (d - 8n) : amt * 10n ** (8n - d); }
+  function fromUnits(units, dec) { var d = BigInt(dec); return d > 8n ? units * 10n ** (d - 8n) : units / 10n ** (8n - d); }
+  // The vault keeps fee = amount × depositFeeBps / 10000 (rounded down) and
+  // credits the rest; that net, converted, is what arrives as uARG.
+  function recalc() {
+    var out = $('amtOut'), line = $('feeLine');
+    if (!chain || !token) { out.textContent = '0.00'; line.textContent = ''; updateGo(); return; }
+    var bps = Number(chain.deposit_fee_bps || 0), v = parseAmt($('amt').value, token.decimals, quant()), parts = [bps ? 'Fee ' + pct(bps) : 'No fee'];
+    if (v === null) out.textContent = '0.00';
+    else { var fee = v * BigInt(bps) / 10000n; out.textContent = uarg(toUnits(v - fee, token.decimals)); if (bps) parts.push(fmt2(fee.toString(), token.decimals) + ' ' + token.symbol); }
+    parts.push(eta(chain)); line.textContent = parts.join(' · ');
+    updateGo();
+  }
+  $('amt').oninput = recalc;
+  $('dest').oninput = function () { var v = $('dest').value.trim().toLowerCase(); var bad = v && !addrRe.test(v); $('dest').setAttribute('aria-invalid', bad ? 'true' : 'false'); $('destErr').textContent = bad && v.length >= HRP.length + 60 ? 'Not a valid ' + HRP + '1… address.' : ''; updateGo(); };
+  $('dest').onblur = function () { var v = $('dest').value.trim().toLowerCase(); if (v && !addrRe.test(v)) $('destErr').textContent = 'Not a valid ' + HRP + '1… address (' + (HRP.length + 60) + ' characters).'; };
+  $('pcts').onclick = function (e) {
+    var b = e.target.closest('.pct'); if (!b || bal === null || !token) return;
+    var part = bal * BigInt(b.dataset.pct) / 100n;
+    $('amt').value = fmtTok(part.toString(), token.decimals, quant(), 0, true); recalc(); $('amt').focus();
+  };
+
+  // ---- the one button ----
+  function setGo(label, disabled) { var b = $('go'); b.textContent = label; b.disabled = !!disabled; b.classList.remove('wait'); }
+  function msg(text, kind) { var m = $('msg'); m.className = 'note ' + (kind || ''); m.textContent = text || ''; }
+  var MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function appLinks() {
+    var here = location.host + location.pathname, full = encodeURIComponent(location.href);
+    return [['MetaMask', 'https://metamask.app.link/dapp/' + here], ['Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + full], ['Coinbase Wallet', 'https://go.cb-w.com/dapp?cb_url=' + full]];
+  }
+  function updateGo() {
+    syncUseAcct();
+    if (flow && flow.busy) return;
+    var hint = $('goHint'); hint.textContent = '';
+    if (!hasWallet()) {
+      if (MOBILE) {
+        setGo('Open in MetaMask', false);
+        hint.innerHTML = 'Phone browsers have no wallet built in. Open this page in your wallet app:<span class="apps">' + appLinks().map(function (a) { return '<a href="' + esc(a[1]) + '">' + esc(a[0]) + '</a>'; }).join('') + '</span>';
+      } else { setGo('Install a wallet', false); hint.innerHTML = 'No wallet extension found in this browser. Install <a href="https://metamask.io/download/" target="_blank" rel="noopener">MetaMask</a> or any EVM wallet, then reload.'; }
+      return;
+    }
+    if (account && prov) hint.innerHTML = 'Connected ' + esc(f.short(account, 6, 4)) + ' in ' + esc(provName) + (wallets.length > 1 ? ' · <button class="textbtn" id="switchWallet" type="button">Change wallet</button>' : '');
+    if (!st || !chain || !token) { setGo(liveOk ? 'Loading…' : 'Bridge unreachable', true); return; }
+    if (chain.error) { setGo(chain.name + ' is unreachable', true); return; }
+    if (bridgePause()) { setGo('The bridge is paused', true); return; }
+    if (chainPaused(chain)) { setGo('Deposits on ' + chain.name + ' are paused', true); return; }
+    if (!account) { setGo('Connect wallet', false); return; }
+    if (walletChain !== chain.chain_id) { setGo('Switch to ' + chain.name, false); return; }
+    var v = parseAmt($('amt').value, token.decimals, quant());
+    if (v === null || v <= 0n) { setGo('Enter an amount', true); return; }
+    if (BigInt(token.min_deposit || 0) > v) { setGo('Minimum ' + fmt2(token.min_deposit, token.decimals) + ' ' + token.symbol, true); return; }
+    if (bal !== null && v > bal) { setGo('Not enough ' + token.symbol, true); return; }
+    if (!addrRe.test($('dest').value.trim().toLowerCase())) { setGo('Enter your ' + BRAND + ' address', true); return; }
+    if (allowance !== null && allowance >= v) setGo('Deposit ' + fmtAmt(v, token.decimals) + ' ' + token.symbol, false);
+    else setGo('Approve ' + token.symbol, false);
+  }
+  // Says what the wallet actually answered, by its EIP-1193 error code.
+  function fail(e) {
+    var code = e && (e.code !== undefined ? e.code : e.error && e.error.code), m = (e && e.message) || String(e), who = (e && e.who) || provName || 'Your wallet';
+    if (code === 4001 || code === 'ACTION_REJECTED') m = who + ' declined the request. If you did not see a wallet window, unlock ' + who + ' from the browser toolbar and try again.';
+    else if (code === -32002) m = 'A request is already waiting in ' + who + '. Open it from the browser toolbar to approve or reject it.';
+    else if (code === 4100) m = who + ' has not given this page access yet. Connect again and approve it.';
+    else if (code === 4900 || code === 4901) m = who + ' is not connected to any network. Open it and try again.';
+    else m = m.replace(/^Error:\s*/, '') + (code !== undefined && !/code/i.test(m) ? ' (code ' + code + ')' : '');
+    msg(m, 'err');
+    if (wallets.length > 1) $('msg').insertAdjacentHTML('beforeend', ' <button class="textbtn" id="switchWallet" type="button">Choose another wallet</button>');
+  }
+  document.addEventListener('click', function (e) { if (e.target && e.target.id === 'switchWallet') { msg(''); openPicker(); } });
+  $('go').onclick = async function () {
+    msg('');
+    if (!hasWallet()) { if (MOBILE) location.href = appLinks()[0][1]; else window.open('https://metamask.io/download/', '_blank', 'noopener'); return; }
+    if (!st || !chain || !token || chain.error) return;
+    var c = chain, t = token;
+    try {
+      // With several wallets installed Connect always asks which one, the last used pinned on top.
+      if (!account) { if (wallets.length > 1) { openPicker(); return; } await connect(); return; }
+      if (walletChain !== c.chain_id) { setGo('Switching…', true); await ensureChain(c); await syncWallet(); return; }
+      var v = parseAmt($('amt').value, t.decimals, quant()), dest = $('dest').value.trim().toLowerCase();
+      if (v === null || v <= 0n || !addrRe.test(dest)) { updateGo(); return; }
+      if (allowance !== null && allowance >= v) await deposit(c, t, v, dest); else await approve(c, t, v);
+    } catch (e) { fail(e); updateGo(); }
+  };
+
+  // ---- EVM helpers (no library: the calls are built by hand) ----
+  function hex32(bi) { return BigInt(bi).toString(16).padStart(64, '0'); }
+  function addr32(a) { return a.toLowerCase().replace(/^0x/, '').padStart(64, '0'); }
+  function strArg(s) { var bytes = new TextEncoder().encode(s), h = Array.prototype.map.call(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join(''); return hex32(bytes.length) + h.padEnd(Math.ceil(h.length / 64) * 64, '0'); }
+  // ---- wallets: every installed wallet announces itself (EIP-6963); the
+  // user picks one when there are several. window.ethereum is only the
+  // fallback, since with several extensions it belongs to whichever loaded last.
+  var wallets = [], prov = null, provName = '';
+  function lastWallet() { try { return localStorage.getItem('bridge.wallet') || ''; } catch (e) { return ''; } }
+  window.addEventListener('eip6963:announceProvider', function (e) {
+    var d = e.detail; if (!d || !d.provider || !d.info || wallets.some(function (w) { return w.info.uuid === d.info.uuid; })) return;
+    wallets.push(d);
+    if (!prov && d.info.rdns && d.info.rdns === lastWallet()) useProvider(d.provider, d.info);
+    updateGo();
+  });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+  function hasWallet() { return wallets.length > 0 || !!window.ethereum; }
+  function useProvider(p, info) {
+    if (prov === p) return;
+    prov = p; provName = (info && info.name) || 'your wallet';
+    try { if (info && info.rdns) localStorage.setItem('bridge.wallet', info.rdns); } catch (e) { }
+    if (p.on && !p.__argonBound) {
+      p.__argonBound = true;
+      p.on('accountsChanged', function (a) { if (prov !== p) return; account = ((a && a[0]) || '').toLowerCase(); loadWallet(); updateGo(); });
+      p.on('chainChanged', function (id) { if (prov !== p) return; walletChain = parseInt(id, 16); loadWallet(); updateGo(); });
+    }
+  }
+  // Picks the provider without asking when the choice is obvious.
+  function autoProvider() {
+    if (prov) return true;
+    if (wallets.length === 1) { useProvider(wallets[0].provider, wallets[0].info); return true; }
+    if (!wallets.length && window.ethereum) { useProvider(window.ethereum, { name: window.ethereum.isMetaMask ? 'MetaMask' : 'your wallet' }); return true; }
+    return false;
+  }
+  // Wallets people use most come first; the rest follow by name.
+  var POPULAR = ['io.metamask', 'io.rabby', 'com.coinbase.wallet', 'com.okex.wallet', 'com.trustwallet.app', 'me.rainbow', 'app.phantom', 'com.brave.wallet', 'io.zerion.wallet', 'app.backpack'];
+  function walletOrder() {
+    return wallets.slice().sort(function (a, b) {
+      var pa = POPULAR.indexOf(a.info.rdns), pb = POPULAR.indexOf(b.info.rdns);
+      return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb) || String(a.info.name || '').localeCompare(String(b.info.name || ''));
+    });
+  }
+  function walletIcon(w) {
+    var src = w.info.icon || '';
+    return /^data:image\/(png|svg\+xml|webp|jpeg|gif)[;,]/.test(src) || /^https:\/\//.test(src)
+      ? '<img class="wp-ic" alt="" src="' + esc(src) + '">'
+      : '<span class="wp-ic wp-ph">' + esc((w.info.name || '?').slice(0, 2)) + '</span>';
+  }
+  function renderPicker() {
+    var q = $('wpSearch').value.trim().toLowerCase(), last = lastWallet();
+    var list = walletOrder().filter(function (w) { return !q || String(w.info.name || '').toLowerCase().indexOf(q) >= 0; });
+    var lastW = null;
+    if (!q && last) list.forEach(function (w) { if (w.info.rdns === last) lastW = w; });
+    $('wpLast').innerHTML = lastW ? '<div class="wp-sec">Last used</div><button class="wp-last" type="button" data-i="' + wallets.indexOf(lastW) + '">' + walletIcon(lastW) + '<span>' + esc(lastW.info.name || 'Wallet') + '</span><small>Connect</small></button>' : '';
+    var rest = list.filter(function (w) { return w !== lastW; });
+    $('wpSecAll').hidden = !rest.length;
+    $('wpSecAll').textContent = q ? 'Results' : lastW ? 'Other wallets' : 'Installed';
+    $('wpList').innerHTML = rest.map(function (w) {
+      return '<button class="wp-tile" type="button" data-i="' + wallets.indexOf(w) + '" title="' + esc(w.info.name || 'Wallet') + '">' + walletIcon(w) + '<span class="nm">' + esc(w.info.name || 'Wallet') + '</span></button>';
+    }).join('');
+    $('wpEmpty').hidden = list.length > 0;
+  }
+  function openPicker() {
+    $('wpSearch').value = ''; $('wpSearchRow').hidden = wallets.length <= 6;
+    renderPicker(); $('walletPick').classList.add('show'); $('wpBody').scrollTop = 0;
+    setTimeout(function () { var f = !$('wpSearchRow').hidden && !MOBILE ? $('wpSearch') : document.querySelector('#walletPick .wp-last, #walletPick .wp-tile'); if (f) f.focus(); }, 30);
+  }
+  function closePicker() { $('walletPick').classList.remove('show'); }
+  $('wpSearch').oninput = renderPicker;
+  $('wpSearch').onkeydown = function (e) { if (e.key === 'Enter') { var f = document.querySelector('#walletPick .wp-last, #walletPick .wp-tile'); if (f) f.click(); } };
+  $('wpClose').onclick = closePicker;
+  $('walletPick').addEventListener('click', function (e) { if (e.target === this) closePicker(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePicker(); });
+  $('wpBody').onclick = function (e) {
+    var b = e.target.closest('.wp-tile, .wp-last'); if (!b) return;
+    var w = wallets[Number(b.dataset.i)]; if (!w) return; closePicker();
+    account = ''; walletChain = null; prov = null; useProvider(w.provider, w.info);
+    connect().catch(function (err) { fail(err); updateGo(); });
+  };
+  function rpc(method, params) { var p = prov || window.ethereum; if (!p) return Promise.reject(new Error('No wallet found in this browser.')); return p.request({ method: method, params: params || [] }); }
+  // chainCall reads a chain through the wallet when it is on that chain and
+  // through the chain's public RPC otherwise, so balances, receipts and block
+  // numbers do not depend on which chain the wallet is showing.
+  async function chainCall(c, method, params) {
+    if (prov && walletChain === c.chain_id) return rpc(method, params);
+    if (!c.rpc) throw new Error('Switch your wallet to ' + c.name + ' to continue.');
+    var r = await fetch(c.rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: method, params: params || [] }) });
+    var j = await r.json(); if (j.error) throw new Error(j.error.message || 'RPC error'); return j.result;
+  }
+  async function waitReceipt(c, h) { for (var i = 0; i < 240; i++) { var r = await chainCall(c, 'eth_getTransactionReceipt', [h]); if (r) return r; await sleep(2000); } throw new Error('Not confirmed in time. Track it with the hash ' + f.short(h, 10, 6) + '.'); }
+  // ensureChain switches the wallet to the chosen chain, adding it first if the wallet does not know it.
+  async function ensureChain(c) {
+    var hexId = '0x' + c.chain_id.toString(16);
+    try { if (parseInt(await rpc('eth_chainId'), 16) === c.chain_id) { walletChain = c.chain_id; return; } } catch (e) { }
+    try { await rpc('wallet_switchEthereumChain', [{ chainId: hexId }]); }
+    catch (e) {
+      if (e && e.code === 4001) throw new Error('Switch your wallet to ' + c.name + ' to continue.');
+      if (!c.rpc) throw new Error('Add ' + c.name + ' to your wallet, then try again.');
+      var p = { chainId: hexId, chainName: c.name, rpcUrls: [c.rpc], nativeCurrency: { name: c.native_symbol, symbol: c.native_symbol, decimals: 18 } };
+      if (c.explorer) p.blockExplorerUrls = [c.explorer];
+      await rpc('wallet_addEthereumChain', [p]);
+    }
+    walletChain = parseInt(await rpc('eth_chainId'), 16);
+    if (walletChain !== c.chain_id) throw new Error('Your wallet is not on ' + c.name + ' (chain id ' + c.chain_id + ').');
+  }
+  async function syncWallet() {
+    if (!autoProvider()) { updateGo(); return; }
+    try { walletChain = parseInt(await rpc('eth_chainId'), 16); } catch (e) { walletChain = null; }
+    if (!account) { try { var a = await rpc('eth_accounts'); account = ((a && a[0]) || '').toLowerCase(); } catch (e) { } }
+    loadWallet(); updateGo();
+  }
+  async function connect() {
+    if (!autoProvider()) { openPicker(); return; }
+    setGo('Waiting for ' + provName + '…', true);
+    $('goHint').textContent = 'Approve the connection in ' + provName + '. If no window opened, click the ' + provName + ' icon in your browser toolbar.';
+    try {
+      var accs = await rpc('eth_requestAccounts'); account = ((accs && accs[0]) || '').toLowerCase();
+      if (!account) throw new Error(provName + ' returned no account. Unlock it and try again.');
+      await syncWallet();
+    } catch (e) {
+      // With several wallets installed, a refusal forgets that choice so the
+      // next Connect asks which wallet to use instead of trying it again.
+      e.who = provName;
+      if (!account && wallets.length > 1) { prov = null; provName = ''; try { localStorage.removeItem('bridge.wallet'); } catch (x) { } }
+      throw e;
+    } finally { updateGo(); }
+  }
+  var balErr = false;
+  function renderBal() {
+    var has = account && bal !== null && token;
+    $('balLine').hidden = !has; $('pcts').hidden = !has || bal === 0n;
+    if (has) $('balVal').textContent = fmt2(bal.toString(), token.decimals) + ' ' + token.symbol;
+    $('balNone').textContent = !has && account && token && balErr ? 'Balance unavailable' : '';
+  }
+  // Reads through the wallet when it sits on the chosen chain, otherwise
+  // through the chain's public RPC; whichever fails, the other is tried.
+  async function readToken(c, t, a) {
+    var calls = [[{ to: t.address, data: '0x' + SEL_BALANCE + addr32(a) }, 'latest'], [{ to: t.address, data: '0x' + SEL_ALLOWANCE + addr32(a) + addr32(c.vault) }, 'latest']];
+    var viaWallet = !!(prov && walletChain === c.chain_id);
+    var paths = viaWallet ? ['wallet', 'rpc'] : ['rpc', 'wallet'];
+    var lastErr = null;
+    for (var i = 0; i < paths.length; i++) {
+      try {
+        if (paths[i] === 'wallet') {
+          if (!prov) continue;
+          if (parseInt(await rpc('eth_chainId'), 16) !== c.chain_id) continue;
+          return await Promise.all([rpc('eth_call', calls[0]), rpc('eth_call', calls[1])]);
+        }
+        if (!c.rpc) continue;
+        var res = await Promise.all(calls.map(function (p) {
+          return fetch(c.rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: p }) })
+            .then(function (r) { return r.json(); }).then(function (j) { if (j.error) throw new Error(j.error.message || 'RPC error'); return j.result; });
+        }));
+        return res;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('no way to read the balance');
+  }
+  async function loadWallet() {
+    bal = null; allowance = null; balErr = false; renderBal();
+    if (!account || !chain || !token) { updateGo(); return; }
+    var c = chain, t = token, a = account;
+    try {
+      var r = await readToken(c, t, a);
+      if (c !== chain || t !== token || a !== account) return;
+      var b = r[0] && r[0] !== '0x' ? BigInt(r[0]) : 0n, al = r[1] && r[1] !== '0x' ? BigInt(r[1]) : 0n;
+      bal = b; allowance = al;
+    } catch (e) { if (c === chain && t === token && a === account) balErr = true; }
+    renderBal(); updateGo();
+  }
+
+  // ---- deposit flow: approve, deposit, confirmations, done ----
+  function step(n, state, sub) { var el = $('s' + n); el.className = 'step ' + state; el.querySelector('.ic').innerHTML = state === 'done' ? ic('check') : ''; $('s' + n + 'b').textContent = sub || ''; }
+  function startFlow(c, t, v) {
+    flow = { c: c, t: t, v: v, busy: false, confs: 0 };
+    $('prog').hidden = false; step(1, '', t.symbol); step(2, '', ''); step(3, '', c.confirmations + ' blocks');
+  }
+  function busy(on, label) { if (!flow) return; flow.busy = on; var b = $('go'); b.disabled = on; b.classList.toggle('wait', on); if (on) b.textContent = label || 'Working…'; }
+  async function approve(c, t, v) {
+    if (!flow || flow.c !== c || flow.t !== t) startFlow(c, t, v);
+    flow.v = v; step(1, 'now', 'In your wallet'); busy(true, 'Confirm in your wallet…');
+    try {
+      var h = await rpc('eth_sendTransaction', [{ from: account, to: t.address, data: '0x' + SEL_APPROVE + addr32(c.vault) + hex32(v) }]);
+      step(1, 'now', 'Confirming'); busy(true, 'Approving ' + t.symbol + '…');
+      var rc = await waitReceipt(c, h);
+      if (rc.status !== '0x1') throw new Error('The approval failed on ' + c.name + '. Nothing was taken.');
+      allowance = v; step(1, 'done', fmtAmt(v, t.decimals) + ' ' + t.symbol);
+    } catch (e) { step(1, '', t.symbol); throw e; }
+    finally { busy(false); updateGo(); }
+  }
+  async function deposit(c, t, v, dest) {
+    if (!flow || flow.c !== c || flow.t !== t) { startFlow(c, t, v); step(1, 'done', 'Already approved'); }
+    flow.v = v; flow.dest = dest; step(2, 'now', 'In your wallet'); busy(true, 'Confirm in your wallet…');
+    try {
+      var h = await rpc('eth_sendTransaction', [{ from: account, to: c.vault, data: '0x' + SEL_DEPOSIT + addr32(t.address) + hex32(v) + hex32(96) + strArg(dest) }]);
+      flow.hash = h; step(2, 'now', 'Confirming'); busy(true, 'Depositing…');
+      var rc = await waitReceipt(c, h);
+      if (rc.status !== '0x1') throw new Error('The deposit failed on ' + c.name + '. Nothing was taken.');
+      var log = (rc.logs || []).filter(function (l) { return l.address && l.address.toLowerCase() === c.vault && l.topics && l.topics[0] === TOPIC_DEPOSIT; })[0];
+      if (log) flow.id = Number(BigInt(log.topics[1]));
+      flow.block = BigInt(rc.blockNumber);
+      if (allowance !== null) allowance = allowance >= v ? allowance - v : 0n;
+      step(2, 'done', f.short(h, 6, 4)); step(3, 'now', '0 of ' + c.confirmations); busy(true, 'Confirming on ' + c.name + '…');
+      loadWallet();
+      watch(flow);
+    } catch (e) { step(2, '', ''); busy(false); updateGo(); throw e; }
+  }
+  async function watch(fl) {
+    var c = fl.c, target = Number(c.confirmations || 0);
+    while (flow === fl) {
+      try { var bn = BigInt(await chainCall(c, 'eth_blockNumber', [])); fl.confs = bn >= fl.block ? Number(bn - fl.block) + 1 : 0; } catch (e) { }
+      try { var r = await fetch('/api/deposit/' + fl.hash); if (r.ok) { var d = await r.json(); if (d && d.id) fl.id = d.id; if (d && d.status) fl.status = d.status; } } catch (e) { }
+      if (flow !== fl) return;
+      if (fl.status === 'reorged') { step(3, 'now', 'Reorganised'); fl.busy = false; msg('This deposit left ' + c.name + ' in a chain reorganisation, so no ' + ASSET + ' is issued for it. Its transaction is ' + f.short(fl.hash, 10, 6) + '.', 'err'); return; }
+      step(3, 'now', Math.min(fl.confs, target) + ' of ' + target);
+      if (fl.status === 'issued' || fl.status === 'confirmed' || fl.confs >= target) { step(3, 'done', fl.status === 'confirmed' ? ASSET + ' issued' : 'Confirmed'); showDone(fl); return; }
+      await sleep(4000);
+    }
+  }
+  function showDone(fl) {
+    fl.busy = false;
+    $('depForm').hidden = true; $('depDone').hidden = false;
+    $('doneTitle').textContent = fmtAmt(fl.v, fl.t.decimals) + ' ' + fl.t.symbol + ' deposited';
+    var bps = Number(fl.c.deposit_fee_bps || 0), net = fl.v - fl.v * BigInt(bps) / 10000n;
+    $('doneLine').textContent = (fl.id ? 'Deposit #' + fl.id + ' on ' : 'On ') + fl.c.name + ' · ' + uarg(toUnits(net, fl.t.decimals)) + ' ' + ASSET + ' to ' + f.short(fl.dest, 9, 5);
+    $('doneStatus').textContent = fl.status === 'confirmed' ? ASSET + ' is in your wallet.' : fl.status === 'issued' ? 'The guardians have issued your ' + ASSET + '.' : 'The guardians issue your ' + ASSET + ' next.';
+    var u = txURL(fl.c, fl.hash); $('doneExplorer').hidden = !u; $('doneExplorer').href = u || '#';
+  }
+  $('doneTrack').onclick = function () { if (!flow) return; $('trackChain').value = flow.c.chain_id; $('trackId').value = flow.hash; openSheet('secTrack'); track(); };
+  $('doneNew').onclick = function () { flow = null; $('prog').hidden = true; $('depDone').hidden = true; $('depForm').hidden = false; $('amt').value = ''; msg(''); recalc(); loadWallet(); };
+
+  // ---- faucet (test tokens only): mint(msg.sender, 100 × 10^decimals), built by hand like the deposit ----
+  $('faucet').onclick = async function () {
+    if (!hasWallet()) { updateGo(); msg('Connect a wallet to get test tokens.', 'err'); return; }
+    var c = chain, t = token; if (!c || !t || !t.mint) return;
+    var b = $('faucet'); b.disabled = true; msg('');
+    try {
+      if (!account && wallets.length > 1) { b.disabled = false; openPicker(); return; }
+      if (!account) { await connect(); if (!account) { b.disabled = false; return; } }
+      await ensureChain(c); walletChain = c.chain_id;
+      msg('Confirm the mint in your wallet.');
+      var h = await rpc('eth_sendTransaction', [{ from: account, to: t.address, data: '0x' + SEL_MINT + addr32(account) + hex32(100n * 10n ** BigInt(t.decimals)) }]);
+      msg('Minting 100 test ' + t.symbol + '…'); var rc = await waitReceipt(c, h);
+      if (rc.status !== '0x1') throw new Error('The mint failed. Nothing was minted.');
+      msg(''); UI.toast('100 test ' + t.symbol + ' minted on ' + c.name, 'ok'); loadWallet();
+    } catch (e) { fail(e); }
+    b.disabled = false; updateGo();
+  };
+
+  // ---- deposit address: no wallet needed. Any wallet or exchange sends the
+  // token to an address of the chosen Argonmine address on the chosen chain;
+  // the leader forwards it into the vault (docs/BRIDGE.md, "Deposit addresses"). ----
+  var da = { c: null, t: null, info: null, status: null, statusAt: null, statusErr: '', timer: null, seq: 0, prev: 'form' };
+  function routerChains() { return ((st && st.chains) || []).filter(function (c) { return !!c.router; }); }
+  function fillDaChains() {
+    var sel = $('daChainSel'), cs = routerChains();
+    var html = cs.map(function (c) { return '<option value="' + esc(c.chain_id) + '">' + esc(c.name) + (c.error ? ' (unreachable)' : '') + '</option>'; }).join('');
+    if (sel.dataset.sig === html) return;
+    var cur = sel.value; sel.innerHTML = html; sel.dataset.sig = html;
+    if (cur && cs.some(function (c) { return String(c.chain_id) === cur; })) sel.value = cur;
+  }
+  function pickDa() {
+    var c = chainById($('daChainSel').value); if (!c || !c.router) c = routerChains()[0] || null;
+    da.c = c; fillTokens($('daTokSel'), c); da.t = tokenOf(c, $('daTokSel').value);
+    renderChips('da', c, da.t);
+    var bps = c ? Number(c.deposit_fee_bps || 0) : 0;
+    $('daFeeLine').textContent = c ? (bps ? 'Fee ' + pct(bps) : 'No fee') + ' · ' + eta(c) : '';
+    renderDa();
+  }
+  function daMsg(text, kind) { var m = $('daMsg'); m.className = 'note ' + (kind || ''); m.textContent = text || ''; }
+  function openDa() {
+    if (!routerChains().length) return;
+    closePicker(); setView('deposit'); msg('');
+    da.prev = $('depDone').hidden ? 'form' : 'done';
+    $('depForm').hidden = true; $('depDone').hidden = true; $('depAddr').hidden = false;
+    fillDaChains();
+    if (!da.info && chain && chain.router) $('daChainSel').value = chain.chain_id;
+    pickDa();
+    if (!da.info && token && da.c && tokenOf(da.c, token.address)) { $('daTokSel').value = token.address; pickDa(); }
+    var d = $('dest').value.trim().toLowerCase();
+    if (!$('daDest').value.trim() && addrRe.test(d)) $('daDest').value = d;
+    if (da.info) startPoll();
+    if (!MOBILE) setTimeout(function () { var el = da.info ? $('daCopy') : addrRe.test($('daDest').value.trim().toLowerCase()) ? $('daGo') : $('daDest'); if (el) el.focus(); }, 30);
+  }
+  function closeDa() {
+    stopPoll(); daMsg(''); $('depAddr').hidden = true;
+    if (da.prev === 'done') $('depDone').hidden = false; else $('depForm').hidden = false;
+    updateGo();
+  }
+  $('daOpen').onclick = openDa; $('wpNoWallet').onclick = openDa; $('daBack').onclick = closeDa;
+  $('daChainSel').onchange = function () { var to = da.info ? da.info.to : ''; stopPoll(); da.info = null; da.status = null; daMsg(''); pickDa(); if (to) daLoad(to); };
+  $('daTokSel').onchange = pickDa;
+  $('daChange').onclick = function () { stopPoll(); da.info = null; da.status = null; daMsg(''); renderDa(); $('daDest').focus(); };
+  $('daDest').oninput = function () { var v = $('daDest').value.trim().toLowerCase(), bad = v && !addrRe.test(v); $('daDest').setAttribute('aria-invalid', bad ? 'true' : 'false'); $('daDestErr').textContent = bad && v.length >= HRP.length + 60 ? 'Not a valid ' + HRP + '1… address.' : ''; };
+  $('daDest').onkeydown = function (e) { if (e.key === 'Enter') $('daGo').click(); };
+  $('daGo').onclick = function () {
+    var to = $('daDest').value.trim().toLowerCase();
+    if (!addrRe.test(to)) { $('daDest').setAttribute('aria-invalid', 'true'); $('daDestErr').textContent = to ? 'Not a valid ' + HRP + '1… address (' + (HRP.length + 60) + ' characters).' : 'Enter your ' + BRAND + ' address.'; return; }
+    daLoad(to);
+  };
+  $('daCopy').onclick = function () { if (da.info) UI.copy(da.info.address, 'Deposit address'); };
+  async function daLoad(to) {
+    var c = da.c; if (!c) return;
+    var seq = ++da.seq, b = $('daGo'); daMsg('');
+    b.disabled = true; b.classList.add('wait'); b.textContent = 'Getting the address…';
+    try {
+      var r = await fetch('/api/deposit-address?chain=' + c.chain_id + '&to=' + encodeURIComponent(to));
+      var j = await r.json().catch(function () { return {}; });
+      if (seq !== da.seq) return;
+      if (!r.ok || !j.address) throw new Error(j.error || 'The bridge could not give an address. Try again.');
+      da.info = j; da.status = null; da.statusErr = '';
+      renderDa(); startPoll();
+    } catch (e) { if (seq === da.seq) daMsg((e && e.message) || String(e), 'err'); }
+    finally { if (seq === da.seq) { b.disabled = false; b.classList.remove('wait'); b.textContent = 'Show deposit address'; } }
+  }
+  function renderDa() {
+    var i = da.info, has = !!(i && da.c && i.chain_id === da.c.chain_id);
+    $('daForm').hidden = has; $('daOut').hidden = !has; $('daChange').hidden = !has;
+    if (!has) return;
+    if ($('daAddr').textContent !== i.address) { $('daAddr').textContent = i.address; $('daQR').src = '/qr.svg?d=' + encodeURIComponent(i.address); }
+    var ex = $('daExplorer'); ex.hidden = !i.explorer; if (i.explorer) ex.href = i.explorer;
+    var toks = i.tokens || [], tk = toks.filter(function (x) { return da.t && x.address === da.t.address; })[0] || toks[0], bps = Number(i.deposit_fee_bps || 0);
+    var facts = ['Send ' + toks.map(function (x) { return x.symbol; }).join(' or ') + ' on ' + i.chain + ' only.'];
+    if (tk) facts.push('Minimum ' + fmt2(tk.min_deposit, tk.decimals) + ' ' + tk.symbol + '.');
+    facts.push('Arrives as ' + ASSET + ' at ' + f.short(i.to, 9, 5) + ' after ' + i.confirmations + ' confirmations' + (bps ? ', less the ' + pct(bps) + ' fee.' : ', with no fee.'));
+    $('daFacts').innerHTML = facts.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '<li class="warn">Sending any other token or chain loses it.</li>';
+    renderDaStatus();
+  }
+  function startPoll() { stopPoll(); pollDa(); da.timer = setInterval(pollDa, 10000); }
+  function stopPoll() { if (da.timer) clearInterval(da.timer); da.timer = null; }
+  async function pollDa() {
+    var i = da.info; if (!i) return;
+    try {
+      var r = await fetch('/api/deposit-address/status?chain=' + i.chain_id + '&to=' + encodeURIComponent(i.to)), j = await r.json();
+      if (da.info !== i) return;
+      if (!r.ok) throw new Error(j.error || 'unavailable');
+      da.status = j; da.statusAt = new Date(); da.statusErr = '';
+    } catch (e) { if (da.info !== i) return; da.statusErr = 'unavailable'; }
+    renderDaStatus();
+  }
+  function setDaStatus(kind, title, subHTML, subKind) {
+    $('daStatus').className = 'da-status' + (kind ? ' da-' + kind : '');
+    $('daIc').innerHTML = kind === 'done' ? ic('check') : '';
+    $('daStTitle').textContent = title;
+    var s = $('daStSub'); s.className = subKind || ''; s.innerHTML = subHTML || ''; s.title = '';
+  }
+  function linkHTML(u, label) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(label) + '</a>' : ''; }
+  // The newest thing that happened wins: funds being forwarded, funds
+  // waiting at the address, then the deposit the last forward made.
+  function renderDaStatus() {
+    var i = da.info, s = da.status; if (!i) return;
+    if (!s) { setDaStatus('', da.statusErr ? 'Status unavailable' : 'Checking the address…', da.statusErr ? 'Retrying every 10 seconds.' : ''); return; }
+    var cc = chainById(i.chain_id) || da.c, conf = Number(s.confirmations || 0), sweeps = s.sweeps || [], deps = s.deposits || [];
+    var amt = function (u, dec, sym) { return fmt2(u, dec) + ' ' + sym; };
+    var open = sweeps.filter(function (x) { return x.status === 'pending' || x.status === 'sent'; })[0];
+    if (open) {
+      var late = open.status === 'pending' && !!open.error;
+      setDaStatus(late ? 'warn' : 'now', 'Received ' + amt(open.amount, open.decimals, open.token_symbol) + ' · forwarding',
+        late ? 'Delayed. The bridge retries on its own.' : (open.tx && linkHTML(txURL(cc, open.tx), 'Forwarding transaction')) || 'Forwarding to the vault.', late ? 'warn' : '');
+      if (late) $('daStSub').title = open.error;
+      return;
+    }
+    var held = (s.balances || []).filter(function (b) { return /^[0-9]+$/.test(b.amount || '') && BigInt(b.amount) > 0n; })[0];
+    if (held) {
+      var a = BigInt(held.amount), min = BigInt(held.min_deposit || 0), tx = held.last_tx ? linkHTML(txURL(cc, held.last_tx), 'View transfer') : '';
+      if (a < min) { setDaStatus('warn', 'Received ' + amt(held.amount, held.decimals, held.symbol), esc('Below the minimum of ' + amt(held.min_deposit, held.decimals, held.symbol) + '. Send ' + amt((min - a).toString(), held.decimals, held.symbol) + ' more.') + (tx ? ' ' + tx : ''), 'warn'); return; }
+      setDaStatus('now', 'Received ' + amt(held.amount, held.decimals, held.symbol) + ' · forwarding', esc('Moves to the vault after ' + conf + ' confirmations.') + (tx ? ' ' + tx : ''));
+      return;
+    }
+    var last = sweeps[0] && sweeps[0].status === 'confirmed' ? sweeps[0] : null;
+    var d = last ? deps.filter(function (x) { return last.deposit_id ? x.id === last.deposit_id : x.created >= last.created; })[0] : deps[0];
+    if (last || d) {
+      var fwd = linkHTML(txURL(cc, last ? last.tx : d.evm_tx), 'Forwarding transaction');
+      if (!d || d.status === 'pending' || d.status === 'issued') {
+        var n = d ? Math.max(0, Number(s.head || 0) - Number(d.block) + 1) : 0;
+        var sub = !d ? 'Waiting for the guardians.' : d.status === 'issued' ? ASSET + ' sent, waiting for a block.' : n >= conf ? 'Confirmed. Waiting for the next issuance.' : n + ' of ' + conf + ' confirmations.';
+        setDaStatus('now', 'Forwarded · issuing ' + ASSET, esc(sub) + (fwd ? ' ' + fwd : ''));
+        return;
+      }
+      if (d.status === 'confirmed') { setDaStatus('done', 'Issued ' + uarg(d.amount || 0) + ' ' + ASSET, esc('To ' + f.short(d.to, 9, 5) + ' · deposit #' + d.id) + (fwd ? ' · ' + fwd : '')); return; }
+      setDaStatus('warn', 'Forwarded · needs a guardian', esc(d.error || 'The guardians could not issue this deposit.'), 'warn');
+      return;
+    }
+    setDaStatus('', 'Waiting for a transfer', esc('Checked ' + (da.statusAt ? da.statusAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '') + '.'));
+  }
+
+  // ---- paste ----
+  var canPaste = !!(navigator.clipboard && navigator.clipboard.readText);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-paste]'), function (b) {
+    var inp = $(b.dataset.paste);
+    if (!canPaste) { b.hidden = true; inp.classList.add('plain'); return; }
+    b.onclick = async function () { try { var t = await navigator.clipboard.readText(); inp.value = String(t || '').trim(); inp.dispatchEvent(new Event('input')); inp.focus(); } catch (e) { UI.toast('Paste is blocked here. Paste into the field by hand.', 'warn'); } };
+  });
+
+  // ---- withdraw: uARG in, USDC or USDT out ----
+  // The page asks the bridge for a withdrawal: the payout's address and a
+  // memo of its own. The user pays the uARG there from any Argonmine wallet
+  // with the memo, and the bridge reports every payment's progress until
+  // the payout lands. The address alone decides where the payout goes, so a
+  // payment without the memo still arrives; the memo matches it to this
+  // withdrawal. ?w=<memo> keeps the withdrawal across reloads and devices.
+  var wd = null, wdTimer = null;
+
+  // A withdrawal memo as typed or linked, bare (eight characters of the
+  // bridge's alphabet), or '' for anything else: nothing else from ?w= is
+  // ever shown or sent.
+  function memoOf(x) { x = String(x || '').replace(/[\s-]/g, '').toUpperCase(); return /^[2-9A-HJ-NP-Z]{8}$/.test(x) ? x : ''; }
+  function memoFmt(c) { return c.slice(0, 4) + '-' + c.slice(4); }
+
+  // ---- swap addresses: the payout, read from the address itself ----
+  // A swap address names its payout (swapaddr/swapaddr.go): bech32m, a
+  // payload of magic 83 ba 10, a byte that makes it a valid key, the chain
+  // id (big-endian), the token symbol (zero padded) and the EVM recipient.
+  // The page shows an address only when it pays exactly what is shown.
+  var B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  function polymod(v) {
+    var G = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3], chk = 1;
+    for (var i = 0; i < v.length; i++) { var top = chk >>> 25; chk = ((chk & 0x1ffffff) << 5) ^ v[i]; for (var j = 0; j < 5; j++) if ((top >>> j) & 1) chk ^= G[j]; }
+    return chk >>> 0;
+  }
+  // The 32-byte payload of an address of this network, or null.
+  function payloadOf(a) {
+    a = String(a || '').trim(); var lo = a.toLowerCase();
+    if (a !== lo && a !== a.toUpperCase()) return null; a = lo;
+    var sep = a.lastIndexOf('1'); if (sep < 1 || sep + 7 > a.length || a.slice(0, sep) !== HRP) return null;
+    var v = [], d = [], i;
+    for (i = 0; i < HRP.length; i++) v.push(HRP.charCodeAt(i) >> 5); v.push(0); for (i = 0; i < HRP.length; i++) v.push(HRP.charCodeAt(i) & 31);
+    for (i = sep + 1; i < a.length; i++) { var c = B32.indexOf(a[i]); if (c < 0) return null; d.push(c); }
+    if (polymod(v.concat(d)) !== 0x2bc830a3) return null;
+    d = d.slice(0, -6); if (d[0] !== 0) return null;
+    var acc = 0, bits = 0, out = [];
+    for (i = 1; i < d.length; i++) { acc = ((acc << 5) | d[i]) & 0x1fff; bits += 5; while (bits >= 8) { bits -= 8; out.push((acc >> bits) & 0xff); } }
+    if (bits >= 5 || ((acc << (8 - bits)) & 0xff)) return null;
+    return out.length === 32 ? out : null;
+  }
+  function hexOf(b) { return b.map(function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join(''); }
+  var SECP_P = null;
+  function modpow(b, e, m) { var r = 1n; b %= m; while (e > 0n) { if (e % 2n === 1n) r = r * b % m; b = b * b % m; e = e / 2n; } return r; }
+  function validX(bytes) {
+    if (!SECP_P) SECP_P = BigInt('0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
+    var x = BigInt('0x' + hexOf(bytes)); if (x >= SECP_P) return false;
+    var y2 = (modpow(x, 3n, SECP_P) + 7n) % SECP_P;
+    return y2 === 0n || modpow(y2, (SECP_P - 1n) / 2n, SECP_P) === 1n;
+  }
+  // { chain_id, symbol, to } for a swap address, { bad: true } for one that
+  // only looks like it, null for anything else.
+  function swapOf(p) {
+    if (!p || p[0] !== 0x83 || p[1] !== 0xba || (p[2] & 0xf0) !== 0x10) return null;
+    if (p[2] !== 0x10) return { bad: true };
+    var chain = p[4] * 16777216 + (p[5] << 16) + (p[6] << 8) + p[7], end = 12, sym = '', i;
+    while (end > 8 && p[end - 1] === 0) end--;
+    for (i = 8; i < end; i++) { var c = p[i]; if (!(c >= 65 && c <= 90 || c >= 48 && c <= 57)) return { bad: true }; sym += String.fromCharCode(c); }
+    var to = p.slice(12);
+    if (!sym || !chain || to.every(function (x) { return x === 0; })) return { bad: true };
+    var q = p.slice(); for (i = 0; i <= p[3]; i++) { q[3] = i; if (validX(q)) break; }
+    if (i !== p[3]) return { bad: true };
+    return { chain_id: chain, symbol: sym, to: '0x' + hexOf(to) };
+  }
+  // Whether addr is the swap address that pays sym on chain chainId to to,
+  // and nothing else.
+  function swapPays(addr, chainId, sym, to) {
+    var x; try { x = swapOf(payloadOf(addr)); } catch (e) { return false; }
+    return !!(x && !x.bad && x.chain_id === Number(chainId) && x.symbol === String(sym || '').toUpperCase() && x.to === String(to || '').toLowerCase());
+  }
+
+  function wdUnits() { return parseAmt($('rAmt').value, 8, 8); }
+  function wdEvm() { return $('evm').value.trim(); }
+  // The Argonmine blocks a withdrawal of u units waits before it is paid: the
+  // first tier that covers it, never fewer than l1_confirmations.
+  function wdTiers() { return (st && Array.isArray(st.l1_confirmation_tiers)) ? st.l1_confirmation_tiers : []; }
+  function wdDepth(u) {
+    var base = Number((st && st.l1_confirmations) || 0), tiers = wdTiers();
+    for (var i = 0; i < tiers.length; i++) if (u === null || u <= BigInt(tiers[i].up_to)) return Math.max(base, Number(tiers[i].confirmations));
+    return base;
+  }
+  function wdMax() { var t = wdTiers(); return t.length ? BigInt(t[t.length - 1].up_to) : null; }
+  function blocksEta(n) { var m = Math.max(1, n) * 10; return m >= 90 ? 'about ' + Math.round(m / 60) + ' hours' : m >= 45 ? 'about 1 hour' : 'about ' + m + ' min'; }
+  function wdEta(u) { var m = wdDepth(u) * 10 + 5; return m >= 90 ? 'about ' + Math.round(m / 60) + ' hours' : m >= 45 ? 'about 1 hour' : 'about ' + m + ' min'; }
+  var WD_MIN = 100000000n; // 1 uARG, as the bridge asks
+  // The smallest withdrawal in a token: 1 uARG, or what pays the token's
+  // minimum release (gross token units) if that is more, as the bridge asks.
+  function wdMin(t) {
+    var m = WD_MIN;
+    if (!t || !t.min_release) return m;
+    var d = BigInt(t.decimals), r = BigInt(t.min_release), u;
+    if (d >= 8n) { var step = 10n ** (d - 8n); u = (r + step - 1n) / step; } else u = r * 10n ** (8n - d);
+    return u > m ? u : m;
+  }
+  function recalcRedeem() {
+    var out = $('rOut'), line = $('rLine');
+    if (!rChain || !rToken) { out.textContent = '0.00'; line.textContent = ''; wdButton(); return; }
+    var bps = Number(rChain.release_fee_bps || 0), u = wdUnits(), parts = [];
+    if (u === null) { out.textContent = '0.00'; parts.push(bps ? 'Fee ' + pct(bps) : 'No fee'); }
+    else {
+      var gross = fromUnits(u, rToken.decimals), fee = gross * BigInt(bps) / 10000n, paid = gross - fee;
+      out.textContent = fmt2(paid.toString(), rToken.decimals);
+      parts.push(bps ? 'Fee ' + pct(bps) + ' · ' + fmt2(fee.toString(), rToken.decimals) + ' ' + rToken.symbol : 'No fee');
+    }
+    if (st) parts.push(wdEta(u));
+    var a = liq(rToken);
+    if (a === 0n) parts = ['No ' + rToken.symbol + ' liquidity on ' + rChain.name + ' right now'];
+    else if (a !== null && u !== null && fromUnits(u, rToken.decimals) > a) parts.push(fmt2(a.toString(), rToken.decimals) + ' ' + rToken.symbol + ' available');
+    line.textContent = parts.join(' · ');
+    line.classList.toggle('warn', a === 0n);
+    wdButton();
+  }
+  function wdButton() {
+    var b = $('wdGo'), u = wdUnits(), label = 'Continue', off = false;
+    if (b.classList.contains('wait')) return;
+    if (!st || !rChain || !rToken) { label = liveOk ? 'Loading…' : 'Bridge unreachable'; off = true; }
+    else if (rChain.error) { label = rChain.name + ' is unreachable'; off = true; }
+    else if (bridgePause()) { label = 'The bridge is paused'; off = true; }
+    else if (chainPaused(rChain)) { label = 'Payouts on ' + rChain.name + ' are paused'; off = true; }
+    else if (liq(rToken) === 0n) { label = 'No ' + rToken.symbol + ' liquidity on ' + rChain.name; off = true; }
+    else if (!evmRe.test(wdEvm())) { label = 'Enter your address'; off = true; }
+    else if (u === null || u <= 0n) { label = 'Enter an amount'; off = true; }
+    else if (u < wdMin(rToken)) { label = 'At least ' + uarg(wdMin(rToken)) + ' ' + ASSET; off = true; }
+    else if (wdMax() !== null && u > wdMax()) { label = 'At most ' + uarg(wdMax()) + ' ' + ASSET + ' per withdrawal'; off = true; }
+    else if (liq(rToken) !== null && fromUnits(u, rToken.decimals) > liq(rToken)) { label = 'Only ' + fmt2(rToken.available_now, rToken.decimals) + ' ' + rToken.symbol + ' available now'; off = true; }
+    b.textContent = label; b.disabled = off;
+  }
+  function syncUseAcct() { $('useAcct').hidden = !account || wdEvm().toLowerCase() === account; }
+  $('useAcct').onclick = function () { $('evm').value = account; $('evm').dispatchEvent(new Event('input')); };
+  $('rAmt').oninput = recalcRedeem;
+  $('evm').oninput = function () { var v = wdEvm(), bad = v && !evmRe.test(v); $('evm').setAttribute('aria-invalid', bad ? 'true' : 'false'); $('evmErr').textContent = bad && v.length >= 42 ? 'Not a valid 0x address (42 characters).' : ''; syncUseAcct(); wdButton(); };
+  $('evm').onblur = function () { var v = wdEvm(); if (v && !evmRe.test(v)) $('evmErr').textContent = 'Not a valid 0x address (42 characters).'; };
+  $('rAmt').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('wdGo').disabled) $('wdGo').click(); });
+  $('evm').addEventListener('keydown', function (e) { if (e.key === 'Enter') { if (!$('wdGo').disabled) $('wdGo').click(); else if (evmRe.test(wdEvm())) $('rAmt').focus(); } });
+  function wdMsg(text, kind) { var m = $('wdMsg'); m.className = 'note ' + (kind || ''); m.textContent = text || ''; }
+
+  // ---- remembering withdrawals: the URL, and a short list in this browser ----
+  function wdSaved() { try { var l = JSON.parse(localStorage.getItem('bridge.withdrawals') || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function wdSave(v) {
+    try {
+      var l = wdSaved().filter(function (x) { return x && x.code !== v.code; });
+      l.unshift({ code: v.code, memo: v.memo, created: v.created, done: v.status === 'completed' && !Number(v.remaining) });
+      localStorage.setItem('bridge.withdrawals', JSON.stringify(l.slice(0, 10)));
+    } catch (e) { }
+  }
+  function wdURL(code) {
+    try { var u = new URL(location.href); if (code) u.searchParams.set('w', code); else u.searchParams.delete('w'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+  }
+  function wdResumeOffer() {
+    var last = wdSaved().filter(function (x) { return x && memoOf(x.code) && !x.done && Date.now() / 1000 - Number(x.created || 0) < 7 * 86400; })[0];
+    $('wdResume').hidden = !last || !!wd;
+    if (last) { $('wdResumeBtn').textContent = 'Continue withdrawal ' + memoFmt(memoOf(last.code)); $('wdResumeBtn').dataset.code = memoOf(last.code); }
+  }
+  $('wdResumeBtn').onclick = function () { wdLoad(this.dataset.code, true); };
+
+  // A new withdrawal: the bridge answers with the address and the memo. The
+  // answer must name exactly what was asked, or nothing is shown.
+  $('wdGo').onclick = async function () {
+    var b = $('wdGo'), u = wdUnits(), c = rChain, t = rToken, to = wdEvm();
+    if (b.disabled || u === null || !c || !t) return;
+    b.disabled = true; b.classList.add('wait'); b.textContent = 'Preparing your address…'; wdMsg('');
+    try {
+      var res = await fetch('/api/withdrawals', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chain_id: c.chain_id, token: t.symbol, to: to, amount: fmtTok(u.toString(), 8, 8, 0, true) }) });
+      var v = await res.json().catch(function () { return {}; });
+      if (!res.ok || !v.code) throw new Error(v.error || 'The bridge could not start the withdrawal. Try again.');
+      // The address alone decides the payout: it must pay exactly the chain,
+      // token and recipient asked for, read from the address itself.
+      if (String(v.to).toLowerCase() !== to.toLowerCase() || Number(v.chain_id) !== c.chain_id || String(v.token).toUpperCase() !== String(t.symbol).toUpperCase() ||
+        String(v.amount) !== u.toString() || memoOf(v.code) !== v.code || !swapPays(v.address, c.chain_id, t.symbol, to)) throw new Error('The bridge answered with a different withdrawal, so nothing is shown. Try again.');
+      wdOpen(v);
+    } catch (e) { wdMsg(e.message || String(e), 'err'); }
+    finally { b.classList.remove('wait'); wdButton(); }
+  };
+  async function wdLoad(code, quiet) {
+    code = memoOf(code);
+    if (!code) { if (!quiet) { setView('redeem'); wdMsg('That link does not hold a withdrawal memo.', 'err'); } wdURL(''); return false; }
+    try {
+      var res = await fetch('/api/withdrawal/' + code, { cache: 'no-store' });
+      var v = await res.json().catch(function () { return {}; });
+      if (!res.ok || !v.code) throw new Error(res.status === 404 ? 'No withdrawal has the memo ' + memoFmt(code) + '.' : (v.error || 'The bridge is unreachable. Try again.'));
+      if (v.code !== code || !swapPays(v.address, v.chain_id, v.token, v.to)) throw new Error('The bridge answered with a withdrawal whose address does not pay what it shows, so nothing is shown.');
+      setView('redeem'); wdOpen(v); return true;
+    } catch (e) { if (!quiet) { setView('redeem'); wdMsg(e.message || String(e), 'err'); } wdURL(''); return false; }
+  }
+  function wdOpen(v) {
+    wd = { code: v.code, v: v };
+    $('wdForm').hidden = true; $('wdNext').hidden = false; $('wdResume').hidden = true; $('wdNextMsg').textContent = '';
+    wdURL(v.code); wdSave(v);
+    $('wdIn').textContent = uarg(v.amount) + ' ' + ASSET;
+    $('wdOutMk').innerHTML = discHTML(v.token);
+    $('wdOut').textContent = fmt2(v.expected_paid, v.decimals) + ' ' + v.token;
+    $('wdWhere').textContent = 'on ' + v.chain + ', paid to';
+    $('wdTo').textContent = v.to;
+    $('wdAddr').textContent = v.address; $('wdQR').src = '/qr.svg?d=' + encodeURIComponent(v.address);
+    $('wdMemo').textContent = v.memo;
+    wdRender(v);
+    clearTimeout(wdTimer); wdTimer = setTimeout(wdPoll, 4000);
+    window.scrollTo(0, 0);
+  }
+  async function wdPoll() {
+    var w = wd; if (!w) return;
+    try {
+      var res = await fetch('/api/withdrawal/' + w.code, { cache: 'no-store' });
+      if (res.ok) { var v = await res.json(); if (wd !== w) return; if (v.code === w.code && v.address === w.v.address) { w.v = v; wdRender(v); wdSave(v); $('wdNextMsg').textContent = ''; } }
+      else if (res.status === 404 && wd === w) { $('wdNextMsg').className = 'note err'; $('wdNextMsg').textContent = 'This withdrawal is no longer on record.'; return; }
+    } catch (e) { if (wd === w) { $('wdNextMsg').className = 'note'; $('wdNextMsg').textContent = 'Reconnecting to the bridge…'; } }
+    if (wd !== w) return;
+    // Faster while something moves, slower once it is done (more can still arrive).
+    var s = w.v.status, done = s === 'completed' || s === 'failed';
+    wdTimer = setTimeout(wdPoll, done ? 15000 : 4000);
+  }
+  $('wdCopy').onclick = function () { if (wd) UI.copy(wd.v.address, 'Address'); };
+  $('wdCopyMemo').onclick = function () { if (wd) UI.copy(wd.v.memo, 'Memo'); };
+  $('wdCopyAmt').onclick = function () { if (wd) UI.copy($('wdCopyAmt').dataset.amt || '', 'Amount'); };
+  $('wdBack').onclick = function () {
+    clearTimeout(wdTimer); wdTimer = null; wd = null; wdURL('');
+    $('wdNext').hidden = true; $('wdForm').hidden = false; wdMsg(''); $('rAmt').value = ''; recalcRedeem(); wdResumeOffer(); $('rAmt').focus();
+  };
+
+  // ---- progress ----
+  function wdStep(n, state, html) {
+    var el = $('ws' + n); el.className = 'wd-step' + (state ? ' is-' + state : '');
+    el.querySelector('.wd-ic').innerHTML = state === 'done' ? ic('check') : state === 'bad' ? ic('x') : state === 'hold' ? ic('history') : '';
+    $('ws' + n + 'b').innerHTML = html || '';
+  }
+  function rankOf(stage) { return { detected: 1, processing: 2, completed: 3 }[stage] || 0; }
+  function waitText(p, v) {
+    switch (p.wait) {
+      case 'liquidity': return 'Waiting for more ' + v.token + ' in the bridge on ' + v.chain + '. Your payout goes out automatically.';
+      case 'paused': return 'Payouts on ' + v.chain + ' are paused for now. Yours goes out when they resume.';
+      case 'limit': return 'Waiting for room in the bridge\'s payout limit. It goes out automatically.';
+      case 'review': return 'A large withdrawal: a guardian checks it before it goes out.';
+      case 'retry': return 'Taking longer than usual. The guardians keep trying.';
+    }
+    return '';
+  }
+  function coinOf(p) { return p.asset === 'ARG' ? '{{ARG}}' : 'another coin'; }
+  function wdRender(v) {
+    // The bridge lists the newest payments of at least 1 {{ASSET}} and counts
+    // the rest: payments_total, dust (below 1 {{ASSET}}) and lost (another
+    // coin); token_due is what all of them pay.
+    var pays = (v.payments || []).filter(function (p) { return !p.asset; }), good = pays;
+    var lostN = Number(v.lost_count || 0), lostArg = BigInt(v.lost_arg || 0), dustN = Number(v.dust_count || 0), dust = BigInt(v.dust_amount || 0);
+    var more = Math.max(0, Number(v.payments_total || 0) - pays.length), due = /^\d+$/.test(v.token_due || '') ? v.token_due : sumPaid(good);
+    var recv = BigInt(v.received || 0), amt = BigInt(v.amount || 0), rem = BigInt(v.remaining || 0), extra = BigInt(v.extra || 0);
+    var c = chainById(v.chain_id), tok = function (units) { return fmt2(units, v.decimals) + ' ' + v.token; };
+    var live = good.filter(function (p) { return p.stage !== 'failed'; }).sort(function (a, b) { return rankOf(a.stage) - rankOf(b.stage); });
+    var lead = live[0] || {}, status = v.status;
+
+    // Pay: shown until the whole amount is on its way.
+    var owe = recv > 0n ? rem : amt;
+    $('wdPay').hidden = !(status === 'waiting' || rem > 0n);
+    $('wdSendPre').textContent = recv > 0n ? 'Send the remaining' : 'Send exactly';
+    $('wdSendAmt').textContent = uarg(owe) + ' ' + ASSET;
+    $('wdCopyAmt').dataset.amt = fmtTok(owe.toString(), 8, 8, 0, true);
+
+    // 1. Waiting for deposit
+    if (status === 'waiting') wdStep(1, 'now', esc('Send ' + uarg(amt) + ' ' + ASSET + ' with the memo from any ' + BRAND + ' wallet. It shows here within seconds.'));
+    else if (recv > 0n) wdStep(1, 'done', esc('Received ' + uarg(recv) + ' ' + ASSET + (rem > 0n ? ' of ' + uarg(amt) : '')));
+    else wdStep(1, 'now', esc('Still waiting for ' + ASSET + '. Send it with the memo from any ' + BRAND + ' wallet.'));
+
+    // 2. Deposit detected · 3. Processing withdrawal · 4. Completed
+    if (status === 'waiting' || (status === 'failed' && !good.length)) { wdStep(2, '', ''); wdStep(3, '', ''); wdStep(4, '', esc('You get ' + tok(v.expected_paid) + ' on ' + v.chain + '.')); }
+    else if (status === 'failed') {
+      wdStep(2, 'done', esc('Confirmed on ' + BRAND));
+      wdStep(3, 'bad', esc('This payment cannot be paid out automatically. See below.'));
+      wdStep(4, '', '');
+    } else if (status === 'detected') {
+      var conf = Math.min(lead.confirmations || 0, lead.needed || 0), need = lead.needed || 0;
+      wdStep(2, 'now', esc(lead.state === 'mempool' ? 'Seen on the network. Waiting for the next ' + BRAND + ' block.' :
+        'Confirming on ' + BRAND + ' · ' + conf + ' of ' + need + ' blocks · ' + blocksEta(need - conf) + ' left'));
+      wdStep(3, '', ''); wdStep(4, '', esc('You get ' + tok(due) + ' on ' + v.chain + '.'));
+    } else if (status === 'processing') {
+      wdStep(2, 'done', esc('Confirmed on ' + BRAND));
+      var w = waitText(lead, v), u1 = lead.evm_tx ? txURL(c, lead.evm_tx) : '';
+      if (w) wdStep(3, 'hold', esc(w));
+      else wdStep(3, 'now', lead.state === 'paying' ? esc('Sending ' + tok(lead.token_paid) + ' on ' + v.chain) + (u1 ? ' · <a href="' + esc(u1) + '" target="_blank" rel="noopener">View</a>' : '') : esc('The guardians are signing your payout.'));
+      wdStep(4, '', esc('You get ' + tok(due) + ' on ' + v.chain + '.'));
+    } else {
+      var last = good.filter(function (p) { return p.evm_tx; }).slice(-1)[0], u2 = last ? txURL(c, last.evm_tx) : '';
+      wdStep(2, 'done', esc('Confirmed on ' + BRAND));
+      wdStep(3, 'done', esc('Sent on ' + v.chain));
+      wdStep(4, 'done', esc(tok(v.token_paid) + ' delivered to ' + f.short(v.to, 6, 4)) + (u2 ? ' · <a href="' + esc(u2) + '" target="_blank" rel="noopener">View transaction</a>' : ''));
+    }
+
+    // What went differently from the request, in plain words.
+    var notes = [], note = function (kind, icon, html) { notes.push('<div class="banner ' + kind + '" role="status">' + ic(icon) + '<div>' + html + '</div></div>'); };
+    if (recv > 0n && rem > 0n) note('warn', 'alert', 'You sent <b>' + esc(uarg(recv)) + '</b> of <b>' + esc(uarg(amt) + ' ' + ASSET) + '</b>. What arrived is paid out' + (recv > 0n ? ' (' + esc(tok(due)) + ')' : '') + '. To withdraw the rest, send <b>' + esc(uarg(rem) + ' ' + ASSET) + '</b> to the same address with the same memo.');
+    if (extra > 0n) note('info', 'info', 'You sent <b>' + esc(uarg(recv) + ' ' + ASSET) + '</b>, ' + esc(uarg(extra)) + ' more than requested. All of it is paid out: <b>' + esc(tok(due)) + '</b>.');
+    if (good.some(function (p) { return !p.memo; })) note('info', 'info', (good.length > 1 ? 'A payment' : 'Your payment') + ' arrived without this memo. It was matched by its address and is paid to the same wallet.');
+    if (lostN === 1 && lostArg > 0n) note('danger', 'alert', 'You sent <b>' + esc(uarg(lostArg)) + ' {{ARG}}</b> to this address. Only ' + esc(ASSET) + ' can be withdrawn; the {{ARG}} cannot be recovered.');
+    else if (lostN > 0) note('danger', 'alert', '<b>' + (lostN === 1 ? 'A payment' : esc(String(lostN)) + ' payments') + '</b> of another coin' + (lostArg > 0n ? ' (' + esc(uarg(lostArg)) + ' {{ARG}} among them)' : '') + ' arrived at this address. Only ' + esc(ASSET) + ' can be withdrawn; ' + (lostN === 1 ? 'it' : 'they') + ' cannot be recovered.');
+    if (dustN > 0) note('info', 'info', (dustN === 1 ? 'A payment' : esc(String(dustN)) + ' payments') + ' below 1 ' + esc(ASSET) + ' (' + esc(uarg(dust)) + ' ' + esc(ASSET) + ' in all) arrived at this address. Payments this small are not listed here.');
+    good.filter(function (p) { return p.stage === 'failed'; }).forEach(function (p) {
+      note('danger', 'alert', p.reason === 'small' ? 'A payment of <b>' + esc(uarg(p.amount) + ' ' + ASSET) + '</b> was too small to pay out.' :
+        'A payment of <b>' + esc(uarg(p.amount) + ' ' + ASSET) + '</b> cannot be paid out automatically. The guardians review it; keep this reference: <span class="mono">' + esc(f.short(p.id, 8, 8)) + '</span>.');
+    });
+    var nh = notes.join(''); if ($('wdNotes')._h !== nh) { $('wdNotes')._h = nh; $('wdNotes').innerHTML = nh; }
+
+    // Several payments: one line each.
+    var ph = pays.length > 1 || more ? (more ? '<div><span>' + esc(String(more)) + ' earlier payment' + (more === 1 ? '' : 's') + '</span><span class="r">counted above</span></div>' : '') + pays.map(function (p) {
+      var u = p.evm_tx ? txURL(c, p.evm_tx) : '', what = p.asset ? '<span class="bad">Not withdrawable</span>' :
+        p.state === 'mempool' ? 'Seen' : p.state === 'confirming' ? 'Confirming ' + Math.min(p.confirmations, p.needed) + '/' + p.needed :
+        p.state === 'sending' ? (p.wait ? 'Waiting' : 'Signing') : p.state === 'paying' ? 'Sending' : p.state === 'paid' ? 'Paid ' + esc(tok(p.token_paid)) : '<span class="bad">Needs review</span>';
+      return '<div><span><b>' + esc(uarg(p.amount) + ' ' + (p.asset ? coinOf(p) : ASSET)) + '</b></span><span class="r">' + what + (u ? ' · <a href="' + esc(u) + '" target="_blank" rel="noopener">View</a>' : '') + '</span></div>';
+    }).join('') : '';
+    $('wdPays').hidden = !ph; if ($('wdPays')._h !== ph) { $('wdPays')._h = ph; $('wdPays').innerHTML = ph; }
+    $('wdBack').textContent = status === 'completed' && rem === 0n ? 'New withdrawal' : 'Start another withdrawal';
+  }
+  function sumPaid(pays) { var s = 0n; pays.forEach(function (p) { if (p.stage !== 'failed' && /^\d+$/.test(p.token_paid || '')) s += BigInt(p.token_paid); }); return s.toString(); }
+
+  // ---- details sheet ----
+  var lastFocus = null;
+  function openSheet(section) {
+    lastFocus = document.activeElement; var s = $('sheet'), b = $('backdrop');
+    s.hidden = false; b.hidden = false; void s.offsetWidth; s.classList.add('show'); b.classList.add('show');
+    document.body.style.overflow = 'hidden'; $('sheetClose').focus();
+    if (section && $(section)) setTimeout(function () { $(section).scrollIntoView({ block: 'start' }); }, 170);
+  }
+  function closeSheet() {
+    var s = $('sheet'), b = $('backdrop'); if (s.hidden) return;
+    s.classList.remove('show'); b.classList.remove('show'); document.body.style.overflow = '';
+    setTimeout(function () { if (!s.classList.contains('show')) { s.hidden = true; b.hidden = true; } }, 160);
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('openSheet').onclick = function () { openSheet(); }; $('sheetClose').onclick = closeSheet; $('backdrop').onclick = closeSheet;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
+  function renderReserves() {
+    var chains = st.chains || [];
+    $('rsvSum').innerHTML = '<b>$' + f.coin(st.reserve_units || 0, 2) + '</b> in the vaults · $' + f.coin(st.backing_units || 0, 2) + ' backing ' + esc(ASSET) + ' · $' + f.coin(st.surplus_units || 0, 2) + ' fees collected';
+    $('rsv').innerHTML = chains.map(function (c) {
+      return '<div><div class="ch">' + cmHTML(c) + '<span class="t">' + esc(c.name) + '</span>' + (c.error ? '<span class="badge badge-danger" title="' + esc(c.error) + '">unreachable</span>' : '') + '</div>' +
+        (c.tokens || []).map(function (t) { return '<div class="tk">' + discHTML(t.symbol) + '<div><span>' + esc(t.symbol) + '</span><small>backing ' + fmt2(t.obligations || 0, t.decimals) + ' · fees ' + fmt2(t.surplus || 0, t.decimals) + '</small></div><span class="amt">' + fmt2(t.reserve || 0, t.decimals) + '</span></div>'; }).join('') + '</div>';
+    }).join('') || '<div class="emptyl">No chains configured.</div>';
+  }
+  function renderLists() {
+    $('depRows').innerHTML = deps.slice(0, 20).map(function (d) {
+      var c = chainById(d.chain_id), u = txURL(c, d.evm_tx);
+      return '<div class="rowi"><div class="l1"><span class="t">' + esc(d.chain) + '</span></div><div class="l2">#' + esc(d.id) + ' · ' + esc(d.token_symbol || '') + ' · ' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' : '<span class="mono">') + esc(f.short(d.evm_tx, 8, 4)) + (u ? '</a>' : '</span>') + '</div><div class="r1">' + fmt2(d.token_amount, d.decimals) + ' ' + esc(d.token_symbol || '') + '</div><div class="r2"><span class="badge ' + esc(badgeOf(d.status)) + '"' + (d.error ? ' title="' + esc(d.error) + '"' : '') + '>' + esc(d.status) + '</span></div></div>';
+    }).join('') || '<div class="emptyl">No deposits yet.</div>';
+    $('redRows').innerHTML = reds.slice(0, 20).map(function (r) {
+      var c = chainById(r.chain_id), u = r.evm_tx ? txURL(c, r.evm_tx) : '';
+      var paid = r.token_symbol ? fmt2(r.token_paid || r.token_amount, r.decimals) + ' ' + esc(r.token_symbol) : '–';
+      return '<div class="rowi"><div class="l1"><span class="t">' + (r.chain ? esc(r.chain) : 'Unknown chain') + '</span></div><div class="l2">' + uarg(r.amount || 0) + ' ' + esc(ASSET) + ' withdrawn · ' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(f.short(r.evm_tx, 8, 4)) + '</a>' : '<span class="mono">' + esc(f.short(r.txid, 8, 4)) + '</span>') + '</div><div class="r1">' + paid + '</div><div class="r2"><span class="badge ' + esc(badgeOf(r.status)) + '"' + (r.error ? ' title="' + esc(r.error) + '"' : '') + '>' + esc(r.status) + '</span></div></div>';
+    }).join('') || '<div class="emptyl">No withdrawals yet.</div>';
+  }
+  function copyBtn(text, label) { return '<button class="btn btn-ghost btn-icon" type="button" data-copy="' + esc(text) + '" data-label="' + esc(label) + '" aria-label="Copy ' + esc(label) + '">' + ic('copy') + '</button>'; }
+  function renderOnChain() {
+    var g = st.guardians || [];
+    var rows = [
+      '<div><span>' + esc(ASSET) + ' asset id</span><span class="v mono"><span class="truncate" title="' + esc(st.asset) + '">' + esc(f.short(st.asset, 10, 6)) + '</span>' + copyBtn(st.asset, 'asset id') + '</span></div>',
+      '<div><span>Issuer</span><span class="v mono"><span class="truncate" title="' + esc(st.custody_address) + '">' + esc(f.short(st.custody_address, 10, 6)) + '</span>' + copyBtn(st.custody_address, 'issuer address') + '</span></div>',
+      '<div><span>Guardians</span><span class="v" title="' + esc(g.join('\n')) + '">' + esc(st.threshold) + ' of ' + g.length + ' sign a payout</span></div>',
+      '<div><span>Confirmations before a payout</span><span class="v">' + esc(st.l1_confirmations) + ' blocks</span></div>'];
+    (st.chains || []).forEach(function (c) {
+      var u = addrURL(c, c.vault);
+      rows.push('<div><span>Vault · ' + esc(c.name) + '</span><span class="v mono">' + (u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener" title="' + esc(c.vault) + '">' + esc(f.short(c.vault, 8, 4)) + '</a>' : '<span title="' + esc(c.vault) + '">' + esc(f.short(c.vault, 8, 4)) + '</span>') + copyBtn(c.vault, 'vault address') + '</span></div>');
+    });
+    $('kv').innerHTML = rows.join('');
+  }
+  $('kv').addEventListener('click', function (e) { var b = e.target.closest('[data-copy]'); if (b) UI.copy(b.dataset.copy, b.dataset.label); });
+
+  // ---- tracking: chain + deposit id, or a 0x transaction hash on any chain ----
+  async function track() {
+    var id = $('trackId').value.trim().toLowerCase(), out = $('trackOut'); if (!id) { out.textContent = ''; return; }
+    var memo = id.replace(/[\s-]/g, '').toUpperCase();
+    if (/^[2-9A-HJ-NP-Z]{8}$/.test(memo) && !/^[0-9]+$/.test(memo)) {
+      out.textContent = 'Looking…';
+      if (await wdLoad(memo, true)) { out.textContent = ''; closeSheet(); } else out.textContent = 'No withdrawal has the memo ' + memo.slice(0, 4) + '-' + memo.slice(4) + '.';
+      return;
+    }
+    var c = chainById($('trackChain').value);
+    out.textContent = 'Looking…';
+    var r;
+    try { r = await fetch(id.indexOf('0x') === 0 ? '/api/deposit/' + id : '/api/deposit/' + (c ? c.chain_id : 0) + '/' + id); } catch (e) { out.textContent = 'The bridge is unreachable.'; return; }
+    if (!r.ok) { out.textContent = 'No deposit found. A deposit appears here once its transaction is in a block on ' + (c ? c.name : 'the chain') + ' and the guardians have seen it.'; return; }
+    var d = await r.json(), dc = chainById(d.chain_id), u = txURL(dc, d.evm_tx);
+    out.innerHTML = '<b>Deposit #' + esc(d.id) + '</b> on ' + esc(d.chain) + ' <span class="badge ' + esc(badgeOf(d.status)) + '">' + esc(d.status) + '</span><br>' +
+      fmt2(d.token_amount, d.decimals) + ' ' + esc(d.token_symbol || '') + ' → <b>' + uarg(d.amount || 0) + ' ' + esc(ASSET) + '</b> to <span class="mono" title="' + esc(d.to) + '">' + esc(f.short(d.to, 12, 6)) + '</span>' +
+      (u ? '<br><a class="link" href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(f.short(d.evm_tx, 10, 6)) + '</a>' : '') +
+      (d.issue_tx ? '<br>Issued in <span class="mono">' + esc(f.short(d.issue_tx, 10, 6)) + '</span>' : '') + (d.error ? '<br><span class="status-text danger">' + esc(d.error) + '</span>' : '');
+  }
+  $('trackBtn').onclick = track;
+  $('trackId').addEventListener('keydown', function (e) { if (e.key === 'Enter') track(); });
+
+  UI.mountIcons(); setView('deposit'); updateGo();
+  refresh().then(syncWallet); setInterval(refresh, 10000);
+  // ?w=<memo> opens that withdrawal; otherwise an unfinished one is offered.
+  var wq = null; try { wq = new URLSearchParams(location.search).get('w'); } catch (e) { }
+  if (wq) wdLoad(wq); else { wdResumeOffer(); if (location.hash === '#withdraw') setView('redeem'); }
+})();
+</script>
+</body></html>

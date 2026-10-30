@@ -1,0 +1,12 @@
+# Keep the upload to Railway small: only sources and docs are needed to build.
+build/
+release/
+_attic/
+contracts/out/
+contracts/cache/
+contracts/lib/
+*.exe
+*.log
+*.zip
+package-lock.json
+node_modules/

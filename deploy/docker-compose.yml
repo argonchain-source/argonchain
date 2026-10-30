@@ -1,0 +1,42 @@
+# A public seed node plus a block explorer on one small VPS.
+#
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#
+# Point DNS at the host:  seed1.<yourdomain>  A  <host ip>
+# and open TCP 9333 (mainnet) or 19333 (testnet) in the firewall.
+# The explorer is published on 8380; put a reverse proxy with TLS in front.
+
+services:
+  node:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: argonmine/node
+    container_name: argonmine-node
+    restart: unless-stopped
+    command: ["-network", "${ARGONMINE_NETWORK:-mainnet}", "-rpc", "0.0.0.0:9332", "-rpctoken", "${ARGONMINE_RPC_TOKEN:?set ARGONMINE_RPC_TOKEN}"]
+    ports:
+      - "9333:9333"
+      - "19333:19333"
+    volumes:
+      - node-data:/data
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- --header='Authorization: Bearer ${ARGONMINE_RPC_TOKEN}' --post-data='{\"method\":\"getblockcount\"}' http://127.0.0.1:9332/ >/dev/null"]
+      interval: 60s
+      timeout: 5s
+
+  explorer:
+    image: argonmine/node
+    container_name: argonmine-explorer
+    restart: unless-stopped
+    depends_on: [node]
+    entrypoint: ["argonmine-explorer"]
+    command: ["-network", "${ARGONMINE_NETWORK:-mainnet}", "-rpc", "http://node:9332", "-token", "${ARGONMINE_RPC_TOKEN}", "-datadir", "/data", "-listen", "0.0.0.0:8380"]
+    ports:
+      - "8380:8380"
+    volumes:
+      - explorer-data:/data
+
+volumes:
+  node-data:
+  explorer-data:

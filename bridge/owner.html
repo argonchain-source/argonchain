@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en"><head>{{HEAD}}
+<style>
+  [hidden] { display: none !important; }
+  body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+  .topbar { padding: 10px 20px; min-height: 52px; gap: var(--sp-3); }
+  .topbar .wordmark { padding: 0; font-size: var(--fs-4); gap: 8px; }
+  .topbar .wordmark .sub { color: var(--ink-3); font-weight: 500; }
+  .stage { flex: 1; width: 100%; max-width: 560px; margin: 0 auto; padding: 28px 16px 40px; display: flex; flex-direction: column; gap: 14px; }
+  h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
+  .lead { color: var(--ink-2); margin: 0; line-height: 1.5; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+  .who span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  #vaults { display: flex; flex-direction: column; gap: 12px; }
+  .vault { background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .vault-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .vault-top b { font-size: var(--fs-4); }
+  .state { font-size: var(--fs-2); font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--sunken); color: var(--ink-2); white-space: nowrap; }
+  .state.ok { color: var(--ok); } .state.wait { color: var(--warn); } .state.bad { color: var(--danger); }
+  dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: var(--fs-2); }
+  dt { color: var(--ink-3); }
+  dd { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono, ui-monospace, monospace); }
+  dd a { color: var(--accent-text); text-decoration: none; }
+  .note { font-size: var(--fs-2); color: var(--ink-3); min-height: 1em; }
+  .note.bad { color: var(--danger); }
+  .vault .btn { width: 100%; }
+  .fees { border-top: 1px solid var(--hair); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .fees .k { font-size: var(--fs-2); color: var(--ink-3); font-weight: 600; }
+  .fee { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--fs-2); font-variant-numeric: tabular-nums; }
+  .vault .fee .btn { width: auto; height: 30px; font-size: var(--fs-2); padding: 0 10px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="wordmark">{{MARK}}<span>{{BRAND}}</span><span class="sub">Vault ownership</span></span>
+</header>
+<main class="stage">
+  <h1>Accept vault ownership</h1>
+  <p class="lead">Each vault's owner accepts it here, chain by chain, and sends the bridge's collected fees to the treasury. The vault checks the wallet itself: no other wallet can do either.</p>
+  <div class="who"><span id="who">No wallet connected</span><button class="btn btn-secondary" id="connect" type="button">Connect wallet</button></div>
+  <p class="note bad" id="err" hidden></p>
+  <div id="vaults"></div>
+</main>
+<script src="{{UIJS}}"></script>
+<script>
+(function () {
+  var SEL_OWNER = '0x8da5cb5b', SEL_PENDING = '0xe30c3978', SEL_ACCEPT = '0x79ba5097', SEL_WITHDRAW_SURPLUS = '0xb516fd98';
+  // The chain's treasury (its 1% rule): the fees go to its deposit address
+  // and come back to it as uARG.
+  var TREASURY = '{{TREASURY}}';
+  var pad = function (h) { return String(h).toLowerCase().replace(/^0x/, '').padStart(64, '0'); };
+  function units(v, d) { var s = String(v || '0').padStart(d + 1, '0'), i = s.slice(0, s.length - d), f = s.slice(s.length - d).replace(/0+$/, ''); return f ? i + '.' + f.slice(0, 6) : i; }
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var short = function (a) { return a ? a.slice(0, 8) + '…' + a.slice(-6) : ''; };
+  var ZERO = '0x0000000000000000000000000000000000000000';
+  var chains = [], account = '', prov = null, wallets = [], busy = {};
+
+  window.addEventListener('eip6963:announceProvider', function (e) { var d = e.detail; if (d && d.provider && !wallets.some(function (w) { return w.info.uuid === d.info.uuid; })) wallets.push(d); });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+  function provider() {
+    if (prov) return prov;
+    var mm = wallets.filter(function (w) { return w.info.rdns === 'io.metamask'; })[0];
+    prov = (mm || wallets[0] || {}).provider || window.ethereum || null;
+    if (prov && prov.on) prov.on('accountsChanged', function (a) { account = ((a && a[0]) || '').toLowerCase(); render(); });
+    return prov;
+  }
+  function wallet(method, params) { var p = provider(); if (!p) return Promise.reject(new Error('No wallet found in this browser. Open this page in the browser that has your wallet, or in your wallet app\'s browser.')); return p.request({ method: method, params: params || [] }); }
+  async function read(c, data) {
+    var r = await fetch(c.rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: c.vault, data: data }, 'latest'] }) });
+    var j = await r.json(); if (j.error) throw new Error(j.error.message || 'RPC error');
+    return '0x' + String(j.result).slice(-40).toLowerCase();
+  }
+  async function receipt(c, h) {
+    for (var i = 0; i < 150; i++) {
+      var r = await fetch(c.rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [h] }) });
+      var j = await r.json(); if (j.result) return j.result;
+      await new Promise(function (ok) { setTimeout(ok, 2000); });
+    }
+    throw new Error('Not confirmed yet. Reload this page in a minute.');
+  }
+  async function ensureChain(c) {
+    var id = '0x' + c.chain_id.toString(16);
+    if (parseInt(await wallet('eth_chainId'), 16) === c.chain_id) return;
+    try { await wallet('wallet_switchEthereumChain', [{ chainId: id }]); }
+    catch (e) {
+      if (e && e.code === 4001) throw new Error('Switch your wallet to ' + c.name + ' to accept there.');
+      var p = { chainId: id, chainName: c.name, rpcUrls: [c.rpc], nativeCurrency: { name: c.native_symbol, symbol: c.native_symbol, decimals: 18 } };
+      if (c.explorer) p.blockExplorerUrls = [c.explorer];
+      await wallet('wallet_addEthereumChain', [p]);
+    }
+    if (parseInt(await wallet('eth_chainId'), 16) !== c.chain_id) throw new Error('Your wallet is not on ' + c.name + '.');
+  }
+  function link(c, kind, v) { return c.explorer ? '<a href="' + esc(c.explorer.replace(/\/$/, '') + '/' + kind + '/' + v) + '" target="_blank" rel="noopener">' + esc(kind === 'tx' ? short(v) : v) + '</a>' : esc(v); }
+  function feesHTML(c, i) {
+    if (!c.loaded || !TREASURY || !(c.tokens || []).length) return '';
+    var isOwner = account && c.owner === account;
+    return '<div class="fees"><span class="k">Collected fees</span>' + c.tokens.map(function (t, j) {
+      var have = BigInt(t.surplus || '0'), enough = have > 0n && have >= BigInt(t.min || '0'), b = busy[i + ':' + j];
+      var label = b ? esc(b) : !have ? 'None yet' : !enough ? 'Below the ' + units(t.min, t.decimals) + ' minimum' : !account ? 'Connect the owner' : !isOwner ? 'Owner only' : 'Send to the treasury';
+      return '<div class="fee"><span>' + esc(units(t.surplus, t.decimals)) + ' ' + esc(t.symbol) + '</span><button class="btn btn-secondary" type="button" data-fee="' + i + ':' + j + '"' + (b || !enough || (account && !isOwner) ? ' disabled' : '') + '>' + label + '</button></div>';
+    }).join('') + '</div>';
+  }
+  function render() {
+    $('who').textContent = account ? 'Connected: ' + account : 'No wallet connected';
+    $('connect').hidden = !!account;
+    $('vaults').innerHTML = chains.map(function (c, i) {
+      var st = c.loaded ? (c.pending === ZERO ? { t: 'Accepted', k: 'ok' } : { t: 'Waiting for acceptance', k: 'wait' }) : { t: c.loadErr ? 'Unavailable' : 'Reading…', k: c.loadErr ? 'bad' : '' };
+      var mine = account && c.pending === account, b = busy[i];
+      var btn = c.loaded && c.pending !== ZERO
+        ? '<button class="btn ' + (mine ? 'btn-primary' : 'btn-secondary') + '" type="button" data-i="' + i + '"' + (b || (account && !mine) ? ' disabled' : '') + '>' +
+          (b ? esc(b) : !account ? 'Connect wallet to accept' : mine ? 'Accept on ' + esc(c.name) : 'This wallet is not the new owner') + '</button>' : '';
+      return '<section class="vault"><div class="vault-top"><b>' + esc(c.name) + '</b><span class="state ' + st.k + '">' + st.t + '</span></div>' +
+        '<dl><dt>Vault</dt><dd>' + link(c, 'address', c.vault) + '</dd>' +
+        '<dt>Owner</dt><dd>' + (c.loaded ? link(c, 'address', c.owner) : '–') + '</dd>' +
+        (c.loaded && c.pending !== ZERO ? '<dt>Offered to</dt><dd>' + link(c, 'address', c.pending) + '</dd>' : '') + '</dl>' +
+        btn + feesHTML(c, i) + '<p class="note' + (c.err ? ' bad' : '') + '">' + (c.err ? esc(c.err) : c.tx ? 'Sent: ' + link(c, 'tx', c.tx) : '') + '</p></section>';
+    }).join('');
+  }
+  async function load(c) {
+    try { c.owner = await read(c, SEL_OWNER); c.pending = await read(c, SEL_PENDING); c.loaded = true; c.loadErr = false; }
+    catch (e) { c.loadErr = true; }
+    render();
+  }
+  async function connect() {
+    $('err').hidden = true;
+    try { var a = await wallet('eth_requestAccounts'); account = ((a && a[0]) || '').toLowerCase(); render(); }
+    catch (e) { $('err').textContent = (e && e.code === 4001) ? 'You declined the connection in your wallet.' : (e.message || String(e)); $('err').hidden = false; }
+  }
+  $('connect').onclick = connect;
+  $('vaults').onclick = async function (e) {
+    var fb = e.target.closest('button[data-fee]');
+    if (fb) { if (!account) { await connect(); return; } await sendFees(fb.dataset.fee); return; }
+    var b = e.target.closest('button[data-i]'); if (!b) return;
+    if (!account) { await connect(); return; }
+    var i = Number(b.dataset.i), c = chains[i]; c.err = ''; c.tx = '';
+    try {
+      busy[i] = 'Switching to ' + c.name + '…'; render();
+      await ensureChain(c);
+      busy[i] = 'Confirm in your wallet…'; render();
+      c.tx = await wallet('eth_sendTransaction', [{ from: account, to: c.vault, data: SEL_ACCEPT }]);
+      busy[i] = 'Waiting for ' + c.name + '…'; render();
+      var r = await receipt(c, c.tx);
+      if (r.status !== '0x1') throw new Error('The transaction failed on ' + c.name + '.');
+    } catch (err) { c.err = (err && err.code === 4001) ? 'You declined it in your wallet.' : (err.message || String(err)); }
+    busy[i] = ''; await load(c);
+  };
+  // sendFees pays a vault's collected fees of one token to the treasury's
+  // deposit address on that chain: the bridge credits them to the treasury
+  // as uARG, backed like every other deposit.
+  async function sendFees(key) {
+    var ij = key.split(':'), c = chains[Number(ij[0])], t = c.tokens[Number(ij[1])];
+    c.err = ''; c.tx = '';
+    try {
+      busy[key] = 'Switching to ' + c.name + '…'; render();
+      await ensureChain(c);
+      var r = await fetch('/api/deposit-address?chain=' + c.chain_id + '&to=' + encodeURIComponent(TREASURY));
+      var d = await r.json();
+      if (!r.ok || !/^0x[0-9a-fA-F]{40}$/.test(String(d.address || ''))) throw new Error((d && d.error) || 'The bridge did not give a deposit address for the treasury.');
+      busy[key] = 'Confirm in your wallet…'; render();
+      var data = SEL_WITHDRAW_SURPLUS + pad(t.address) + pad(d.address) + BigInt(t.surplus).toString(16).padStart(64, '0');
+      c.tx = await wallet('eth_sendTransaction', [{ from: account, to: c.vault, data: data }]);
+      busy[key] = 'Waiting for ' + c.name + '…'; render();
+      var rc = await receipt(c, c.tx);
+      if (rc.status !== '0x1') throw new Error('The transaction failed on ' + c.name + '.');
+      t.surplus = '0';
+    } catch (err) { c.err = (err && err.code === 4001) ? 'You declined it in your wallet.' : (err.message || String(err)); }
+    busy[key] = ''; render();
+  }
+  fetch('/api/status').then(function (r) { return r.json(); }).then(function (st) {
+    chains = (st.chains || []).filter(function (c) { return c.vault && c.rpc; }).map(function (c) { return { name: c.name, chain_id: c.chain_id, vault: String(c.vault).toLowerCase(), rpc: c.rpc, explorer: c.explorer, native_symbol: c.native_symbol || 'ETH', tokens: (c.tokens || []).map(function (t) { return { symbol: t.symbol, address: String(t.address).toLowerCase(), decimals: t.decimals, min: String(t.min_deposit || '0'), surplus: String(t.surplus || '0') }; }) }; });
+    render(); chains.forEach(load);
+    var p = provider(); if (p) p.request({ method: 'eth_accounts' }).then(function (a) { account = ((a && a[0]) || '').toLowerCase(); render(); }).catch(function () { });
+  }).catch(function () { $('err').textContent = 'The bridge did not answer. Reload the page.'; $('err').hidden = false; });
+})();
+</script>
+</body></html>

@@ -1,0 +1,328 @@
+{{define "head"}}<!doctype html>
+<html lang="en"><head>{{.Head}}
+<style>
+  .topbar .wordmark { padding: 0; }
+  .charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); }
+  .chart-card .card-body { padding-top: var(--sp-2); }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+  .hash-cell { max-width: 240px; }
+  .addr-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-5); align-items: start; }
+  .qr { background: #fff; border: 1px solid var(--hair); border-radius: 12px; padding: 10px; width: 148px; height: 148px; }
+  .qr img { width: 128px; height: 128px; display: block; }
+  .blocknav { display: flex; gap: var(--sp-2); }
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-2); font-weight: 600; }
+  .tag.mined { color: var(--accent-text); } .tag.in { color: var(--ok); } .tag.out { color: var(--danger); }
+  .tok { width: 20px; height: 20px; border-radius: 50%; vertical-align: -4px; margin-right: 6px; }
+  h1 .tok { width: 32px; height: 32px; vertical-align: -6px; margin-right: 10px; }
+  .unverified { color: var(--warn, #b7791f); }
+  .memo { font-family: var(--font-mono); font-size: var(--fs-2); background: var(--sunken); border: 1px solid var(--hair); border-radius: 6px; padding: 2px 6px; }
+  @media (max-width: 960px) { .charts, .two { grid-template-columns: minmax(0, 1fr); } .addr-head { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .table .hide-m { display: none; } }
+  @media (max-width: 760px) { .topbar nav { order: 10; width: 100%; } .topbar .spacer { display: none; } .topbar .badge[title] { display: none; } .page-header { flex-direction: column; align-items: flex-start; } .page-header p.mono { overflow-wrap: anywhere; } dl.props dd.mono, .prose-mono { overflow-wrap: anywhere; } }
+</style></head>
+<body>
+<header class="topbar">
+  <a class="wordmark" href="/">{{.Mark}}<span>{{.Brand}} explorer</span></a>
+  <span class="badge">{{.Network}}</span>
+  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a></nav>
+  <form class="searchbar" action="/search" method="get" role="search"><i data-icon="search"></i><input name="q" placeholder="Search a height, block hash, transaction or address id" aria-label="Search" autocomplete="off"></form>
+  <span class="spacer"></span>
+  <span class="badge" title="Indexed height / node height">indexed <b class="num" style="margin-left:4px">{{num .Height}}</b><span class="muted" style="margin:0 4px">/</span><b class="num">{{num .Tip}}</b></span>
+  <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme"></button>
+</header>
+<main class="container" style="padding-top:var(--sp-5)">
+{{if .Err}}<div class="banner warn" role="alert"><i data-icon="alert"></i><div>{{.Err}}. The explorer cannot reach its node right now, so the figures may be out of date.</div></div>{{end}}
+<div class="content" style="padding:0;max-width:none">
+{{end}}
+
+{{define "foot"}}</div></main>
+<footer class="foot"><span>{{.Brand}} block explorer</span><span>Every coin is mined, none are given</span></footer>
+<script src="{{.UIJS}}"></script>
+<script>UI.mountIcons();</script>
+</body></html>{{end}}
+
+{{define "home"}}{{template "head" .}}
+<div class="grid cols-3">
+  <div class="card stat"><span class="stat-label">Height</span><span class="stat-value sm num">{{num .Height}}</span><span class="stat-hint">{{if .Data.Blocks}}last block {{ago (index .Data.Blocks 0).Time}}{{else}}waiting for the first block{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Network hashrate</span><span class="stat-value sm">{{hashrate .Data.Hashrate}}</span><span class="stat-hint">over the last 120 blocks</span></div>
+  <div class="card stat"><span class="stat-label">Difficulty</span><span class="stat-value sm num">{{printf "%.2f" .Data.Difficulty}}</span><span class="stat-hint">{{if .Data.Interval}}{{printf "%.0f" .Data.Interval}} s per block, target 600{{else}}1.0 is the easiest block{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Coins mined</span><span class="stat-value sm"><span class="num">{{coin .Data.Supply}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">{{pct .Data.SupplyPct}} of 21,000,000 · next reward {{coin .Data.Subsidy}}</span></div>
+  <div class="card stat"><span class="stat-label">Next halving</span><span class="stat-value sm"><span class="num">{{num .Data.ToHalving}}</span><span class="stat-unit">blocks</span></span><span class="stat-hint">at height {{num .Data.Halving}}, about {{.Data.HalvingETA}}</span></div>
+  <div class="card stat"><span class="stat-label">Mempool</span><span class="stat-value sm"><span class="num">{{num .Data.Mempool}}</span><span class="stat-unit">tx</span></span><span class="stat-hint">{{printf "%.0f" .Data.MempoolB}} bytes waiting · {{.Data.Peers}} peers</span></div>
+</div>
+
+<div class="charts">
+  <div class="card chart-card"><div class="card-header"><h2>Hashrate</h2><span class="muted small" id="hrCurrent"></span></div><div class="card-body"><div id="chartHashrate"></div></div></div>
+  <div class="card chart-card"><div class="card-header"><h2>Difficulty</h2><span class="muted small" id="diffCurrent"></span></div><div class="card-body"><div id="chartDifficulty"></div></div></div>
+  <div class="card chart-card"><div class="card-header"><h2>Block interval</h2><span class="muted small" id="intCurrent"></span></div><div class="card-body"><div id="chartInterval"></div></div></div>
+  <div class="card chart-card"><div class="card-header"><h2>Coins mined</h2><span class="muted small" id="supCurrent"></span></div><div class="card-body"><div id="chartSupply"></div></div></div>
+</div>
+
+<div class="two">
+  <div class="card flush">
+    <div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Latest blocks</h2><a class="link small" href="/blocks">All blocks</a></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th class="num">Height</th><th>Age</th><th class="num">Txs</th><th>Miner</th><th class="num">Reward</th></tr></thead><tbody>
+    {{range .Data.Blocks}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td title="{{when .Time}} UTC">{{ago .Time}}</td><td class="num">{{.TxCount}}</td><td class="mono">{{if .Miner}}<a href="/address/{{.Miner}}" title="{{.Miner}}">{{short .Miner}}</a>{{end}}</td><td class="num">{{coin .Reward}}</td></tr>{{end}}
+    {{if not .Data.Blocks}}<tr><td colspan="5"><div class="empty"><i data-icon="cube" class="lg"></i><h3>No blocks indexed yet</h3><p>The explorer is catching up with the node.</p></div></td></tr>{{end}}
+    </tbody></table></div>
+  </div>
+  <div class="card flush">
+    <div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Latest transactions</h2><a class="link small" href="/mempool">Mempool</a></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Transaction</th><th class="num">Block</th><th>Age</th><th class="num">Value</th><th class="num">Fee</th></tr></thead><tbody>
+    {{range .Data.Txs}}<tr><td class="mono hash-cell"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a>{{if .Coinbase}} <span class="badge badge-accent">reward</span>{{end}}</td><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td title="{{when .Time}} UTC">{{ago .Time}}</td><td class="num">{{coin .Out}}</td><td class="num muted">{{if .Coinbase}}–{{else}}{{coin .Fee}}{{end}}</td></tr>{{end}}
+    {{if not .Data.Txs}}<tr><td colspan="5"><div class="empty"><i data-icon="activity" class="lg"></i><h3>No transactions yet</h3><p>Transactions appear here as blocks are mined.</p></div></td></tr>{{end}}
+    </tbody></table></div>
+  </div>
+</div>
+<script src="{{.UIJS}}"></script>
+<script>
+(async function () {
+  const r = await fetch('/api/charts?n=288'); const d = await r.json(); const pts = d.points || [];
+  const fx = h => UI.fmt.int(h), empty = 'Not enough blocks yet for a chart.';
+  UI.chart(document.getElementById('chartHashrate'), pts.map(p => ({ x: p.h, y: p.hashrate })), { formatY: v => UI.fmt.hashrate(v), formatX: fx, label: 'Network hashrate by block height', zero: true, empty });
+  UI.chart(document.getElementById('chartDifficulty'), pts.map(p => ({ x: p.h, y: p.difficulty })), { formatY: v => v.toLocaleString(undefined, { maximumFractionDigits: 2 }), formatX: fx, label: 'Difficulty by block height', zero: true, empty });
+  UI.chart(document.getElementById('chartInterval'), pts.map(p => ({ x: p.h, y: p.interval })), { formatY: v => UI.fmt.duration(v), formatX: fx, label: 'Seconds between blocks by height', zero: true, empty });
+  UI.chart(document.getElementById('chartSupply'), pts.map(p => ({ x: p.h, y: p.supply / 1e8 })), { formatY: v => v.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ARG', formatX: fx, label: 'Coins mined by block height', zero: true, empty });
+  if (pts.length) {
+    const last = pts[pts.length - 1], at = ' at height ' + fx(last.h);
+    document.getElementById('hrCurrent').textContent = UI.fmt.hashrate(last.hashrate) + at;
+    document.getElementById('diffCurrent').textContent = last.difficulty.toLocaleString(undefined, { maximumFractionDigits: 2 }) + at;
+    document.getElementById('intCurrent').textContent = UI.fmt.duration(last.interval) + ' for the last block';
+    document.getElementById('supCurrent').textContent = (last.supply / 1e8).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ARG' + at;
+  }
+})();
+</script>
+{{template "foot" .}}{{end}}
+
+{{define "blocks"}}{{template "head" .}}
+<div class="page-header"><div><h1>Blocks</h1><p>Newest first, from height {{num .Data.Before}}.</p></div></div>
+<div class="card flush"><div class="table-wrap"><table class="table"><thead><tr><th class="num">Height</th><th class="hide-m">Time (UTC)</th><th>Age</th><th class="num hide-m">Interval</th><th class="hide-m">Hash</th><th class="num">Txs</th><th class="num hide-m">Size</th><th>Miner</th><th class="num">Reward</th><th class="num">Fees</th></tr></thead><tbody>
+{{range .Data.Blocks}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}}</td><td>{{ago .Time}}</td><td class="num muted hide-m">{{if .Interval}}{{dur .Interval}}{{else}}–{{end}}</td><td class="mono hash-cell hide-m"><a href="/block/{{.Hash}}" title="{{.Hash}}">{{short .Hash}}</a></td><td class="num">{{.TxCount}}</td><td class="num hide-m">{{num .Size}} B</td><td class="mono">{{if .Miner}}<a href="/address/{{.Miner}}" title="{{.Miner}}">{{short .Miner}}</a>{{end}}</td><td class="num">{{coin .Reward}}</td><td class="num muted">{{coin .Fees}}</td></tr>{{end}}
+</tbody></table></div></div>
+<div class="pager">{{if lt .Data.Prev .Height}}<a class="btn btn-secondary btn-sm" href="/blocks?before={{.Data.Prev}}">Newer</a>{{else}}<span></span>{{end}}{{if ge .Data.Next 0}}<a class="btn btn-secondary btn-sm" href="/blocks?before={{.Data.Next}}">Older</a>{{end}}</div>
+{{template "foot" .}}{{end}}
+
+{{define "block"}}{{template "head" .}}
+<div class="page-header"><div><h1>Block {{num .Data.height}}</h1><p class="mono">{{.Data.hash}}</p></div>
+<div class="row">
+  {{if .Data.onmainchain}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-warn"><i data-icon="alert"></i>not on the main chain</span>{{end}}
+  <span class="blocknav">{{if .Data.prevheight}}<a class="btn btn-secondary btn-sm" href="/block/{{.Data.prevheight}}">← {{num .Data.prevheight}}</a>{{else}}{{if eq (printf "%.0f" .Data.height) "1"}}<a class="btn btn-secondary btn-sm" href="/block/0">← 0</a>{{end}}{{end}}{{if .Data.nextblockhash}}<a class="btn btn-secondary btn-sm" href="/block/{{.Data.nextblockhash}}">{{num .Data.nextheight}} →</a>{{end}}</span>
+</div></div>
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Mined</span><span class="stat-value sm">{{agof .Data.time}}</span><span class="stat-hint">{{whenf .Data.time}} UTC</span></div>
+  <div class="card stat"><span class="stat-label">Reward</span><span class="stat-value sm"><span class="num">{{if .Data.reward}}{{coin .Data.reward}}{{else}}–{{end}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">includes {{coin .Data.fees}} {{.Coin}} in fees</span></div>
+  <div class="card stat"><span class="stat-label">Transactions</span><span class="stat-value sm num">{{.Data.txcount}}</span><span class="stat-hint">{{num .Data.size}} bytes</span></div>
+  <div class="card stat"><span class="stat-label">Miner</span><span class="stat-value sm mono" style="font-size:var(--fs-4)">{{if .Data.miner}}<a class="link" href="/address/{{.Data.miner}}" title="{{.Data.miner}}">{{short .Data.miner}}</a>{{else}}–{{end}}</span><span class="stat-hint">coinbase recipient</span></div>
+</div>
+<div class="card flush"><dl class="props">
+  <dt>Height</dt><dd class="num">{{num .Data.height}}</dd>
+  <dt>Time</dt><dd>{{whenf .Data.time}} UTC <span class="muted">({{agof .Data.time}})</span></dd>
+  <dt>Previous block</dt><dd class="mono"><a class="link" href="/block/{{.Data.prevhash}}">{{.Data.prevhash}}</a></dd>
+  {{if .Data.nextblockhash}}<dt>Next block</dt><dd class="mono"><a class="link" href="/block/{{.Data.nextblockhash}}">{{.Data.nextblockhash}}</a></dd>{{end}}
+  <dt>Difficulty</dt><dd>{{printf "%.4f" .Data.difficulty}} <span class="muted">(bits {{.Data.bits}})</span></dd>
+  {{if .Data.target}}<dt>Target</dt><dd class="mono">{{.Data.target}}</dd>{{end}}
+  {{if .Data.work}}<dt>Work</dt><dd class="mono">{{.Data.work}} <span class="muted">expected hashes, hex</span></dd>{{end}}
+  <dt>Nonce</dt><dd class="num">{{printf "%.0f" .Data.nonce}}</dd>
+  <dt>Version</dt><dd class="num">{{printf "%.0f" .Data.version}}</dd>
+  <dt>Transaction root</dt><dd class="mono">{{.Data.txroot}}</dd>
+  <dt>Witness root</dt><dd class="mono">{{.Data.witnessroot}}</dd>
+  <dt>Proof-of-work hash</dt><dd class="mono">{{.Data.powhash}}</dd>
+</dl></div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Transactions</h2><span class="muted small">{{.Data.txcount}} in this block</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Transaction</th><th class="num">Inputs</th><th class="num">Outputs</th><th class="num">Value out</th><th class="num">Fee</th></tr></thead><tbody>
+{{range .Data.tx}}<tr><td class="mono"><a href="/tx/{{.txid}}">{{.txid}}</a>{{if .coinbase}} <span class="badge badge-accent">reward</span>{{end}}</td><td class="num">{{len .inputs}}</td><td class="num">{{len .outputs}}</td><td class="num">{{coin .valueOut}}</td><td class="num muted">{{if .coinbase}}–{{else}}{{coin .fee}}{{end}}</td></tr>{{end}}
+</tbody></table></div></div>
+{{template "foot" .}}{{end}}
+
+{{define "tx"}}{{template "head" .}}
+<div class="page-header"><div><h1>Transaction</h1><p class="mono">{{.Data.txid}}</p></div>
+<div class="row">{{if .Data.blockhash}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-accent"><i data-icon="history"></i>Pending</span>{{end}}{{if .Data.coinbase}}<span class="badge badge-accent">mining reward</span>{{end}}</div></div>
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Value out</span><span class="stat-value sm"><span class="num">{{coin .Data.totalOut}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">{{len .Data.outputs}} outputs{{if .Data.assets}} · also moves {{range $i, $a := .Data.assets}}{{if $i}}, {{end}}{{$a.Name}}{{end}}{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Fee</span><span class="stat-value sm"><span class="num">{{if .Data.coinbase}}–{{else}}{{coin .Data.fee}}{{end}}</span>{{if not .Data.coinbase}}<span class="stat-unit">{{.Coin}}</span>{{end}}</span><span class="stat-hint">{{if .Data.feeRate}}{{printf "%.2f" .Data.feeRate}} units per byte{{else}}{{if .Data.coinbase}}new coins pay no fee{{else}}–{{end}}{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Size</span><span class="stat-value sm num">{{num .Data.size}}</span><span class="stat-hint">bytes with witnesses</span></div>
+  <div class="card stat"><span class="stat-label">{{if .Data.blockhash}}Mined{{else}}Status{{end}}</span><span class="stat-value sm">{{if .Data.blockhash}}{{if .Data.time}}{{ago .Data.time}}{{else}}block {{num .Data.height}}{{end}}{{else}}Pending{{end}}</span><span class="stat-hint">{{if .Data.blockhash}}in block {{num .Data.height}}{{else}}in the mempool, waiting to be mined{{end}}</span></div>
+</div>
+<div class="card flush"><dl class="props">
+  {{if .Data.blockhash}}<dt>Block</dt><dd class="mono"><a class="link" href="/block/{{.Data.blockhash}}">{{.Data.blockhash}}</a></dd>{{end}}
+  <dt>Lock height</dt><dd class="num">{{num .Data.lock_height}}</dd>
+  <dt>Total in</dt><dd>{{if .Data.coinbase}}<span class="muted">new coins</span>{{else}}{{coin .Data.totalIn}} {{.Coin}}{{end}}</dd>
+  <dt>Total out</dt><dd>{{coin .Data.totalOut}} {{.Coin}}</dd>
+  <dt>Witness id</dt><dd class="mono">{{.Data.wtxid}}</dd>
+  {{range .Data.assets}}{{if .Issued}}<dt>Issuance</dt><dd><span class="num">{{coin .Issued}}</span> <b{{if .Unverified}} class="unverified"{{end}}>{{.Name}}</b> <span class="muted small">created in this transaction</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div><div class="muted small mono">issuer {{.Issuer}}</div></dd>{{end}}{{end}}
+  {{range .Data.assets}}{{if .Burned}}<dt>Burned</dt><dd><span class="num">{{coin .Burned}}</span> <b>{{.Name}}</b> <span class="muted small">destroyed: the inputs and issuance exceed the outputs</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div></dd>{{end}}{{end}}
+</dl></div>
+<div class="grid cols-2">
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Inputs</h2><span class="muted small">{{len .Data.inputs}}</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>From</th><th class="num">Amount</th></tr></thead><tbody>
+{{range $i, $in := .Data.inputs}}<tr><td class="num muted">{{$i}}</td>
+  <td class="mono">{{if $in.coinbase}}<span class="badge badge-accent">new coins</span>{{else}}{{if $in.prevout}}{{if $in.prevout.address}}<a href="/address/{{$in.prevout.address}}" title="{{$in.prevout.address}}">{{short $in.prevout.address}}</a>{{end}}{{if $in.prevout.asset}} <span class="badge badge-accent">{{sym $in.prevout.assetDisplay $in.prevout.asset}}</span>{{end}}<div class="muted small">spends <a href="/tx/{{$in.txid}}">{{short $in.txid}}</a>:{{$in.index}}</div>{{else}}<a href="/tx/{{$in.txid}}">{{short $in.txid}}</a>:{{$in.index}}{{end}}{{end}}</td>
+  <td class="num">{{if $in.prevout}}{{$in.prevout.coin}}{{if $in.prevout.asset}} <span class="muted">{{sym $in.prevout.assetDisplay $in.prevout.asset}}</span>{{end}}{{end}}</td></tr>{{end}}
+</tbody></table></div></div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Outputs</h2><span class="muted small">{{len .Data.outputs}}</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>To</th><th class="num">Amount</th></tr></thead><tbody>
+{{range .Data.outputs}}<tr><td class="num muted">{{.n}}</td><td class="mono">{{if .address}}<a href="/address/{{.address}}" title="{{.address}}">{{short .address}}</a>{{else}}<span class="badge">data</span> {{if .text}}<span class="memo">{{.text}}</span>{{else}}<span class="muted">{{.payload}}</span>{{end}}{{end}}{{if .asset}} <span class="badge badge-accent">{{sym .assetDisplay .asset}}</span>{{end}}</td><td class="num">{{.coin}}{{if .asset}} <span class="muted">{{sym .assetDisplay .asset}}</span>{{end}}</td></tr>{{end}}
+</tbody></table></div></div>
+</div>
+{{template "foot" .}}{{end}}
+
+{{define "address"}}{{template "head" .}}
+<div class="addr-head">
+  <div class="page-header" style="margin:0"><div><h1>{{if .Data.Swap}}Swap address{{else if .Data.Treasury}}Treasury{{else}}Address{{end}}</h1><p class="mono" style="overflow-wrap:anywhere">{{.Data.Address}}</p></div></div>
+  <div class="qr"><img alt="QR code" src="/qr.svg?d={{.Data.Address}}"></div>
+</div>
+{{if .Data.Treasury}}<div class="banner info"><i data-icon="info"></i><div>The {{.Brand}} treasury. From block 300 every block pays it 1% of the block subsidy, and the swap and bridge fees are paid to it. Its key is held offline by the project.</div></div>{{end}}
+{{with .Data.Swap}}<div class="banner info"><i data-icon="info"></i><div>uARG sent here is paid out by the bridge as {{.Symbol}} on {{.Chain}} to <span class="mono" style="overflow-wrap:anywhere">{{.To}}</span>. Nothing sent to this address can move again.</div></div>{{end}}
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Balance</span><span class="stat-value sm"><span class="num">{{coin .Data.Balance}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">{{if .Data.Maturing}}{{coin .Data.Maturing}} {{.Coin}} still maturing{{else}}all spendable{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Received</span><span class="stat-value sm num">{{coin .Data.Totals.Received}}</span><span class="stat-hint">lifetime</span></div>
+  <div class="card stat"><span class="stat-label">Sent</span><span class="stat-value sm num">{{coin .Data.Totals.Sent}}</span><span class="stat-hint">lifetime</span></div>
+  <div class="card stat"><span class="stat-label">Transactions</span><span class="stat-value sm num">{{num .Data.Totals.TxCount}}</span><span class="stat-hint">{{if .Data.Stats.FirstHeight}}first at block {{num .Data.Stats.FirstHeight}}{{else}}none yet{{end}}</span></div>
+</div>
+<div class="grid cols-3">
+  <div class="card stat"><span class="stat-label">Blocks mined</span><span class="stat-value sm num">{{num .Data.Stats.Mined}}</span><span class="stat-hint">{{coin .Data.Stats.MinedTotal}} {{.Coin}} in rewards{{if .Data.Stats.ReferralCount}} · {{coin .Data.Stats.ReferralTotal}} {{.Coin}} from {{num .Data.Stats.ReferralCount}} referral{{if gt .Data.Stats.ReferralCount 1}}s{{end}}{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">First seen</span><span class="stat-value sm">{{if .Data.Stats.FirstTime}}{{ago .Data.Stats.FirstTime}}{{else}}–{{end}}</span><span class="stat-hint">{{if .Data.Stats.FirstTime}}{{when .Data.Stats.FirstTime}} UTC{{else}}no activity{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Last seen</span><span class="stat-value sm">{{if .Data.Stats.LastTime}}{{ago .Data.Stats.LastTime}}{{else}}–{{end}}</span><span class="stat-hint">{{if .Data.Stats.LastTime}}{{when .Data.Stats.LastTime}} UTC{{else}}no activity{{end}}</span></div>
+</div>
+{{if .Data.Holdings}}<div class="grid cols-3">
+{{range .Data.Holdings}}  <div class="card stat"><span class="stat-label{{if .Unverified}} unverified{{end}}">{{if .Logo}}<img class="tok" src="{{.Logo}}" alt="" width="20" height="20">{{end}}{{sym .Display .Asset}} balance</span><span class="stat-value sm"><span class="num">{{coin .Balance}}</span><span class="stat-unit">{{sym .Display .Asset}}</span></span><span class="stat-hint">{{if .Unverified}}<span class="mono" title="issuer {{.Issuer}}">issuer {{short .Issuer}}</span> · {{end}}received <span class="num">{{coin .Received}}</span> · sent <span class="num">{{coin .Sent}}</span> · <span class="link">about {{sym .Display .Asset}}</span></span></div>
+{{end}}</div>{{end}}
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>History</h2><span class="muted small">{{if .Data.Before}}older than block {{num .Data.Before}}{{else}}newest first{{end}}</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Type</th><th>Transaction</th><th class="num">Change</th></tr></thead><tbody>
+{{range .Data.History}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td>{{if .Referral}}<span class="tag mined"><i data-icon="users"></i>Referral</span>{{else}}{{if .Coinbase}}<span class="tag mined"><i data-icon="pickaxe"></i>Mined</span>{{else}}{{if .Incoming}}<span class="tag in"><i data-icon="receive"></i>Received</span>{{else}}<span class="tag out"><i data-icon="send"></i>Sent</span>{{end}}{{end}}{{end}}{{range .Assets}} <span class="badge {{if .Unverified}}badge-warn{{else}}badge-accent{{end}}">{{sym .Display .Asset}}</span>{{end}}</td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{if .MovedARG}}<span class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}}</span>{{end}}{{range .Assets}}<div class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}} <span class="muted small">{{sym .Display .Asset}}</span></div>{{end}}</td></tr>{{end}}
+{{if not .Data.History}}<tr><td colspan="5"><div class="empty"><i data-icon="wallet" class="lg"></i><h3>No activity yet</h3><p>This address has not received or sent anything the index knows about.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+<div class="pager">{{if .Data.Before}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}">Newest</a>{{else}}<span></span>{{end}}{{if .Data.Older}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}?before={{.Data.Older}}">Older</a>{{end}}</div>
+{{template "foot" .}}{{end}}
+
+{{define "notfound"}}{{template "head" .}}
+<div class="card"><div class="empty"><i data-icon="search" class="lg"></i><h3>Nothing found</h3><p>No block, transaction or address matches <span class="mono" style="overflow-wrap:anywhere">{{.Data}}</span>. The index is at height {{num .Height}} of {{num .Tip}}; very recent items may not be indexed yet.</p><a class="btn btn-secondary btn-sm" href="/">Back to the explorer</a></div></div>
+{{template "foot" .}}{{end}}
+
+{{define "mempool"}}{{template "head" .}}
+<style>
+  .mp-lane-wrap { position: relative; margin: 0 calc(-1 * var(--sp-2)); }
+  .mp-lane { display: flex; align-items: flex-end; gap: 16px; overflow-x: auto; padding: 8px var(--sp-2) 26px; scrollbar-width: thin; }
+  .mp-side { display: flex; align-items: flex-end; gap: 16px; }
+  .mp-sep { flex: none; align-self: stretch; width: 0; border-left: 2px dashed var(--border); margin: 0 4px; position: relative; }
+  .mp-sep span { position: absolute; bottom: -17px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+  .mp-blk { flex: none; width: 132px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); text-decoration: none; }
+  .mp-blk .lbl { font-size: var(--fs-2); font-weight: 650; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .mp-blk a.lbl { color: var(--accent-text); }
+  .mp-cube { position: relative; height: 132px; border-radius: 12px; overflow: hidden; border: 1px solid var(--hair); background: var(--sunken); box-shadow: 0 8px 22px -12px rgba(0,0,0,.55); }
+  .mp-cube::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 45%); pointer-events: none; z-index: 2; }
+  .mp-fill { position: absolute; left: 0; right: 0; bottom: 0; z-index: 0; transition: height .6s var(--ease); }
+  .mp-blk.next .mp-fill { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #fff), color-mix(in srgb, var(--accent) 60%, #000)); }
+  .mp-blk.mined .mp-fill { background: linear-gradient(180deg, color-mix(in srgb, var(--ink-3) 70%, transparent), color-mix(in srgb, var(--ink-3) 35%, transparent)); }
+  .mp-in { position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .mp-in .rate { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mp-in .range { font-size: 12px; opacity: .85; font-variant-numeric: tabular-nums; }
+  .mp-in .meta { font-size: 12px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .mp-in .meta b { font-weight: 650; }
+  .mp-blk.next .mp-in { color: var(--ink); }
+  .mp-blk.mp-none .mp-cube { border-style: dashed; background: transparent; box-shadow: none; }
+  .mp-fees { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
+  .mp-fee { padding: var(--sp-4); border-radius: 12px; border: 1px solid var(--hair); background: var(--surface); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .mp-fee .k { font-size: var(--fs-2); color: var(--ink-3); font-weight: 600; }
+  .mp-fee .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mp-fee .v small { font-size: 13px; font-weight: 600; color: var(--ink-3); margin-left: 4px; }
+  .mp-fee .c { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mp-fee.high { border-color: color-mix(in srgb, var(--accent) 45%, var(--hair)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+  .mp-fee.high .v { color: var(--accent-text); }
+  @media (max-width: 760px) { .mp-fees, .mp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } .mp-blk { width: 124px; } .mp-in { padding: 10px; } .mp-in .rate { font-size: 15px; } .mp-in .meta, .mp-in .range { font-size: 11px; } .mp-stats .stat-hint { display: none; } }
+</style>
+<div class="page-header"><div><h1>Mempool</h1><p>Transactions waiting for a block, and the blocks that would mine them.</p></div><span class="badge" id="mpBadge">{{if .Data.Count}}{{num .Data.Count}} waiting{{else}}empty{{end}}</span></div>
+{{if .Data.Error}}<div class="banner warn" role="alert"><i data-icon="alert"></i><div>{{.Data.Error}}. The mempool cannot be read right now.</div></div>{{end}}
+<div class="mp-lane-wrap"><div class="mp-lane" id="mpLane" aria-label="Projected and recent blocks"><div class="mp-side" id="mpNext"></div><div class="mp-sep"><span>Now</span></div><div class="mp-side" id="mpMined"></div></div></div>
+<div class="mp-fees" aria-label="Fee rates">
+  <div class="mp-fee"><span class="k">No priority</span><span class="v" id="feeNone">–<small>u/B</small></span><span class="c" id="feeNoneC">&nbsp;</span></div>
+  <div class="mp-fee"><span class="k">Low priority</span><span class="v" id="feeLow">–<small>u/B</small></span><span class="c" id="feeLowC">&nbsp;</span></div>
+  <div class="mp-fee"><span class="k">Medium priority</span><span class="v" id="feeMed">–<small>u/B</small></span><span class="c" id="feeMedC">&nbsp;</span></div>
+  <div class="mp-fee high"><span class="k">High priority</span><span class="v" id="feeHigh">–<small>u/B</small></span><span class="c" id="feeHighC">&nbsp;</span></div>
+</div>
+<div class="grid cols-4 mp-stats">
+  <div class="card stat"><span class="stat-label">Transactions</span><span class="stat-value sm num" id="stCount">{{num .Data.Count}}</span><span class="stat-hint">waiting</span></div>
+  <div class="card stat"><span class="stat-label">Size</span><span class="stat-value sm num" id="stSize">–</span><span class="stat-hint">kB, of 1,000 kB per block</span></div>
+  <div class="card stat"><span class="stat-label">Fees waiting</span><span class="stat-value sm"><span class="num" id="stFees">–</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">paid to the miners who include them</span></div>
+  <div class="card stat"><span class="stat-label">Blocks to clear</span><span class="stat-value sm num" id="stBlocks">–</span><span class="stat-hint">at the current fee order</span></div>
+</div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Waiting transactions</h2><span class="muted small">highest fee rate first</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Transaction</th><th class="num">Size</th><th class="num hide-m">Value</th><th class="num hide-m">Fee</th><th class="num">Fee rate</th></tr></thead><tbody id="mpRows">
+{{range .Data.Rows}}<tr><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{printf "%.0f" .Size}} B</td><td class="num hide-m">{{coinf .Out}}</td><td class="num hide-m">{{coin .Fee}}</td><td class="num">{{printf "%.2f" .FeeRate}} u/B</td></tr>{{end}}
+{{if not .Data.Rows}}<tr><td colspan="5"><div class="empty"><i data-icon="activity" class="lg"></i><h3>Nothing waiting</h3><p>Every broadcast transaction is in a block. New ones appear here within seconds.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+<script>
+(function () {
+  var COIN = 1e8, TYPICAL = 220; // bytes of a typical one-input, two-output payment
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var int = function (n) { return Number(n || 0).toLocaleString('en-US'); };
+  function rate(r) { r = Number(r) || 0; return r >= 100 ? Math.round(r).toLocaleString('en-US') : r >= 10 ? r.toFixed(0) : r.toFixed(r % 1 ? 1 : 0); }
+  function arg(units) { var v = Number(units || 0) / COIN; if (!v) return '0'; return v >= 1 ? v.toLocaleString('en-US', { maximumFractionDigits: 4 }) : v.toFixed(8).replace(/0+$/, '').replace(/\.$/, ''); }
+  function ago(t) { var s = Math.max(0, Math.floor(Date.now() / 1000 - t)); return s < 60 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : Math.floor(s / 86400) + ' d ago'; }
+  function fill(frac) { return Math.max(3, Math.min(100, frac * 100)).toFixed(1) + '%'; }
+  function nextBlock(b, i, max, secs) {
+    var mins = Math.round((i + 1) * secs / 60), label = i === 0 ? 'Next block' : (b.rest ? '+' : '') + 'Block ' + (i + 1);
+    return '<div class="mp-blk next"><span class="lbl">' + label + '</span><div class="mp-cube" title="' + int(b.txs) + ' transactions, ' + (b.bytes / 1000).toFixed(1) + ' kB"><div class="mp-fill" style="height:' + fill(b.bytes / max) + '"></div><div class="mp-in"><div><div class="rate">~' + rate(b.median_rate) + ' u/B</div><div class="range">' + rate(b.min_rate) + ' to ' + rate(b.max_rate) + ' u/B</div></div><div class="meta"><b>' + int(b.txs) + '</b> transactions<br>' + arg(b.fees) + ' ARG fees<br>in ~' + mins + ' min</div></div></div></div>';
+  }
+  function emptyBlock() {
+    return '<div class="mp-blk next mp-none"><span class="lbl">Next block</span><div class="mp-cube"><div class="mp-in"><div><div class="rate">Empty</div><div class="range">nothing waiting</div></div><div class="meta">Any fee from the minimum gets in.</div></div></div></div>';
+  }
+  function minedBlock(b, max) {
+    return '<a class="mp-blk mined" href="/block/' + b.height + '"><span class="lbl">' + int(b.height) + '</span><div class="mp-cube" title="' + int(b.txs) + ' transactions, ' + (b.size / 1000).toFixed(1) + ' kB"><div class="mp-fill" style="height:' + fill(b.size / max) + '"></div><div class="mp-in"><div><div class="rate">' + int(b.txs) + (b.txs === 1 ? ' tx' : ' txs') + '</div><div class="range">' + (b.size / 1000).toFixed(1) + ' kB</div></div><div class="meta">' + arg(b.fees) + ' ARG fees<br>' + ago(b.time) + '</div></div></div></a>';
+  }
+  function feeBox(id, r) { $(id).innerHTML = rate(r) + '<small>u/B</small>'; $(id + 'C').textContent = '≈ ' + arg(r * TYPICAL) + ' ARG for a payment'; }
+  var first = true;
+  function render(m) {
+    var max = m.max_block_bytes || 1000000, secs = m.block_seconds || 600, proj = m.projected || [];
+    $('mpNext').innerHTML = proj.length ? proj.slice().reverse().map(function (b, k) { return nextBlock(b, proj.length - 1 - k, max, secs); }).join('') : emptyBlock();
+    $('mpMined').innerHTML = (m.recent || []).map(function (b) { return minedBlock(b, max); }).join('');
+    var e = m.estimates || {};
+    feeBox('feeNone', e.none); feeBox('feeLow', e.low); feeBox('feeMed', e.medium); feeBox('feeHigh', e.high);
+    $('stCount').textContent = int(m.count); $('stSize').textContent = ((m.bytes || 0) / 1000).toFixed(1);
+    $('stFees').textContent = arg(m.fees); $('stBlocks').textContent = int(proj.length);
+    $('mpBadge').textContent = m.count ? int(m.count) + ' waiting' : 'empty';
+    var txs = m.txs || [];
+    $('mpRows').innerHTML = txs.length ? txs.map(function (t) {
+      return '<tr><td class="mono"><a href="/tx/' + esc(t.txid) + '" title="' + esc(t.txid) + '">' + esc(t.txid.slice(0, 10) + '…' + t.txid.slice(-6)) + '</a></td><td class="num">' + int(t.size) + ' B</td><td class="num hide-m">' + arg(t.value) + '</td><td class="num hide-m">' + arg(t.fee) + '</td><td class="num">' + rate(t.rate) + ' u/B</td></tr>';
+    }).join('') : '<tr><td colspan="5"><div class="empty"><h3>Nothing waiting</h3><p>Every broadcast transaction is in a block. New ones appear here within seconds.</p></div></td></tr>';
+    if (first) { first = false; var lane = $('mpLane'), sep = lane.querySelector('.mp-sep'); lane.scrollLeft = Math.max(0, sep.offsetLeft - lane.clientWidth * 0.55); }
+  }
+  function load() { fetch('/api/mempool').then(function (r) { return r.json(); }).then(render).catch(function () { }); }
+  load(); setInterval(load, 8000);
+})();
+</script>
+{{template "foot" .}}{{end}}
+
+{{define "asset"}}{{template "head" .}}
+<div class="page-header"><div><h1>{{if .Data.Info.Logo}}<img class="tok" src="{{.Data.Info.Logo}}" alt="" width="32" height="32">{{end}}{{if .Data.Info.Display}}{{.Data.Info.Display}}{{else}}Asset{{end}}</h1><p class="mono">{{.Data.Info.Asset}}</p></div>
+<div class="row"><span class="badge">asset</span>{{if .Data.Info.Symbol}}<span class="badge badge-accent" title="symbol as written on chain">{{.Data.Info.Symbol}}</span>{{end}}{{if .Data.Info.Logo}}<span class="badge badge-ok"><i data-icon="check"></i>the bridge's asset</span>{{end}}</div></div>
+{{if .Data.Info.Unverified}}<div class="banner warn" role="alert"><i data-icon="alert"></i><div>Unverified: this asset calls itself {{.Data.Info.Symbol}}, but it is not the one the bridge issues. Anyone can issue an asset with any symbol. Issuer <span class="mono" title="{{.Data.Info.Issuer}}">{{short .Data.Info.Issuer}}</span>.</div></div>{{end}}
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Supply</span><span class="stat-value sm"><span class="num">{{coin .Data.Info.Supply}}</span><span class="stat-unit">{{sym .Data.Info.Display .Data.Info.Asset}}</span></span><span class="stat-hint">issued minus burned</span></div>
+  <div class="card stat"><span class="stat-label">Issued</span><span class="stat-value sm num">{{coin .Data.Info.Issued}}</span><span class="stat-hint">lifetime</span></div>
+  <div class="card stat"><span class="stat-label">Burned</span><span class="stat-value sm num">{{coin .Data.Info.Burned}}</span><span class="stat-hint">{{if .Data.Info.Burned}}destroyed by their holders{{else}}none destroyed{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Transactions</span><span class="stat-value sm num">{{num .Data.Info.TxCount}}</span><span class="stat-hint">first at block {{num .Data.Info.FirstHeight}}</span></div>
+</div>
+<div class="card flush"><dl class="props">
+  <dt>Symbol</dt><dd>{{if .Data.Info.Symbol}}<b{{if .Data.Info.Unverified}} class="unverified"{{end}}>{{.Data.Info.Display}}</b> <span class="muted">(on chain: {{.Data.Info.Symbol}})</span>{{else}}<span class="muted">unknown: no issuance of this asset is indexed</span>{{end}}</dd>
+  <dt>Asset id</dt><dd class="mono">{{.Data.Info.Asset}}</dd>
+  <dt>Issuer</dt><dd class="mono">{{if .Data.Info.Issuer}}{{.Data.Info.Issuer}} <span class="muted small">x-only public key</span>{{else}}<span class="muted">unknown</span>{{end}}</dd>
+  <dt>First seen</dt><dd>block <a class="link" href="/block/{{.Data.Info.FirstHeight}}">{{num .Data.Info.FirstHeight}}</a>, {{when .Data.Info.FirstTime}} UTC <span class="muted">({{ago .Data.Info.FirstTime}})</span><div class="muted small mono">in <a class="link" href="/tx/{{.Data.Info.FirstTxID}}">{{.Data.Info.FirstTxID}}</a></div></dd>
+</dl></div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Transactions</h2><span class="muted small">{{if .Data.Before}}older than block {{num .Data.Before}}{{else}}newest first{{end}}</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Transaction</th><th class="num" title="units in the outputs">Moved</th><th class="num">Issued</th><th class="num">Burned</th></tr></thead><tbody>
+{{range .Data.History}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a>{{if .Issued}} <span class="badge badge-accent">issuance</span>{{end}}</td><td class="num">{{coin .Out}}</td><td class="num {{if .Issued}}pos{{else}}muted{{end}}">{{if .Issued}}+{{coin .Issued}}{{else}}–{{end}}</td><td class="num {{if .Burned}}neg{{else}}muted{{end}}">{{if .Burned}}−{{coin .Burned}}{{else}}–{{end}}</td></tr>{{end}}
+{{if not .Data.History}}<tr><td colspan="6"><div class="empty"><i data-icon="layers" class="lg"></i><h3>No transactions</h3><p>The index knows no transaction that moves this asset.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+<div class="pager">{{if .Data.Before}}<span class="btn btn-secondary btn-sm">Newest</span>{{else}}<span></span>{{end}}{{if .Data.Older}}<span class="btn btn-secondary btn-sm">Older</span>{{end}}</div>
+{{template "foot" .}}{{end}}
+
+{{define "assets"}}{{template "head" .}}
+<div class="page-header"><div><h1>Assets</h1><p>Every asset issued on {{.Network}}, by symbol. {{.Coin}} itself is mined, never issued.</p></div>{{if .Data}}<span class="badge">{{len .Data}} assets</span>{{end}}</div>
+<div class="card flush"><div class="table-wrap"><table class="table"><thead><tr><th>Symbol</th><th class="hide-m">Asset id</th><th class="num">Supply</th><th class="num hide-m">Issued</th><th class="num hide-m">Burned</th><th class="num">Txs</th><th class="num hide-m">First seen</th></tr></thead><tbody>
+{{range .Data}}<tr><td><span>{{if .Logo}}<img class="tok" src="{{.Logo}}" alt="" width="20" height="20">{{end}}<b{{if .Unverified}} class="unverified"{{end}}>{{sym .Display .Asset}}</b></span>{{if .Unverified}}<div class="muted small mono" title="issuer {{.Issuer}}">issuer {{short .Issuer}}</div>{{end}}</td><td class="mono hash-cell hide-m"><span>{{short .Asset}}</span></td><td class="num">{{coin .Supply}}</td><td class="num hide-m">{{coin .Issued}}</td><td class="num muted hide-m">{{coin .Burned}}</td><td class="num">{{num .TxCount}}</td><td class="num hide-m"><a href="/block/{{.FirstHeight}}">{{num .FirstHeight}}</a></td></tr>{{end}}
+{{if not .Data}}<tr><td colspan="7"><div class="empty"><i data-icon="layers" class="lg"></i><h3>No assets yet</h3><p>No transaction with an issuance has been indexed on {{.Network}}.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+{{template "foot" .}}{{end}}
+

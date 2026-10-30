@@ -1,0 +1,91 @@
+/* Argonmine colours. Brand constants plus the light and dark theme tokens,
+   identical to ui/theme.css. Light is the default; dark follows the system
+   setting unless data-theme="light" is set, or is forced with data-theme="dark". */
+
+:root {
+  /* Brand */
+  --brand-amber: #e0a63a;
+  --brand-amber-deep: #b7791f;
+  --brand-graphite: #0d0d0d;
+  --brand-graphite-raised: #1a1a19;
+  --brand-ink: #0b0b0b;
+  --brand-paper: #f9f9f7;
+  --brand-bone: #f0efec;
+  --brand-amber-ink: #1a1200;
+
+  /* Token logos (disc gradients, top-left to bottom-right) */
+  --token-arg-from: #f6c25a;
+  --token-arg-to: #b7791f;
+  --token-uarg-from: #3fd2a0;
+  --token-uarg-to: #0e7a5e;
+  --token-warg-from: #9a8cfb;
+  --token-warg-to: #4b3fc6;
+
+  /* Theme: light */
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --sunken: #f1f1ee;
+  --hair: #e1e0d9;
+  --border: #c3c2b7;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+  --accent: #b7791f;
+  --accent-text: #946016;
+  --accent-ink: #1a1200;
+  --accent-soft: rgba(183,121,31,.12);
+  --focus: #2a78d6;
+  --ok: #006300;
+  --ok-bg: rgba(12,163,12,.12);
+  --warn: #8a5a00;
+  --warn-bg: rgba(250,178,25,.18);
+  --danger: #b02a2a;
+  --danger-bg: rgba(208,59,59,.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --sunken: #131312;
+    --hair: #2c2c2a;
+    --border: #383835;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --accent: #e0a63a;
+    --accent-text: #e0a63a;
+    --accent-ink: #1a1200;
+    --accent-soft: rgba(224,166,58,.14);
+    --focus: #3987e5;
+    --ok: #3fc43f;
+    --ok-bg: rgba(12,163,12,.16);
+    --warn: #fab219;
+    --warn-bg: rgba(250,178,25,.14);
+    --danger: #ef6b6b;
+    --danger-bg: rgba(208,59,59,.18);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --sunken: #131312;
+  --hair: #2c2c2a;
+  --border: #383835;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --ink-3: #898781;
+  --accent: #e0a63a;
+  --accent-text: #e0a63a;
+  --accent-ink: #1a1200;
+  --accent-soft: rgba(224,166,58,.14);
+  --focus: #3987e5;
+  --ok: #3fc43f;
+  --ok-bg: rgba(12,163,12,.16);
+  --warn: #fab219;
+  --warn-bg: rgba(250,178,25,.14);
+  --danger: #ef6b6b;
+  --danger-bg: rgba(208,59,59,.18);
+}

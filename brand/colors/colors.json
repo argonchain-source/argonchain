@@ -1,0 +1,238 @@
+{
+  "$schema": "Argonmine brand colours. sRGB hex. Light and dark mirror ui/theme.css.",
+  "brand": {
+    "amber": {
+      "name": "Amber",
+      "hex": "#e0a63a",
+      "rgb": [
+        224,
+        166,
+        58
+      ],
+      "use": "The mark on dark grounds; app icon; accent in dark mode."
+    },
+    "amber-deep": {
+      "name": "Amber Deep",
+      "hex": "#b7791f",
+      "rgb": [
+        183,
+        121,
+        31
+      ],
+      "use": "The mark on light grounds; accent in light mode."
+    },
+    "graphite": {
+      "name": "Graphite",
+      "hex": "#0d0d0d",
+      "rgb": [
+        13,
+        13,
+        13
+      ],
+      "use": "Dark ground: dark-mode page, social images."
+    },
+    "graphite-raised": {
+      "name": "Graphite Raised",
+      "hex": "#1a1a19",
+      "rgb": [
+        26,
+        26,
+        25
+      ],
+      "use": "App icon tile; dark-mode surfaces."
+    },
+    "ink": {
+      "name": "Ink",
+      "hex": "#0b0b0b",
+      "rgb": [
+        11,
+        11,
+        11
+      ],
+      "use": "Wordmark and text on light grounds; one-colour black logo."
+    },
+    "paper": {
+      "name": "Paper",
+      "hex": "#f9f9f7",
+      "rgb": [
+        249,
+        249,
+        247
+      ],
+      "use": "Light ground: light-mode page."
+    },
+    "bone": {
+      "name": "Bone",
+      "hex": "#f0efec",
+      "rgb": [
+        240,
+        239,
+        236
+      ],
+      "use": "Wordmark and text on dark grounds."
+    },
+    "amber-ink": {
+      "name": "Amber Ink",
+      "hex": "#1a1200",
+      "rgb": [
+        26,
+        18,
+        0
+      ],
+      "use": "Text and marks placed on Amber (alternate icon, primary buttons in dark mode)."
+    }
+  },
+  "light": {
+    "page": "#f9f9f7",
+    "surface": "#fcfcfb",
+    "sunken": "#f1f1ee",
+    "hair": "#e1e0d9",
+    "border": "#c3c2b7",
+    "ink": "#0b0b0b",
+    "ink-2": "#52514e",
+    "ink-3": "#898781",
+    "accent": "#b7791f",
+    "accent-text": "#946016",
+    "accent-ink": "#1a1200",
+    "accent-soft": "rgba(183,121,31,.12)",
+    "focus": "#2a78d6",
+    "ok": "#006300",
+    "ok-bg": "rgba(12,163,12,.12)",
+    "warn": "#8a5a00",
+    "warn-bg": "rgba(250,178,25,.18)",
+    "danger": "#b02a2a",
+    "danger-bg": "rgba(208,59,59,.12)"
+  },
+  "dark": {
+    "page": "#0d0d0d",
+    "surface": "#1a1a19",
+    "sunken": "#131312",
+    "hair": "#2c2c2a",
+    "border": "#383835",
+    "ink": "#f0efec",
+    "ink-2": "#c3c2b7",
+    "ink-3": "#898781",
+    "accent": "#e0a63a",
+    "accent-text": "#e0a63a",
+    "accent-ink": "#1a1200",
+    "accent-soft": "rgba(224,166,58,.14)",
+    "focus": "#3987e5",
+    "ok": "#3fc43f",
+    "ok-bg": "rgba(12,163,12,.16)",
+    "warn": "#fab219",
+    "warn-bg": "rgba(250,178,25,.14)",
+    "danger": "#ef6b6b",
+    "danger-bg": "rgba(208,59,59,.18)"
+  },
+  "tokens": {
+    "ARG": {
+      "from": "#f6c25a",
+      "to": "#b7791f",
+      "glyph": "#ffffff",
+      "note": "Amber disc, white nugget."
+    },
+    "uARG": {
+      "from": "#3fd2a0",
+      "to": "#0e7a5e",
+      "glyph": "#ffffff",
+      "badge": "#0e7a5e",
+      "note": "Green disc, white nugget, dollar badge."
+    },
+    "wARG": {
+      "from": "#9a8cfb",
+      "to": "#4b3fc6",
+      "glyph": "#ffffff",
+      "note": "Violet disc, dashed ring, white nugget. Not live yet."
+    }
+  },
+  "contrast": [
+    {
+      "pair": "Amber Deep on Paper",
+      "fg": "#b7791f",
+      "bg": "#f9f9f7",
+      "ratio": 3.45,
+      "use": "Mark on light",
+      "ok": true
+    },
+    {
+      "pair": "Amber Deep on white",
+      "fg": "#b7791f",
+      "bg": "#ffffff",
+      "ratio": 3.64,
+      "use": "Mark on white",
+      "ok": true
+    },
+    {
+      "pair": "Ink on Paper",
+      "fg": "#0b0b0b",
+      "bg": "#f9f9f7",
+      "ratio": 18.67,
+      "use": "Wordmark and text on light",
+      "ok": true
+    },
+    {
+      "pair": "Amber on Graphite",
+      "fg": "#e0a63a",
+      "bg": "#0d0d0d",
+      "ratio": 8.96,
+      "use": "Mark on dark",
+      "ok": true
+    },
+    {
+      "pair": "Amber on Graphite Raised",
+      "fg": "#e0a63a",
+      "bg": "#1a1a19",
+      "ratio": 8.03,
+      "use": "App icon",
+      "ok": true
+    },
+    {
+      "pair": "Bone on Graphite",
+      "fg": "#f0efec",
+      "bg": "#0d0d0d",
+      "ratio": 16.9,
+      "use": "Wordmark and text on dark",
+      "ok": true
+    },
+    {
+      "pair": "Ink 2 (dark) on Graphite",
+      "fg": "#c3c2b7",
+      "bg": "#0d0d0d",
+      "ratio": 10.85,
+      "use": "Secondary text on dark",
+      "ok": true
+    },
+    {
+      "pair": "Amber Ink on Amber",
+      "fg": "#1a1200",
+      "bg": "#e0a63a",
+      "ratio": 8.57,
+      "use": "Alternate icon; dark-mode primary button",
+      "ok": true
+    },
+    {
+      "pair": "White on Amber Deep",
+      "fg": "#ffffff",
+      "bg": "#b7791f",
+      "ratio": 3.64,
+      "use": "Light-mode primary button label (large/bold only)",
+      "ok": true
+    },
+    {
+      "pair": "Amber on Paper",
+      "fg": "#e0a63a",
+      "bg": "#f9f9f7",
+      "ratio": 2.06,
+      "use": "Do not use: too light on light grounds",
+      "ok": false
+    },
+    {
+      "pair": "Amber Deep on Graphite",
+      "fg": "#b7791f",
+      "bg": "#0d0d0d",
+      "ratio": 5.34,
+      "use": "Avoid: use Amber on dark grounds",
+      "ok": false
+    }
+  ]
+}

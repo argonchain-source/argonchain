@@ -1,0 +1,15 @@
+[profile.default]
+src = "."
+test = "test"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.26"
+optimizer = true
+optimizer_runs = 200
+evm_version = "cancun"
+# Avoid picking up the Go tree above us.
+allow_paths = []
+
+[lint]
+# forge-std is not ours to lint.
+ignore = ["lib/**"]

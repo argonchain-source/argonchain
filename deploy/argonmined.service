@@ -1,0 +1,26 @@
+# systemd unit for a seed node on a Linux host without Docker.
+#   sudo useradd -r -m -d /var/lib/argonmine argonmine
+#   sudo install -m 755 argonmined /usr/local/bin/argonmined
+#   sudo install -m 644 deploy/argonmined.service /etc/systemd/system/
+#   sudo systemctl enable --now argonmined
+[Unit]
+Description=Argonmine full node (seed)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=argonmine
+Group=argonmine
+ExecStart=/usr/local/bin/argonmined -network mainnet -datadir /var/lib/argonmine -listen :9333
+Restart=always
+RestartSec=5
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/argonmine
+PrivateTmp=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

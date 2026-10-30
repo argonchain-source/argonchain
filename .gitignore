@@ -1,0 +1,37 @@
+# Build output
+/build/
+/release/
+*.exe
+*.prev.exe
+/cmd/argonmine-web/site/static/miner.wasm
+/cmd/argonmine-web/site/static/wasm_exec.js
+/contracts/out/
+/contracts/cache/
+/contracts/lib/
+/scripts/mkzip/mkzip
+
+# Runtime data
+/data/
+*.log
+*.wallet
+*.ledger.json
+wallet.json
+rpc.cookie
+peers.json
+*.key
+*.pem
+
+# Local notes and media sources
+/GO-LIVE.md
+/MAINNET.md
+/TODO.md
+/_attic/
+/brand/launch/
+/package-lock.json
+/node_modules/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
