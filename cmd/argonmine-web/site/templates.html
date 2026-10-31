@@ -113,6 +113,8 @@
   .seg button { flex: 1; height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-2); font: inherit; font-weight: 650; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .10); }
   .mode-hint { font-size: var(--fs-2); color: var(--ink-3); margin: -6px 0 0; line-height: 1.45; }
+  .nudge { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); font-size: var(--fs-2); line-height: 1.4; }
+  .nudge > div { flex: 1; } .nudge .btn { flex-shrink: 0; }
   .mode-pool .solo-only, .mode-solo .pool-only { display: none; }
   .mine-btn { height: 60px; font-size: var(--fs-5); border-radius: 14px; gap: 10px; width: 100%; }
   .mine-btn svg { width: 20px; height: 20px; }
@@ -500,8 +502,9 @@
             </div>
           </div>
           <div class="card control">
-            <div class="seg" id="modeSeg" role="group" aria-label="Mining mode"><button type="button" data-mode="solo" aria-pressed="true">Solo</button><button type="button" data-mode="pool" aria-pressed="false">Pool</button></div>
+            <div class="seg" id="modeSeg" role="group" aria-label="Mining mode"><button type="button" data-mode="pool" aria-pressed="true">Pool</button><button type="button" data-mode="solo" aria-pressed="false">Solo</button></div>
             <p class="mode-hint" id="modeHint"></p>
+            <div class="nudge solo-only" id="poolNudge" hidden><div id="poolNudgeText"></div><button class="btn btn-secondary btn-sm" type="button" id="poolNudgeGo">Switch to Pool</button></div>
             <button class="btn btn-primary mine-btn" id="btnMine" disabled><i data-icon="play"></i><span>Loading miner…</span></button>
             <div class="status-line" id="mineStatus"></div>
             <ul class="kvl">
@@ -509,12 +512,14 @@
               <li><span>Block reward</span><b id="rewardNow">–</b></li>
               <li><span>Network hashrate</span><b id="netRate">–</b></li>
               <li class="pool-only"><span>Pool hashrate</span><b id="poolRate">–</b></li>
+              <li class="pool-only"><span>Next pool block, expected</span><b id="poolNext">–</b></li>
               <li class="pool-only"><span>Your part of the pool</span><b id="poolPart">–</b></li>
               <li class="pool-only hi"><span>Estimated per day</span><b id="poolDay">–</b></li>
               <li class="pool-only"><span>Owed to you</span><b id="poolOwed">–</b></li>
               <li class="pool-only"><span>Paid by the pool</span><b id="poolPaid">–</b></li>
               <li class="solo-only"><span>Your share</span><b id="share">–</b></li>
-              <li class="solo-only hi"><span>Expected time to a block</span><b id="expected">–</b></li>
+              <li class="solo-only hi"><span>Estimated per day</span><b id="soloDay">–</b></li>
+              <li class="solo-only"><span>Expected time to a block</span><b id="expected">–</b></li>
               <li class="solo-only" id="refLine" hidden><span>Inviter share</span><b id="refLineV">–</b></li>
             </ul>
           </div>
@@ -686,7 +691,7 @@
             <section class="st-sec" id="st-mining">
               <div class="st-h"><h2>Mining</h2></div>
               <div class="card st-card">
-                <div class="st-row"><span class="st-ic"><i data-icon="users"></i></span><div class="st-t"><b>Mining mode</b><span id="modeSetHint">Solo: the whole block when you find one. Pool: steady small payouts.</span></div><select class="select st-sel" id="selMode" aria-label="Mining mode"><option value="solo">Solo</option><option value="pool">Pool</option></select></div>
+                <div class="st-row"><span class="st-ic"><i data-icon="users"></i></span><div class="st-t"><b>Mining mode</b><span id="modeSetHint">Pool: a part of every pool block, paid out steadily. Solo: the whole block when you find one.</span></div><select class="select st-sel" id="selMode" aria-label="Mining mode"><option value="pool">Pool</option><option value="solo">Solo</option></select></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="play"></i></span><div class="st-t"><b>Start when the app opens</b></div><button class="switch" id="swAutostart" role="switch" aria-checked="false" aria-label="Start mining when the app opens"></button></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="cpu"></i></span><div class="st-t"><b>Processor cores</b><span>More cores mine faster and use more battery.</span></div><select class="select st-sel" id="selCores" aria-label="Processor cores used for mining"></select></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="zap"></i></span><div class="st-t"><b>Keep the screen on</b><span>Stops a phone from sleeping while mining.</span></div><button class="switch" id="swWake" role="switch" aria-checked="false" aria-label="Keep the screen on while mining"></button></div>
@@ -921,9 +926,9 @@
   var addr = '', created = false, ready = false, running = false, pendingAddr = '', phrase = '', rates = [], netRate = 0, myRate = 0;
   var autostart = false, keepAwake = false, wakeLock = null, startedAt = 0, hist = [], tip = 0, filter = 'all', ref = '', refPct = 5, refAgreed = 5, resume = false;
   var MATURITY = 100, BLOCK_SECS = 600, legacyAddr = '';
-  // Mining mode: 'solo' (whole blocks, the default) or 'pool' (shares,
-  // steady payouts from the pool).
-  var mode = 'solo', liveMode = 'solo', poolInfo = null, poolMine = null, nextSubsidy = 0;
+  // Mining mode: 'pool' (shares of every pool block, the default) or
+  // 'solo' (whole blocks, which on a phone are months apart).
+  var mode = 'pool', liveMode = 'solo', poolInfo = null, poolMine = null, nextSubsidy = 0;
   try { var savedMode = localStorage.getItem('mine.mode'); if (savedMode === 'solo' || savedMode === 'pool') mode = savedMode; } catch (e) {}
   try { addr = localStorage.getItem('mine.addr') || ''; created = localStorage.getItem('mine.created') === '1'; autostart = localStorage.getItem('mine.autostart') === '1'; keepAwake = localStorage.getItem('mine.wake') === '1'; ref = localStorage.getItem('mine.ref') || ''; refAgreed = Math.max(0, Math.min(50, Number(localStorage.getItem('mine.refpct')) || 5)); resume = localStorage.getItem('mine.running') === '1'; } catch (e) {}
   var re = new RegExp('^' + HRP + '1[02-9ac-hj-np-z]{59}$');
@@ -1032,7 +1037,7 @@
     $('selMode').value = mode;
     var fee = poolInfo && poolInfo.enabled ? poolInfo.fee_percent : null;
     $('modeHint').textContent = mode === 'pool'
-      ? 'Steady small payouts. Blocks pay the pool, which pays everyone by their share of the work' + (fee !== null ? ', less a ' + fee + '% fee.' : '.') + (poolInfo && poolInfo.enabled === false ? ' The pool is not available right now.' : '')
+      ? 'A part of every block the pool finds, by the work you did' + (fee !== null ? ', less a ' + fee + '% fee.' : '.') + ' Paid out from 0.1 ' + COIN + '.' + (poolInfo && poolInfo.enabled === false ? ' The pool is not available right now.' : '')
       : 'The whole block is yours when you find one. On a phone that can take months.';
     $('foundK').textContent = mode === 'pool' ? 'Shares this session' : 'Found this session';
     $('dbExpectK').textContent = mode === 'pool' ? 'Estimated per day' : 'Expected time to a block';
@@ -1054,7 +1059,7 @@
   // told the address so its job check can insist that pool jobs pay it.
   function fetchPool() {
     return fetch(EXPLORER + '/api/pool/stats').then(function (r) { return r.json(); }).then(function (p) {
-      poolInfo = { enabled: !!p.enabled && re.test(String(p.address || '')), address: String(p.address || '').toLowerCase(), fee_percent: n0(p.fee_percent), min_payout: n0(p.min_payout), hashrate: n0(p.hashrate) };
+      poolInfo = { enabled: !!p.enabled && re.test(String(p.address || '')), address: String(p.address || '').toLowerCase(), fee_percent: n0(p.fee_percent), min_payout: n0(p.min_payout), hashrate: n0(p.hashrate), expected: n0(p.expected_seconds), round_percent: n0(p.round_percent) };
       renderMode();
       if (running && mode === 'pool' && liveMode !== 'pool' && poolInfo.enabled) { stopMining(); startMining(); }
       return poolInfo;
@@ -1067,6 +1072,7 @@
   function renderPoolRows() {
     var m = poolMine || {}, pr = poolInfo ? poolInfo.hashrate : 0;
     $('poolRate').textContent = pr ? UI.fmt.hashrate(pr) : '–';
+    $('poolNext').textContent = poolInfo && poolInfo.expected ? fmtWait(poolInfo.expected) + (poolInfo.round_percent ? ' · this round at ' + Math.round(poolInfo.round_percent) + '%' : '') : '–';
     var part = n0(m.round_total) ? 100 * n0(m.round_shares) / n0(m.round_total) : 0;
     $('poolPart').textContent = n0(m.round_total) && n0(m.round_shares) ? part.toFixed(part < 1 ? 2 : 1) + '%' : '–';
     $('poolOwed').textContent = UI.fmt.coin(n0(m.balance)) + ' ' + COIN + (n0(m.pending) ? ' · ' + UI.fmt.coin(n0(m.pending)) + ' maturing' : '');
@@ -1075,9 +1081,9 @@
     // its part of the network, times 144 blocks, less the fee.
     var fee = poolInfo ? poolInfo.fee_percent : 1;
     if (running && myRate && netRate && nextSubsidy) {
-      var perDay = myRate / (netRate + myRate) * (86400 / BLOCK_SECS) * nextSubsidy * (1 - fee / 100);
-      $('poolDay').textContent = (perDay >= 1e8 ? UI.fmt.coin(perDay, 2) : UI.fmt.coin(perDay)) + ' ' + COIN;
-    } else $('poolDay').textContent = '–';
+      var gross = myRate / (netRate + myRate) * (86400 / BLOCK_SECS) * nextSubsidy, perDay = gross * (1 - fee / 100);
+      $('poolDay').textContent = fmtDay(perDay); $('soloDay').textContent = fmtDay(gross);
+    } else { $('poolDay').textContent = '–'; $('soloDay').textContent = '–'; }
     if (mode === 'pool') $('dbExpect').textContent = running ? $('poolDay').textContent : 'Start the miner';
   }
   setInterval(function () { if (mode === 'pool' && addr && (running || current === 'mine')) fetchPoolMiner(); }, 10000);
@@ -2673,14 +2679,25 @@
       updateExpected(); renderDashMiner(); renderPoolRows();
     }).catch(function () { polling = false; });
   }, 1000);
+  function fmtWait(secs) { return secs < 3600 ? Math.max(1, Math.round(secs / 60)) + ' min' : secs < 172800 ? (secs / 3600).toFixed(1) + ' hours' : secs < 31536000 ? Math.round(secs / 86400) + ' days' : (secs / 31536000).toFixed(1) + ' years'; }
+  function fmtDay(v) { return (v >= 1e8 ? UI.fmt.coin(v, 2) : UI.fmt.coin(v)) + ' ' + COIN; }
   function updateExpected() {
     $('netRate').textContent = netRate ? UI.fmt.hashrate(netRate) : '–';
-    if (!running || !myRate || !netRate) { $('expected').textContent = '–'; $('share').textContent = '–'; return; }
+    if (!running || !myRate || !netRate) { $('expected').textContent = '–'; $('share').textContent = '–'; $('poolNudge').hidden = true; return; }
     var share = myRate / (netRate + myRate);
     $('share').textContent = (share * 100).toFixed(share < 0.01 ? 3 : 1) + '%';
     var secs = 600 / share;
-    $('expected').textContent = secs < 3600 ? Math.round(secs / 60) + ' min' : secs < 172800 ? (secs / 3600).toFixed(1) + ' hours' : secs < 31536000 ? Math.round(secs / 86400) + ' days' : (secs / 31536000).toFixed(1) + ' years';
+    $('expected').textContent = fmtWait(secs);
+    // Solo on a small device: say what the pool would pay instead of leaving
+    // a countdown of months as the only number.
+    var nudge = mode === 'solo' && secs > 86400 && poolInfo && poolInfo.enabled;
+    $('poolNudge').hidden = !nudge;
+    if (nudge) {
+      var perDay = share * (86400 / BLOCK_SECS) * nextSubsidy * (1 - (poolInfo.fee_percent || 0) / 100);
+      $('poolNudgeText').textContent = 'A block of your own is about ' + fmtWait(secs) + ' away at this hashrate. In the pool this device earns about ' + fmtDay(perDay) + ' a day, paid out as it comes.';
+    }
   }
+  $('poolNudgeGo').onclick = function () { setMode('pool'); };
 
   // ---- chain data ----
   function dayLabel(ts) {

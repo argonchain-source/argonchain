@@ -26,13 +26,19 @@ import (
 // hashes it took (its difficulty); one at or below the block target is also
 // a block, handed to the node like a solo one.
 //
-// Accounting is per round: the shares sent between two pool blocks. When a
-// block matures (consensus.CoinbaseMaturity) its reward less the pool fee is
-// split over the round's shares and credited to each miner's balance; when
-// a balance reaches the minimum payout it is paid from the pool wallet, many
-// miners in one transaction. A block that ends up off the main chain pays
-// nothing, and its round's shares are carried into the next round so that
-// nobody's work is lost to an orphan.
+// Accounting is pay-per-last-N-shares (PPLNS), the scheme most pools use:
+// the pool keeps a sliding window of the most recent shares worth
+// poolWindowBlocks times the hashes a block takes at the current
+// difficulty. When the pool finds a block, the window at that moment is
+// the block's round: when the block matures (consensus.CoinbaseMaturity)
+// its reward less the pool fee is split over those shares by weight and
+// credited to each miner's balance. The window is not cleared by a block,
+// so a share is paid by every block found while it is in the window, and
+// a miner who leaves keeps earning from the blocks that follow for a
+// while. Nothing is paid that a block did not earn. A block that ends up
+// off the main chain pays nothing; its shares stay in the window for the
+// next one. Balances at the minimum payout are paid from the pool wallet,
+// many miners in one transaction.
 //
 // Everything the pool owes and has paid is in one state file, saved on
 // every block and payout and a few seconds after any share, and published
@@ -57,6 +63,7 @@ const (
 	poolFeeRate       = 1                // payout transaction fee, units per byte
 	poolFeeReserve    = 1_000_000        // 0.01 ARG kept back for the payout's own fee
 	poolRoundsKept    = 1000             // rounds and payouts remembered in the state file
+	poolWindowBlocks  = 2                // the PPLNS window: this many blocks' worth of hashes
 	poolDownText      = "the pool is not available"
 )
 
@@ -90,12 +97,23 @@ type poolPayout struct {
 	Total   consensus.Amount            `json:"total"`
 }
 
+// poolBucket is one minute of the share window: weights per miner.
+type poolBucket struct {
+	Minute int64             `json:"m"`
+	Shares map[string]uint64 `json:"s"`
+	Total  uint64            `json:"t"`
+}
+
 // poolState is the ledger, persisted whole.
 type poolState struct {
 	Balances       map[string]consensus.Amount `json:"balances"` // owed, matured, not yet paid
 	Paid           map[string]consensus.Amount `json:"paid"`     // paid so far, per miner
-	Round          map[string]uint64           `json:"round"`    // the current round's shares
-	RoundStart     int64                       `json:"round_start"`
+	Window         []poolBucket                `json:"window"`   // the PPLNS share window, oldest first
+	WindowTotal    uint64                      `json:"window_total"`
+	SinceBlock     uint64                      `json:"since_block"`     // hashes credited since the last pool block
+	Credited       uint64                      `json:"credited"`        // hashes credited in all
+	Round          map[string]uint64           `json:"round,omitempty"` // ledgers from before the window: converted on load
+	RoundStart     int64                       `json:"round_start"`     // when the last pool block was found (or the pool started)
 	Rounds         []poolRound                 `json:"rounds"`
 	Payouts        []poolPayout                `json:"payouts"`
 	TotalPaid      consensus.Amount            `json:"total_paid"`
@@ -123,16 +141,17 @@ type pool struct {
 	ws   *workServer
 	logf func(string, ...any)
 
-	mu      sync.Mutex
-	cfg     poolConfig
-	pay     consensus.TxOut // the pool address, decoded
-	on      bool
-	miners  map[string]*poolMiner
-	state   poolState
-	recent  []poolRec // every share in the window, for the pool hashrate
-	dirty   bool
-	lastErr string
-	paying  bool // a payout is being built and sent
+	mu        sync.Mutex
+	cfg       poolConfig
+	pay       consensus.TxOut // the pool address, decoded
+	on        bool
+	miners    map[string]*poolMiner
+	state     poolState
+	recent    []poolRec // every share of the last minutes, for the pool hashrate
+	blockDiff uint64    // expected hashes per block at the last template seen
+	dirty     bool
+	lastErr   string
+	paying    bool // a payout is being built and sent
 }
 
 var big2_256 = new(big.Int).Lsh(big.NewInt(1), 256)
@@ -140,7 +159,7 @@ var big2_256 = new(big.Int).Lsh(big.NewInt(1), 256)
 // newPool returns a disabled pool; enable turns it on.
 func newPool(ws *workServer) *pool {
 	p := &pool{ws: ws, logf: ws.logf, miners: map[string]*poolMiner{}}
-	p.state = poolState{Balances: map[string]consensus.Amount{}, Paid: map[string]consensus.Amount{}, Round: map[string]uint64{}, RoundStart: time.Now().Unix()}
+	p.state = poolState{Balances: map[string]consensus.Amount{}, Paid: map[string]consensus.Amount{}, RoundStart: time.Now().Unix()}
 	return p
 }
 
@@ -156,7 +175,7 @@ func (p *pool) enable(cfg poolConfig) error {
 	if cfg.MinPayout < wallet.DustLimit {
 		cfg.MinPayout = wallet.DustLimit
 	}
-	st := poolState{Balances: map[string]consensus.Amount{}, Paid: map[string]consensus.Amount{}, Round: map[string]uint64{}, RoundStart: time.Now().Unix()}
+	st := poolState{Balances: map[string]consensus.Amount{}, Paid: map[string]consensus.Amount{}, RoundStart: time.Now().Unix()}
 	if cfg.StatePath != "" {
 		if b, err := os.ReadFile(cfg.StatePath); err == nil {
 			if err := json.Unmarshal(b, &st); err != nil {
@@ -168,11 +187,26 @@ func (p *pool) enable(cfg poolConfig) error {
 			if st.Paid == nil {
 				st.Paid = map[string]consensus.Amount{}
 			}
-			if st.Round == nil {
-				st.Round = map[string]uint64{}
-			}
 			if st.RoundStart == 0 {
 				st.RoundStart = time.Now().Unix()
+			}
+			// A ledger from before the share window kept the current round
+			// as one map: it becomes the oldest minute of the window, so
+			// the work already done stays in line for the next block.
+			if len(st.Round) > 0 {
+				b := poolBucket{Minute: st.RoundStart / 60, Shares: st.Round}
+				for _, n := range st.Round {
+					b.Total += n
+				}
+				st.Window = append([]poolBucket{b}, st.Window...)
+				st.WindowTotal += b.Total
+				if st.SinceBlock == 0 {
+					st.SinceBlock = b.Total
+				}
+				if st.Credited == 0 {
+					st.Credited = b.Total
+				}
+				st.Round = nil
 			}
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("pool: ledger %s: %w", cfg.StatePath, err)
@@ -313,6 +347,7 @@ func (p *pool) Job(miner string) (*workJobJSON, error) {
 	m := p.minerLocked(miner, now)
 	p.adjustLocked(m, now)
 	diff := m.diff
+	p.blockDiff = diffOf(t.target)
 	p.mu.Unlock()
 
 	outs := []consensus.TxOut{{Amount: value, Type: pay.Type, Payload: pay.Payload}}
@@ -328,17 +363,64 @@ func (p *pool) Job(miner string) (*workJobJSON, error) {
 
 // credit records an accepted share of weight w for addr.
 func (p *pool) credit(addr string, w uint64) {
-	now := time.Now()
+	p.creditAt(addr, w, time.Now())
+}
+
+func (p *pool) creditAt(addr string, w uint64, now time.Time) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.state.Round[addr] += w
-	p.state.SharesAccepted++
+	minute := now.Unix() / 60
+	st := &p.state
+	if n := len(st.Window); n == 0 || st.Window[n-1].Minute != minute {
+		st.Window = append(st.Window, poolBucket{Minute: minute, Shares: map[string]uint64{}})
+	}
+	b := &st.Window[len(st.Window)-1]
+	b.Shares[addr] += w
+	b.Total += w
+	st.WindowTotal += w
+	st.SinceBlock += w
+	st.Credited += w
+	st.SharesAccepted++
+	p.trimWindowLocked()
 	m := p.minerLocked(addr, now)
 	m.sharesSince++
 	m.lastShare = now
 	m.recent = trimRecs(append(m.recent, poolRec{now, w}), now)
 	p.recent = trimRecs(append(p.recent, poolRec{now, w}), now)
 	p.dirty = true
+}
+
+// windowHashesLocked is the size of the PPLNS window in hashes.
+func (p *pool) windowHashesLocked() uint64 {
+	d := p.blockDiff
+	if d == 0 {
+		d = poolStartDiff
+	}
+	return d * poolWindowBlocks
+}
+
+// trimWindowLocked drops the oldest minutes that the window no longer
+// needs, always keeping at least the window's worth of hashes.
+func (p *pool) trimWindowLocked() {
+	want := p.windowHashesLocked()
+	st := &p.state
+	for len(st.Window) > 1 && st.WindowTotal-st.Window[0].Total >= want {
+		st.WindowTotal -= st.Window[0].Total
+		st.Window = st.Window[1:]
+	}
+}
+
+// windowSharesLocked sums the window per miner.
+func (p *pool) windowSharesLocked() (map[string]uint64, uint64) {
+	out := map[string]uint64{}
+	var total uint64
+	for _, b := range p.state.Window {
+		for a, n := range b.Shares {
+			out[a] += n
+			total += n
+		}
+	}
+	return out, total
 }
 
 func (p *pool) rejectedShare() {
@@ -355,12 +437,9 @@ func (p *pool) blockFound(j *workJob, hash consensus.Hash, foundBy string) {
 		reward = cb.Outputs[0].Amount
 	}
 	p.mu.Lock()
-	shares := make(map[string]uint64, len(p.state.Round))
-	var total uint64
-	for a, n := range p.state.Round {
-		shares[a] = n
-		total += n
-	}
+	// The window as it stands is this block's round; it stays in place for
+	// the next block (PPLNS).
+	shares, total := p.windowSharesLocked()
 	p.state.Rounds = append(p.state.Rounds, poolRound{
 		Height: j.tmpl.height, BlockHash: hash.String(), Reward: reward, FoundBy: foundBy,
 		Shares: shares, TotalShares: total, Found: time.Now().Unix(), Status: "pending",
@@ -369,12 +448,12 @@ func (p *pool) blockFound(j *workJob, hash consensus.Hash, foundBy string) {
 		p.state.Rounds = append([]poolRound{}, p.state.Rounds[len(p.state.Rounds)-poolRoundsKept:]...)
 	}
 	p.state.BlocksFound++
-	p.state.Round = map[string]uint64{}
+	p.state.SinceBlock = 0
 	p.state.RoundStart = time.Now().Unix()
 	p.dirty = true
 	p.saveLocked()
 	p.mu.Unlock()
-	p.logf("pool: block %s at height %d pays %s to the pool; %d weighted shares in the round", hash, j.tmpl.height, wallet.FormatAmount(reward), total)
+	p.logf("pool: block %s at height %d pays %s to the pool; %d weighted shares in the window", hash, j.tmpl.height, wallet.FormatAmount(reward), total)
 }
 
 func trimRecs(rs []poolRec, now time.Time) []poolRec {
@@ -421,6 +500,13 @@ func (p *pool) tick() {
 	if !p.enabled() || p.ws.client == nil {
 		return
 	}
+	// Keep the block difficulty current even when no miner asks for work,
+	// so the window size and the expected wait are right from the start.
+	if t, err := p.ws.template(); err == nil {
+		p.mu.Lock()
+		p.blockDiff = diffOf(t.target)
+		p.mu.Unlock()
+	}
 	if err := p.mature(); err != nil {
 		p.setErr(err)
 		return
@@ -460,14 +546,11 @@ func (p *pool) mature() error {
 		h, err := p.ws.client.BlockHash(r.Height)
 		if err != nil || h != r.BlockHash {
 			if info.Blocks > r.Height+poolOrphanDepth {
-				// Off the main chain: the reward never existed. The round's
-				// work counts towards the next block instead.
+				// Off the main chain: the reward never existed. The shares
+				// are still in the window for the next block.
 				r.Status = "orphaned"
-				for a, n := range r.Shares {
-					p.state.Round[a] += n
-				}
 				p.dirty = true
-				p.logf("pool: block %s at height %d is not on the chain; its %d shares move to the current round", r.BlockHash, r.Height, r.TotalShares)
+				p.logf("pool: block %s at height %d is not on the chain; nothing to pay for it", r.BlockHash, r.Height)
 			}
 			continue
 		}
@@ -634,7 +717,13 @@ type poolStats struct {
 	ShareInterval  int              `json:"share_interval"`
 	Hashrate       float64          `json:"hashrate"`
 	Miners         int              `json:"miners"`
-	RoundShares    uint64           `json:"round_shares"`
+	RoundShares    uint64           `json:"round_shares"`     // hashes credited since the last pool block
+	WindowShares   uint64           `json:"window_shares"`    // hashes in the PPLNS window
+	WindowHashes   uint64           `json:"window_hashes"`    // the window's size
+	BlockHashes    uint64           `json:"block_hashes"`     // expected hashes per block at the current difficulty
+	ExpectedSecs   float64          `json:"expected_seconds"` // expected wait for the pool's next block at its hashrate
+	RoundPercent   float64          `json:"round_percent"`    // hashes since the last block as a percentage of a block's expectation
+	LuckPercent    float64          `json:"luck_percent"`     // blocks found against blocks expected from all hashes credited (100 = average)
 	RoundStart     int64            `json:"round_start"`
 	BlocksFound    int              `json:"blocks_found"`
 	Pending        int              `json:"pending"`
@@ -664,8 +753,15 @@ func (p *pool) stats() poolStats {
 			s.Miners++
 		}
 	}
-	for _, n := range p.state.Round {
-		s.RoundShares += n
+	s.RoundShares, s.WindowShares, s.WindowHashes, s.BlockHashes = p.state.SinceBlock, p.state.WindowTotal, p.windowHashesLocked(), p.blockDiff
+	if s.Hashrate > 0 && p.blockDiff > 0 {
+		s.ExpectedSecs = float64(p.blockDiff) / s.Hashrate
+	}
+	if p.blockDiff > 0 {
+		s.RoundPercent = 100 * float64(p.state.SinceBlock) / float64(p.blockDiff)
+		if p.state.BlocksFound > 0 && p.state.Credited > 0 {
+			s.LuckPercent = 100 * float64(p.state.BlocksFound) * float64(p.blockDiff) / float64(p.state.Credited)
+		}
 	}
 	s.RoundStart, s.BlocksFound, s.TotalPaid, s.Fees = p.state.RoundStart, p.state.BlocksFound, p.state.TotalPaid, p.state.Fees
 	s.SharesAccepted, s.SharesRejected, s.Error = p.state.SharesAccepted, p.state.SharesRejected, p.lastErr
@@ -714,10 +810,8 @@ func (p *pool) miner(addr string) poolMinerStats {
 	if !p.on {
 		return m
 	}
-	m.RoundShares, m.Balance, m.Paid = p.state.Round[addr], p.state.Balances[addr], p.state.Paid[addr]
-	for _, n := range p.state.Round {
-		m.RoundTotal += n
-	}
+	win, total := p.windowSharesLocked()
+	m.RoundShares, m.RoundTotal, m.Balance, m.Paid = win[addr], total, p.state.Balances[addr], p.state.Paid[addr]
 	if ms := p.miners[addr]; ms != nil {
 		m.Hashrate = rateOf(ms.recent, time.Now())
 		m.ShareDiff = ms.diff

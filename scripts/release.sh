@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-1.1.0}"
 OUT=release
 mkdir -p "$OUT"
-CMDS="argonmined argonmine-wallet argonmine-explorer genesis"
+CMDS="argonmined argonmine-wallet argonmine-explorer argonmine-miner genesis"
 
 # Fetch modules once so the cross-compiles never hit the network, and build
 # the archiver for this machine (forward-slash paths, programs marked

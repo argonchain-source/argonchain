@@ -34,12 +34,12 @@ Your browser asks the explorer for a block to work on, makes attempts in
 the background, and sends back what it finds. The explorer passes blocks
 to the network. The Mine page offers two ways to be paid:
 
-- **Solo** (the default). The block pays your address directly, the whole
-  reward at once. The explorer never holds your coins. Before mining a
-  template, the app checks that it really pays your address.
-- **Pool.** The block pays the pool, and the pool pays every miner in
-  proportion to the work they did, a little at a time. One tap on the
-  Mine page. See [Pool mining](#pool-mining).
+- **Pool** (the default). The block pays the pool, and the pool pays every
+  miner in proportion to the work they did, a little at a time. See [Pool
+  mining](#pool-mining).
+- **Solo.** The block pays your address directly, the whole reward at
+  once, when you find one. The explorer never holds your coins. Before
+  mining a template, the app checks that it really pays your address.
 
 Solo suits a server or a desktop with many cores; the pool suits a phone
 or a laptop, which would otherwise wait months for a block.
@@ -137,14 +137,23 @@ How it works:
 2. Along with the block target, the job carries a much easier **share
    target**, tuned per miner so that it is met about every 15 seconds. A
    hash that meets it is a **share**: proof of the attempts it took, which
-   the pool checks one by one. The shares between two pool blocks are a
-   **round**.
+   the pool checks one by one. The pool keeps a window of the most recent
+   shares worth two blocks of work at the current difficulty; this is the
+   pay-per-last-N-shares scheme (PPLNS) most pools use.
 3. A hash that also meets the block target is a block. It pays the pool,
-   and the round closes.
+   and the window at that moment is the block's **round**. The window is
+   not emptied by a block, so a share is paid by every block found while
+   it is in the window, and a miner who stops keeps earning from the
+   blocks that follow for a while.
 4. When that block has 100 confirmations, its reward less the pool fee is
    split over the round's shares, by weight, and credited to each miner's
    balance. A balance of 0.1 ARG or more is paid out automatically, many
    miners in one transaction, usually within a minute of maturing.
+
+Finding a block is random. The pool page shows its expected wait for the
+next block, a block's work divided by the pool's hashrate, and how far
+the current round is past it. A small pool waits hours between blocks;
+the fix for that is more miners in it, not a different payout rule.
 
 What you should know:
 
@@ -159,8 +168,8 @@ What you should know:
   The complete ledger of shares, balances and payouts is at
   `/api/pool/ledger`, and every payout is a transaction on the chain from
   the pool address `arg1q6f8efzllg7fmyuva7k2qhju8t6kaeuk737ypuanhz8faakq32tysz67vuc`.
-- **Orphans cost nobody.** A pool block that ends up off the main chain
-  pays nothing, and its round's shares are carried into the next round.
+- **Orphans pay nothing.** A pool block that ends up off the main chain
+  pays nothing; the shares are still in the window for the next block.
 - **Referral shares apply to solo mining only.** A pool block has no
   output for a referrer.
 - **The pool is run by the project**, on the explorer. Solo mining does not
@@ -169,7 +178,15 @@ What you should know:
 
 Switch between Pool and Solo on the Mine page or in Settings at any time;
 mining restarts in the other mode. Node miners (`argonmined -mine`) always
-mine solo.
+mine solo. To mine in the pool from a server without a browser, the
+release archives carry `argonmine-miner`, the browser miner as a program:
+
+```
+argonmine-miner -address <your address> -threads 4
+```
+
+It needs no node and no chain data; add `-solo` to mine whole blocks to
+your address through the explorer instead.
 
 ## How long until I find a block?
 

@@ -168,11 +168,11 @@ a reviewer should try to break, and what already holds:
   pool job offered as solo work, a tampered block target or a share target
   harder than the block are all refused (tests in
   `browser_jobcheck_test.go`).
-- The reward split uses integer arithmetic over the round's weights; the
-  sum never exceeds the reward less the fee, and the remainder stays with
-  the pool as fee. Orphaned blocks pay nothing and their shares are carried
-  into the next round, so a reorganisation cannot credit coins that do not
-  exist.
+- The reward split uses integer arithmetic over the weights of the share
+  window at the time of the block (pay per last N shares, two blocks of
+  work); the sum never exceeds the reward less the fee, and the remainder
+  stays with the pool as fee. Orphaned blocks pay nothing, so a
+  reorganisation cannot credit coins that do not exist.
 - Balances are deducted and the ledger written before a payout is
   broadcast; a crash in between can lose a record, never pay twice.
 - Custody: the pool wallet holds matured rewards for at most one tick

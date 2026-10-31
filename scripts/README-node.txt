@@ -7,6 +7,7 @@ Programs
   argonmined          the node
   argonmine-wallet    command-line wallet that talks to your node
   argonmine-explorer  block explorer for your node
+  argonmine-miner     pool (or solo) miner through the explorer; needs no node
   genesis             reproduces the genesis blocks
 
 Install

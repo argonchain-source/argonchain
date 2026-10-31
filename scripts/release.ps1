@@ -21,7 +21,7 @@ $targets = @(
     @{os="darwin";  arch="amd64"},
     @{os="darwin";  arch="arm64"}
 )
-$cmds = @("argonmined", "argonmine-wallet", "argonmine-explorer", "genesis")
+$cmds = @("argonmined", "argonmine-wallet", "argonmine-explorer", "argonmine-miner", "genesis")
 
 # Fetch every module up front so cross-compiles never hit the network, and
 # build the archiver for this machine (forward-slash paths, programs marked

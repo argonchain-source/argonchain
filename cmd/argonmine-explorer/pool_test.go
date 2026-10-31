@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -238,11 +239,11 @@ func TestPoolRoundsMatureAndPay(t *testing.T) {
 	if st := ws.pool.stats(); st.Owed != 0 || st.TotalPaid != 0 {
 		t.Fatalf("paid before maturity: %+v", st)
 	}
-	// A round whose block is not on the chain: orphaned once six blocks deep,
-	// its shares carried over.
+	// A round whose block is not on the chain: orphaned once six blocks deep
+	// and paid nothing; the window is untouched.
 	ws.pool.mu.Lock()
 	ws.pool.state.Rounds = append(ws.pool.state.Rounds, poolRound{Height: 2, BlockHash: strings.Repeat("ab", 32), Reward: consensus.Subsidy(2), Shares: map[string]uint64{miner: 7}, TotalShares: 7, Status: "pending"})
-	before := ws.pool.state.Round[miner]
+	before := ws.pool.state.WindowTotal
 	ws.pool.mu.Unlock()
 
 	other := testKeyAddr(t, 1)
@@ -268,14 +269,14 @@ func TestPoolRoundsMatureAndPay(t *testing.T) {
 			orphaned++
 		}
 	}
-	if matured != 3 || orphaned != 1 || st.Fees != fees {
+	if matured != st.BlocksFound || orphaned != 1 || st.Fees != fees {
 		t.Fatalf("after maturity: matured %d orphaned %d, %+v", matured, orphaned, st)
 	}
-	if got := ws.pool.miner(miner).RoundShares; got != before+7 {
-		t.Fatalf("orphaned shares not carried: %d, want %d", got, before+7)
+	if got := ws.pool.miner(miner).RoundTotal; got != before {
+		t.Fatalf("window changed by an orphan: %d, want %d", got, before)
 	}
 	// The pool wallet paid the miner everything matured, in one transaction.
-	want := 3 * (consensus.Subsidy(1) - consensus.Subsidy(1)/100)
+	want := consensus.Amount(st.BlocksFound) * (consensus.Subsidy(1) - consensus.Subsidy(1)/100)
 	if st.TotalPaid != want || st.Owed != 0 || len(st.Payouts) != 1 || st.Payouts[0].Amounts[miner] != want {
 		t.Fatalf("payout: %+v", st)
 	}
@@ -341,7 +342,7 @@ func TestPoolRoundsMatureAndPay(t *testing.T) {
 		t.Fatalf("miner: %d %s", code, body)
 	}
 	var led poolState
-	if code, body := get("/api/pool/ledger"); code != 200 || json.Unmarshal(body, &led) != nil || led.TotalPaid != want || len(led.Rounds) != 4 {
+	if code, body := get("/api/pool/ledger"); code != 200 || json.Unmarshal(body, &led) != nil || led.TotalPaid != want || len(led.Rounds) != st.BlocksFound+1 {
 		t.Fatalf("ledger: %d %s", code, body)
 	}
 }
@@ -419,5 +420,83 @@ func TestPoolDistributionRounding(t *testing.T) {
 	net := r.Reward - r.Reward/100
 	if r.Status != "matured" || given > net || net-given > 7 || given+r.Fee != r.Reward || st.Fees != r.Fee {
 		t.Fatalf("given %d of %d, fee %d, reward %d (%s)", given, net, r.Fee, r.Reward, r.Status)
+	}
+}
+
+// TestPoolWindowIsPPLNS: the share window keeps two blocks' worth of
+// hashes, drops older minutes, is the round of every block found while
+// a share is in it, and a ledger from before the window converts on load.
+func TestPoolWindowIsPPLNS(t *testing.T) {
+	ws := newWorkServer(nil, consensus.RegTest, 5, t.Logf)
+	fixedTemplate(t, ws, hardTemplate(consensus.RegTest))
+	dir := t.TempDir()
+	enableTestPool(t, ws, nil, dir)
+	p := ws.pool
+	p.mu.Lock()
+	p.blockDiff = 1000 // window: 2000 hashes
+	p.mu.Unlock()
+	a, b, c := randomAddr(t, consensus.RegTest), randomAddr(t, consensus.RegTest), randomAddr(t, consensus.RegTest)
+	t0 := time.Unix(1_800_000_000, 0)
+	p.creditAt(a, 1500, t0)
+	p.creditAt(b, 1500, t0.Add(time.Minute))
+	p.creditAt(c, 1000, t0.Add(2*time.Minute)) // 4000 in the window: the oldest minute (a) can go
+	p.mu.Lock()
+	win, total := p.windowSharesLocked()
+	n := len(p.state.Window)
+	p.mu.Unlock()
+	if n != 2 || total != 2500 || win[a] != 0 || win[b] != 1500 || win[c] != 1000 {
+		t.Fatalf("window: %d minutes, %d hashes, %v", n, total, win)
+	}
+	// A block found now has b and c as its round, 60/40.
+	ws.mu.Lock()
+	var j *workJob
+	for _, x := range ws.jobs {
+		j = x
+	}
+	ws.mu.Unlock()
+	if j == nil {
+		job, err := p.Job(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ws.mu.Lock()
+		j = ws.jobs[job.ID]
+		ws.mu.Unlock()
+	}
+	p.blockFound(j, consensus.Hash{1}, b)
+	st := p.stats()
+	if st.BlocksFound != 1 || st.RoundShares != 0 || st.WindowShares != 2500 {
+		t.Fatalf("after block: %+v", st)
+	}
+	p.mu.Lock()
+	r := p.state.Rounds[0]
+	p.mu.Unlock()
+	if r.TotalShares != 2500 || r.Shares[b] != 1500 || r.Shares[c] != 1000 || r.Shares[a] != 0 {
+		t.Fatalf("round snapshot: %+v", r)
+	}
+	// The window survives the block: a second block pays the same shares again.
+	p.creditAt(a, 100, t0.Add(3*time.Minute))
+	p.blockFound(j, consensus.Hash{2}, a)
+	p.mu.Lock()
+	r2 := p.state.Rounds[1]
+	p.mu.Unlock()
+	if r2.TotalShares != 2600 || r2.Shares[b] != 1500 || r2.Shares[a] != 100 {
+		t.Fatalf("second round snapshot: %+v", r2)
+	}
+	// An old ledger with a "round" map becomes the oldest minute of the window.
+	old := `{"balances":{},"paid":{},"round":{"` + a + `":4200},"round_start":1800000000,"rounds":[],"payouts":[]}`
+	path := filepath.Join(dir, "old.json")
+	if err := os.WriteFile(path, []byte(old), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ws2 := newWorkServer(nil, consensus.RegTest, 5, t.Logf)
+	if err := ws2.pool.enable(poolConfig{Address: randomAddr(t, consensus.RegTest), FeeBps: 100, MinPayout: 1, StatePath: path}); err != nil {
+		t.Fatal(err)
+	}
+	if m := ws2.pool.miner(a); m.RoundShares != 4200 || m.RoundTotal != 4200 {
+		t.Fatalf("converted ledger: %+v", m)
+	}
+	if st := ws2.pool.stats(); st.RoundShares != 4200 || st.WindowShares != 4200 {
+		t.Fatalf("converted stats: %+v", st)
 	}
 }

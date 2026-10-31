@@ -1,5 +1,5 @@
 # One image for the whole public footprint on Railway (or any Docker host).
-# Which program runs is chosen at start time by ARGONMINE_ROLE: node, explorer, web or bridge.
+# Which program runs is chosen at start time by ARGONMINE_ROLE: node, explorer, web, bridge, swap or miner.
 # See deploy/railway/README.md for the service layout and variables.
 #
 #   docker build -f deploy/railway/Dockerfile -t argonmine/stack .
@@ -18,7 +18,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmined ./cmd/a
  && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-explorer ./cmd/argonmine-explorer \
  && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-web ./cmd/argonmine-web \
  && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-bridge ./cmd/argonmine-bridge \
- && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-swap ./cmd/argonmine-swap
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-swap ./cmd/argonmine-swap \
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/argonmine-miner ./cmd/argonmine-miner
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata

@@ -146,6 +146,7 @@ Each archive contains:
 | `argonmined` | The node. |
 | `argonmine-wallet` | The command-line wallet. |
 | `argonmine-explorer` | The block explorer and work server. |
+| `argonmine-miner` | The pool miner (or, with `-solo`, a solo miner through the explorer). Needs no node ([Mining, Pool mining](docs/MINING.md#pool-mining)). |
 | `genesis` | Reproduces the genesis blocks. |
 | `README.txt` | A short start guide. |
 | `SECURITY.md` | How to report a security problem. |
@@ -175,7 +176,7 @@ With Go 1.26 or newer installed:
 ```
 git clone https://github.com/argonchain-source/argonchain
 cd argonchain
-go build ./cmd/argonmined ./cmd/argonmine-wallet ./cmd/argonmine-explorer
+go build ./cmd/argonmined ./cmd/argonmine-wallet ./cmd/argonmine-explorer ./cmd/argonmine-miner
 go test ./...
 ```
 

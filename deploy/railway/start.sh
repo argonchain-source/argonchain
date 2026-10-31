@@ -4,7 +4,7 @@
 set -eu
 
 NET="${ARGONMINE_NETWORK:-mainnet}"
-ROLE="${ARGONMINE_ROLE:?set ARGONMINE_ROLE to node, explorer, web or bridge}"
+ROLE="${ARGONMINE_ROLE:?set ARGONMINE_ROLE to node, explorer, web, bridge, swap or miner}"
 EXTRA="${ARGONMINE_ARGS:-}"
 
 case "$ROLE" in
@@ -15,6 +15,17 @@ case "$ROLE" in
       -rpc ":${RPC_PORT:-19332}" -rpctoken "${RPC_TOKEN:?RPC_TOKEN is required}" \
       ${ARGONMINE_SEEDS:+-seeds "$ARGONMINE_SEEDS"} \
       ${ARGONMINE_DNSSEED:+-dnsseed "$ARGONMINE_DNSSEED"} \
+      $EXTRA
+    ;;
+  miner)
+    # A pool miner (or, with -solo in ARGONMINE_ARGS, a solo one) paying
+    # MINE_ADDRESS through the explorer; on Railway the explorer is reached
+    # over the private network.
+    # shellcheck disable=SC2086
+    exec argonmine-miner -network "$NET" \
+      -server "${MINE_SERVER:-http://explorer.railway.internal:8380}" \
+      -address "${MINE_ADDRESS:?MINE_ADDRESS is required}" \
+      -threads "${MINE_THREADS:-4}" \
       $EXTRA
     ;;
   explorer)
@@ -123,7 +134,7 @@ case "$ROLE" in
       -client-ip-header X-Forwarded-For
     ;;
   *)
-    echo "unknown ARGONMINE_ROLE '$ROLE' (node, explorer, web, bridge or swap)" >&2
+    echo "unknown ARGONMINE_ROLE '$ROLE' (node, explorer, web, bridge, swap or miner)" >&2
     exit 2
     ;;
 esac

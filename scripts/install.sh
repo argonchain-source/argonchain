@@ -5,7 +5,7 @@
 set -eu
 SRC="$(cd "$(dirname "$0")" && pwd)"
 BIN="$HOME/.local/bin"
-PROGRAMS="argonmined argonmine-wallet argonmine-explorer genesis"
+PROGRAMS="argonmined argonmine-wallet argonmine-explorer argonmine-miner genesis"
 
 if [ "${1:-}" = "--uninstall" ]; then
   for c in $PROGRAMS argonmine-app; do rm -f "$BIN/$c"; done
