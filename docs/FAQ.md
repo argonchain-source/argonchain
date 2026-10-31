@@ -107,6 +107,15 @@ wallet. Anyone with them has the coins; nobody without them does. Forgot
 the password? Forget the wallet in Settings and open it again with the 24
 words.
 
+**Can I have a name instead of an address?**
+Yes. Open **Names** in the app, look up a name, and register it for 1 to
+5 years. A name is 3 to 32 characters (lowercase letters, digits and
+hyphens) and costs 10 ARG a year, 50 for four characters, 250 for three,
+paid to the treasury. It then works wherever an address does: Send
+accepts `alice.arg`, and the explorer and the dashboard show it for your
+address. Renew it, transfer it, or let it go; the owner alone can renew
+it for 30 days after it expires. See [Names](docs/NAMES.md).
+
 **Can I use the same wallet on several devices?**
 Yes. Log in with the same 24 words on each device. They all open the same
 address and the same coins.

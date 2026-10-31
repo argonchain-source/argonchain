@@ -16,6 +16,11 @@
   h1 .tok { width: 32px; height: 32px; vertical-align: -6px; margin-right: 10px; }
   .unverified { color: var(--warn, #b7791f); }
   .memo { font-family: var(--font-mono); font-size: var(--fs-2); background: var(--sunken); border: 1px solid var(--hair); border-radius: 6px; padding: 2px 6px; }
+  .name-head h1 { font-size: var(--fs-8); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .addr-head .dn { font-size: var(--fs-7); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: var(--sp-1); overflow-wrap: anywhere; }
+  .addr-head .dn + h1 { font-size: var(--fs-4); font-weight: 500; color: var(--ink-3); }
+  .name-search { display: flex; gap: var(--sp-2); max-width: 520px; } .name-search .input { flex: 1; min-width: 0; }
+  .arrow { color: var(--ink-3); padding: 0 4px; }
   @media (max-width: 960px) { .charts, .two { grid-template-columns: minmax(0, 1fr); } .addr-head { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { .table .hide-m { display: none; } }
   @media (max-width: 760px) { .topbar nav { order: 10; width: 100%; } .topbar .spacer { display: none; } .topbar .badge[title] { display: none; } .page-header { flex-direction: column; align-items: flex-start; } .page-header p.mono { overflow-wrap: anywhere; } dl.props dd.mono, .prose-mono { overflow-wrap: anywhere; } }
@@ -24,8 +29,8 @@
 <header class="topbar">
   <a class="wordmark" href="/">{{.Mark}}<span>{{.Brand}} explorer</span></a>
   <span class="badge">{{.Network}}</span>
-  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a><a class="btn btn-ghost btn-sm" href="/pool">Pool</a></nav>
-  <form class="searchbar" action="/search" method="get" role="search"><i data-icon="search"></i><input name="q" placeholder="Search a height, block hash, transaction or address id" aria-label="Search" autocomplete="off"></form>
+  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a><a class="btn btn-ghost btn-sm" href="/pool">Pool</a><a class="btn btn-ghost btn-sm" href="/names">Names</a></nav>
+  <form class="searchbar" action="/search" method="get" role="search"><i data-icon="search"></i><input name="q" placeholder="Search a height, block hash, transaction, address or name" aria-label="Search" autocomplete="off"></form>
   <span class="spacer"></span>
   <span class="badge" title="Indexed height / node height">indexed <b class="num" style="margin-left:4px">{{num .Height}}</b><span class="muted" style="margin:0 4px">/</span><b class="num">{{num .Tip}}</b></span>
   <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme"></button>
@@ -136,7 +141,7 @@
 
 {{define "tx"}}{{template "head" .}}
 <div class="page-header"><div><h1>Transaction</h1><p class="mono">{{.Data.txid}}</p></div>
-<div class="row">{{if .Data.blockhash}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-accent"><i data-icon="history"></i>Pending</span>{{end}}{{if .Data.coinbase}}<span class="badge badge-accent">mining reward</span>{{end}}</div></div>
+<div class="row">{{if .Data.blockhash}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-accent"><i data-icon="history"></i>Pending</span>{{end}}{{if .Data.coinbase}}<span class="badge badge-accent">mining reward</span>{{end}}{{with .Data.nameOp}}<a class="badge badge-accent" href="/name/{{.Label}}"><i data-icon="user"></i>{{.Display}}</a>{{end}}</div></div>
 <div class="grid cols-4">
   <div class="card stat"><span class="stat-label">Value out</span><span class="stat-value sm"><span class="num">{{coin .Data.totalOut}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">{{len .Data.outputs}} outputs{{if .Data.assets}} · also moves {{range $i, $a := .Data.assets}}{{if $i}}, {{end}}{{$a.Name}}{{end}}{{end}}</span></div>
   <div class="card stat"><span class="stat-label">Fee</span><span class="stat-value sm"><span class="num">{{if .Data.coinbase}}–{{else}}{{coin .Data.fee}}{{end}}</span>{{if not .Data.coinbase}}<span class="stat-unit">{{.Coin}}</span>{{end}}</span><span class="stat-hint">{{if .Data.feeRate}}{{printf "%.2f" .Data.feeRate}} units per byte{{else}}{{if .Data.coinbase}}new coins pay no fee{{else}}–{{end}}{{end}}</span></div>
@@ -149,6 +154,7 @@
   <dt>Total in</dt><dd>{{if .Data.coinbase}}<span class="muted">new coins</span>{{else}}{{coin .Data.totalIn}} {{.Coin}}{{end}}</dd>
   <dt>Total out</dt><dd>{{coin .Data.totalOut}} {{.Coin}}</dd>
   <dt>Witness id</dt><dd class="mono">{{.Data.wtxid}}</dd>
+  {{with .Data.nameOp}}<dt>Name</dt><dd>{{.Before}} <a class="link" href="/name/{{.Label}}">{{.Display}}</a> {{.After}}{{if .Confirmed}}{{if .Applied}} <span class="badge badge-ok">applied</span>{{else}} <span class="badge badge-warn">ignored</span> <span class="muted small">the operation broke a rule, so the transaction did nothing to names</span>{{end}}{{else}} <span class="badge badge-accent">pending</span>{{end}}</dd>{{end}}
   {{range .Data.assets}}{{if .Issued}}<dt>Issuance</dt><dd><span class="num">{{coin .Issued}}</span> <b{{if .Unverified}} class="unverified"{{end}}>{{.Name}}</b> <span class="muted small">created in this transaction</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div><div class="muted small mono">issuer {{.Issuer}}</div></dd>{{end}}{{end}}
   {{range .Data.assets}}{{if .Burned}}<dt>Burned</dt><dd><span class="num">{{coin .Burned}}</span> <b>{{.Name}}</b> <span class="muted small">destroyed: the inputs and issuance exceed the outputs</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div></dd>{{end}}{{end}}
 </dl></div>
@@ -168,7 +174,7 @@
 
 {{define "address"}}{{template "head" .}}
 <div class="addr-head">
-  <div class="page-header" style="margin:0"><div><h1>{{if .Data.Swap}}Swap address{{else if .Data.Treasury}}Treasury{{else if .Data.Pool}}Mining pool{{else}}Address{{end}}</h1><p class="mono" style="overflow-wrap:anywhere">{{.Data.Address}}</p></div></div>
+  <div class="page-header" style="margin:0"><div>{{if .Data.Name}}<div class="dn"><a class="link" href="/name/{{.Data.Name}}">{{display .Data.Name}}</a></div>{{end}}<h1>{{if .Data.Swap}}Swap address{{else if .Data.Treasury}}Treasury{{else if .Data.Pool}}Mining pool{{else}}Address{{end}}</h1><p class="mono" style="overflow-wrap:anywhere">{{.Data.Address}}</p></div></div>
   <div class="qr"><img alt="QR code" src="/qr.svg?d={{.Data.Address}}"></div>
 </div>
 {{if .Data.Pool}}<div class="banner info"><i data-icon="info"></i><div>The {{.Brand}} mining pool. Blocks found by pool miners pay this address; it pays each miner their part once a block matures. Who is owed what is on the <a href="/pool">pool page</a> and in the <a href="/api/pool/ledger">ledger</a>.</div></div>{{end}}
@@ -188,12 +194,78 @@
 {{if .Data.Holdings}}<div class="grid cols-3">
 {{range .Data.Holdings}}  <div class="card stat"><span class="stat-label{{if .Unverified}} unverified{{end}}">{{if .Logo}}<img class="tok" src="{{.Logo}}" alt="" width="20" height="20">{{end}}{{sym .Display .Asset}} balance</span><span class="stat-value sm"><span class="num">{{coin .Balance}}</span><span class="stat-unit">{{sym .Display .Asset}}</span></span><span class="stat-hint">{{if .Unverified}}<span class="mono" title="issuer {{.Issuer}}">issuer {{short .Issuer}}</span> · {{end}}received <span class="num">{{coin .Received}}</span> · sent <span class="num">{{coin .Sent}}</span> · <span class="link">about {{sym .Display .Asset}}</span></span></div>
 {{end}}</div>{{end}}
+{{if .Data.Names}}<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Names</h2><span class="muted small">{{len .Data.Names}} owned · <a class="link" href="/names">about names</a></span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Status</th><th class="num">Expires</th><th class="hide-m">Expires in</th></tr></thead><tbody>
+{{range .Data.Names}}<tr><td><a class="link" href="/name/{{.Label}}">{{.Display}}</a>{{if .Primary}} <span class="badge badge-accent">primary</span>{{end}}</td><td>{{if .Grace}}<span class="badge badge-warn">in grace</span>{{else}}<span class="badge badge-ok">registered</span>{{end}}</td><td class="num"><a href="/block/{{.Expires}}">{{num .Expires}}</a></td><td class="hide-m">{{.ExpiresIn}} <span class="muted small">{{date .ExpiresTime}}</span></td></tr>{{end}}
+</tbody></table></div></div>{{end}}
 <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>History</h2><span class="muted small">{{if .Data.Before}}older than block {{num .Data.Before}}{{else}}newest first{{end}}</span></div>
 <div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Type</th><th>Transaction</th><th class="num">Change</th></tr></thead><tbody>
 {{range .Data.History}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td>{{if .Referral}}<span class="tag mined"><i data-icon="users"></i>Referral</span>{{else}}{{if .Coinbase}}<span class="tag mined"><i data-icon="pickaxe"></i>Mined</span>{{else}}{{if .Incoming}}<span class="tag in"><i data-icon="receive"></i>Received</span>{{else}}<span class="tag out"><i data-icon="send"></i>Sent</span>{{end}}{{end}}{{end}}{{range .Assets}} <span class="badge {{if .Unverified}}badge-warn{{else}}badge-accent{{end}}">{{sym .Display .Asset}}</span>{{end}}</td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{if .MovedARG}}<span class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}}</span>{{end}}{{range .Assets}}<div class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}} <span class="muted small">{{sym .Display .Asset}}</span></div>{{end}}</td></tr>{{end}}
 {{if not .Data.History}}<tr><td colspan="5"><div class="empty"><i data-icon="wallet" class="lg"></i><h3>No activity yet</h3><p>This address has not received or sent anything the index knows about.</p></div></td></tr>{{end}}
 </tbody></table></div></div>
 <div class="pager">{{if .Data.Before}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}">Newest</a>{{else}}<span></span>{{end}}{{if .Data.Older}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}?before={{.Data.Older}}">Older</a>{{end}}</div>
+{{template "foot" .}}{{end}}
+
+{{define "names"}}{{template "head" .}}
+<div class="page-header"><div><h1>Names</h1><p>A name stands for an address: <span class="mono">alice.{{.Data.Suffix}}</span> instead of <span class="mono">{{.Data.HRP}}1q…</span>. Registered on the chain, paid to the treasury, yours for a year or more.</p></div><a class="btn btn-secondary btn-sm" href="{{.App}}/names" rel="noopener">Register in the app</a></div>
+<div class="card"><div class="card-body">
+  <form class="name-search" action="/name/" method="get" role="search"><input class="input mono" name="q" placeholder="alice.{{.Data.Suffix}}" aria-label="Look up a name" autocomplete="off" spellcheck="false" required><button class="btn btn-primary" type="submit">Look up</button></form>
+</div></div>
+<div class="grid cols-3">
+  <div class="card stat"><span class="stat-label">Names registered</span><span class="stat-value sm num">{{num .Data.Count}}</span><span class="stat-hint">active at height {{num .Height}}</span></div>
+  <div class="card stat"><span class="stat-label">Last 24 hours</span><span class="stat-value sm num">{{num .Data.Day}}</span><span class="stat-hint">new registrations</span></div>
+  <div class="card stat"><span class="stat-label">Price</span>{{if .Data.Free}}<span class="stat-value sm">Free</span><span class="stat-hint">no treasury on {{.Network}}: only the network fee</span>{{else}}<span class="stat-value sm"><span class="num">from {{coin .Data.From}}</span><span class="stat-unit">{{.Coin}} a year</span></span><span class="stat-hint">paid to the treasury, 1 to 5 years at once</span>{{end}}</div>
+</div>
+<div class="two">
+  <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Price per year</h2><span class="muted small">by length</span></div>
+  <div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th class="num">Per year</th></tr></thead><tbody>
+  {{range .Data.Prices}}<tr><td>{{.Length}}</td><td class="num">{{if $.Data.Free}}free{{else}}{{coin .Price}} {{$.Coin}}{{end}}</td></tr>{{end}}
+  </tbody></table></div>
+  <div class="card-body"><p class="hint">A label is 3 to 32 characters: lowercase letters, digits and hyphens, not at either end. A year is 52,560 blocks. After expiry the owner alone can renew for 30 days (4,320 blocks); then the name is free again.</p></div></div>
+  <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>How it works</h2></div>
+  <div class="card-body stack">
+    <p class="hint">A name operation is an ordinary transaction with a memo: <span class="memo">NMS1 register alice 2</span>. The address that signs it owns the name. The first valid operation on the chain wins; an operation that breaks a rule confirms as a plain payment and changes nothing.</p>
+    <p class="hint">Reserved labels ({{range $i, $r := .Data.ReservedList}}{{if $i}}, {{end}}<span class="mono">{{$r}}</span>{{end}}) can be registered by the treasury only.</p>
+    <p class="hint">Developers: <a class="link" href="/api/names/info">/api/names/info</a>, <a class="link" href="/api/names/recent">/api/names/recent</a>, <span class="mono">/api/name/{label}</span>, <span class="mono">/api/resolve/{label}</span>, <span class="mono">/api/names?owner=…</span>.</p>
+  </div></div>
+</div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Newest registrations</h2><span class="muted small">newest first</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Owner</th><th class="num">Block</th><th>Age</th><th class="hide-m">Expires in</th></tr></thead><tbody>
+{{range .Data.Recent}}<tr><td><a class="link" href="/name/{{.Label}}">{{.Display}}</a></td><td class="mono"><a href="/address/{{.Owner}}" title="{{.Owner}}">{{short .Owner}}</a></td><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td title="{{when .Time}} UTC">{{ago .Time}}</td><td class="hide-m">{{.ExpiresIn}}</td></tr>{{end}}
+{{if not .Data.Recent}}<tr><td colspan="5"><div class="empty"><i data-icon="user" class="lg"></i><h3>No names yet</h3><p>The first name registered on {{.Network}} will appear here.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+{{template "foot" .}}{{end}}
+
+{{define "name"}}{{template "head" .}}
+<div class="page-header name-head"><div><h1>{{.Data.Display}}</h1><p>{{if .Data.Current}}owned by <a class="link mono" href="/address/{{.Data.Rec.Owner}}" title="{{.Data.Rec.Owner}}">{{short .Data.Rec.Owner}}</a>{{if .Data.OwnerName}}{{if ne .Data.OwnerName .Data.Label}} <span class="muted">(shown as {{display .Data.OwnerName}})</span>{{end}}{{end}}{{else if eq .Data.Status "invalid"}}{{.Data.Reason}}.{{else if eq .Data.Status "reserved"}}Reserved for the treasury.{{else if eq .Data.Status "pending"}}A transaction in the mempool is registering it.{{else}}Available. <a class="link" href="{{.App}}/names" rel="noopener">Register it in the app</a>.{{end}}</p></div>
+<div class="row"><span class="badge {{.Data.BadgeClass}}">{{if eq .Data.Status "registered"}}<i data-icon="check"></i>{{end}}{{.Data.StatusWord}}</span></div></div>
+{{if .Data.Current}}
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Owner</span><span class="stat-value sm mono" style="font-size:var(--fs-4)"><a class="link" href="/address/{{.Data.Rec.Owner}}" title="{{.Data.Rec.Owner}}">{{short .Data.Rec.Owner}}</a></span><span class="stat-hint">{{if .Data.Rec.Primary}}this is the owner's primary name{{else if .Data.OwnerName}}{{if eq .Data.OwnerName .Data.Label}}shown for the owner's address{{else}}the owner is shown as {{display .Data.OwnerName}}{{end}}{{else}}the owner's address{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Registered</span><span class="stat-value sm">{{ago .Data.RegisteredTime}}</span><span class="stat-hint">block {{num .Data.Rec.Registered}} · {{when .Data.RegisteredTime}} UTC</span></div>
+  <div class="card stat"><span class="stat-label">Expires</span><span class="stat-value sm">{{if eq .Data.Status "grace"}}in grace{{else}}{{date .Data.ExpiresTime}}{{end}}</span><span class="stat-hint">block {{num .Data.Rec.Expires}}{{if eq .Data.Status "grace"}} · expired, the owner can still renew{{else}} · estimated{{end}}</span></div>
+  <div class="card stat"><span class="stat-label">Years left</span><span class="stat-value sm num">{{if eq .Data.Status "grace"}}0{{else}}{{.Data.YearsLeft}}{{end}}</span><span class="stat-hint">{{if eq .Data.Status "grace"}}renew within 30 days of the expiry{{else}}{{.Data.ExpiresIn}} · {{if .Data.Free}}renewal is free on {{.Network}}{{else}}renew from {{coin .Data.Price}} {{.Coin}} a year{{end}}{{end}}</span></div>
+</div>
+<div class="card flush"><dl class="props">
+  <dt>Name</dt><dd><b>{{.Data.Display}}</b> <span class="muted">(label <span class="mono">{{.Data.Label}}</span>)</span></dd>
+  <dt>Owner</dt><dd class="mono"><a class="link" href="/address/{{.Data.Rec.Owner}}">{{.Data.Rec.Owner}}</a></dd>
+  <dt>Registered</dt><dd>block <a class="link" href="/block/{{.Data.Rec.Registered}}">{{num .Data.Rec.Registered}}</a>, {{when .Data.RegisteredTime}} UTC<div class="muted small mono">in <a class="link" href="/tx/{{.Data.Rec.RegTxID}}">{{.Data.Rec.RegTxID}}</a></div></dd>
+  <dt>Expires</dt><dd>block {{num .Data.Rec.Expires}}, about {{date .Data.ExpiresTime}} <span class="muted">({{.Data.ExpiresIn}})</span></dd>
+  <dt>Primary</dt><dd>{{if .Data.Rec.Primary}}yes: shown for the owner's address{{else}}not set{{if .Data.OwnerName}}{{if eq .Data.OwnerName .Data.Label}}: shown for the owner's address as its oldest name{{end}}{{end}}{{end}}</dd>
+  <dt>Price</dt><dd>{{if .Data.Free}}free on {{.Network}}{{else}}{{coin .Data.Price}} {{.Coin}} a year{{end}}</dd>
+</dl></div>
+{{else if ne .Data.Status "invalid"}}
+<div class="card"><div class="empty"><i data-icon="user" class="lg"></i><h3>{{if eq .Data.Status "reserved"}}Reserved{{else if eq .Data.Status "pending"}}Being registered{{else}}Available{{end}}</h3><p>{{if eq .Data.Status "reserved"}}Only the treasury can register {{.Data.Display}}.{{else if eq .Data.Status "pending"}}A transaction in the mempool claims {{.Data.Display}}. It may still lose to another one.{{else}}{{.Data.Display}} is free. {{if .Data.Free}}Registering it costs only the network fee on {{.Network}}.{{else}}It costs {{coin .Data.Price}} {{.Coin}} a year, for 1 to 5 years.{{end}}{{end}}</p>{{if eq .Data.Status "available"}}<a class="btn btn-primary btn-sm" href="{{.App}}/names" rel="noopener">Register it in the app</a>{{end}}</div></div>
+{{else}}
+<div class="card"><div class="empty"><i data-icon="alert" class="lg"></i><h3>Not a valid name</h3><p>{{.Data.Reason}}. A name is 3 to 32 characters: lowercase letters, digits and hyphens, not at either end.</p><a class="btn btn-secondary btn-sm" href="/names">All names</a></div></div>
+{{end}}
+{{if ne .Data.Status "invalid"}}
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>History</h2><span class="muted small">newest first</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Operation</th><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Transaction</th><th>From → to</th></tr></thead><tbody>
+{{range .Data.History}}<tr><td><span class="badge {{if eq .Op "register"}}badge-ok{{else}}badge-accent{{end}}">{{.Op}}</span>{{if .Years}} <span class="muted small">{{.Years}} {{if eq .Years 1}}year{{else}}years{{end}}</span>{{end}}</td><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="mono">{{if eq .Op "transfer"}}<a href="/address/{{.From}}" title="{{.From}}">{{short .From}}</a><span class="arrow">→</span><a href="/address/{{.To}}" title="{{.To}}">{{short .To}}</a>{{else}}<a href="/address/{{.From}}" title="{{.From}}">{{short .From}}</a>{{end}}</td></tr>{{end}}
+{{if not .Data.History}}<tr><td colspan="5"><div class="empty"><i data-icon="history" class="lg"></i><h3>No history</h3><p>No valid operation on {{.Data.Display}} has been indexed.</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+{{end}}
 {{template "foot" .}}{{end}}
 
 {{define "notfound"}}{{template "head" .}}

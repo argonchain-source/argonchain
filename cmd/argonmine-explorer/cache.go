@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"argonmine/consensus"
+	"argonmine/names"
 )
 
 // byteLRU is a least-recently-used cache of byte slices bounded by their
@@ -218,6 +219,7 @@ type mempoolRow struct {
 	Outputs int
 	Spends  []coinRef // the coins it spends, with their owners
 	Pays    []mpOut   // its outputs to addresses
+	Name    *names.Op // the name operation its memo carries, if any (names.go)
 }
 
 // mpOut is an unconfirmed output to an address.
@@ -318,6 +320,9 @@ func mempoolRowOf(id string, raw json.RawMessage) mempoolRow {
 		}
 	}
 	rw.In, rw.Out = float64(in), float64(out)
+	if op, ok := names.FindMemo(nullDataPayloads(&tx)); ok {
+		rw.Name = &op
+	}
 	if in >= out {
 		rw.Fee = in - out
 	}

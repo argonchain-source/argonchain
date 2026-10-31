@@ -307,6 +307,19 @@ func TestPagesRender(t *testing.T) {
 	if !strings.Contains(out, "No assets yet") {
 		t.Error("empty asset list lacks its empty state")
 	}
+	// Names pages with nothing registered yet (names_test.go has the rest).
+	out = render("names", namesPageData{Free: true, Suffix: "arg", HRP: "rarg", Prices: []priceRow{{Length: "3 characters"}}, Recent: []nameRow{}})
+	if !strings.Contains(out, "No names yet") || !strings.Contains(out, "Free") {
+		t.Error("empty names page lacks its empty state")
+	}
+	out = render("name", s.nameData("nobody"))
+	if !strings.Contains(out, "nobody.arg") || !strings.Contains(out, "Available") {
+		t.Error("available name page lacks its empty state")
+	}
+	out = render("address", addressData{Address: bobAddr, Totals: bt, Name: "bob", Names: s.ownedNames(bobAddr)})
+	if !strings.Contains(out, "bob.arg") {
+		t.Error("address page lacks the display name")
+	}
 }
 
 // Since the treasury height a coinbase ends with the treasury's output. It

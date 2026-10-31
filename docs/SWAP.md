@@ -121,3 +121,11 @@ ARG and its uARG in several coins (`-split-arg 100`, `-split-uarg 10` by
 default; 0 turns one off): swaps in the same block then pay from
 different coins instead of waiting for each other's change to confirm.
 Wallets likewise offer only confirmed coins in a quote request.
+
+To stop trading without stopping the service, pass `-closed "message"`
+(`SWAP_CLOSED` on Railway): `/api/info` lists no pairs and carries the
+message, and every quote is refused with it. To close chosen directions
+while the others keep trading, pass `-closed-pairs ARG>UARG,WARG>UARG`
+(`SWAP_CLOSED_PAIRS` on Railway): a closed direction is left out of
+`/api/info` and a quote for it is refused with 503 and the message
+"This direction is closed for now". Fees and the reserve are unchanged.

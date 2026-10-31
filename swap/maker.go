@@ -52,6 +52,10 @@ type Config struct {
 	// every quote is refused with it) while the maker keeps running; empty
 	// when it trades.
 	Closed string
+	// ClosedPairs closes single directions, keyed {from, to} in protocol
+	// names (ARG, UARG, WARG): /api/info leaves them out and a quote for one
+	// is refused, while the others trade. See ParseClosedPairs.
+	ClosedPairs map[[2]string]bool
 
 	LedgerPath string // the wARG ledger (issued and burned per transaction)
 	// Treasury receives the swap fees (fees.go); empty: they stay with the
@@ -186,6 +190,35 @@ func New(cfg Config) (*Maker, error) {
 		}
 	}
 	return m, nil
+}
+
+// ParseClosedPairs reads a list of closed directions, "ARG>UARG,WARG>UARG"
+// (coin names in any case), for Config.ClosedPairs. Each side must be one
+// of ARG, UARG, WARG and the two must differ; "" gives no closed pair.
+func ParseClosedPairs(s string) (map[[2]string]bool, error) {
+	if strings.TrimSpace(s) == "" {
+		return nil, nil
+	}
+	out := map[[2]string]bool{}
+	for _, item := range strings.Split(s, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		from, to, ok := strings.Cut(item, ">")
+		if !ok {
+			return nil, fmt.Errorf("closed pair %q: write it as FROM>TO, e.g. ARG>UARG", item)
+		}
+		f, t := Normalize(from), Normalize(to)
+		if f == "" || t == "" {
+			return nil, fmt.Errorf("closed pair %q: each side must be one of ARG, UARG, WARG", item)
+		}
+		if f == t {
+			return nil, fmt.Errorf("closed pair %q: the two sides must differ", item)
+		}
+		out[[2]string{f, t}] = true
+	}
+	return out, nil
 }
 
 // Address is the maker's address; WARG its wARG asset id.
@@ -406,7 +439,7 @@ func (m *Maker) Info() (*Info, error) {
 	for _, from := range []string{ARG, WARG, UARG} {
 		for _, to := range []string{ARG, WARG, UARG} {
 			r, err := m.price(from, to)
-			if err != nil {
+			if err != nil || m.cfg.ClosedPairs[[2]string{from, to}] {
 				continue
 			}
 			p := Pair{From: from, To: to, Rate: rateString(r), Min: m.cfg.MinIn, Max: m.cfg.MaxIn[from]}
@@ -453,6 +486,9 @@ func (m *Maker) Quote(req *QuoteRequest, ip string) (*Quote, error) {
 	}
 	if m.cfg.Closed != "" {
 		return nil, &apiErr{http.StatusServiceUnavailable, m.cfg.Closed}
+	}
+	if m.cfg.ClosedPairs[[2]string{from, to}] {
+		return nil, &apiErr{http.StatusServiceUnavailable, "This direction is closed for now"}
 	}
 	rate, err := m.price(from, to)
 	if err != nil {

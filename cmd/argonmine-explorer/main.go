@@ -24,6 +24,7 @@ import (
 
 	"argonmine/bridge"
 	"argonmine/consensus"
+	"argonmine/names"
 	"argonmine/ui"
 	"argonmine/wallet"
 )
@@ -42,6 +43,7 @@ type server struct {
 	miners   *minerBook                 // the website's miner count (miners.go); nil: off
 	origins  originSet                  // browser origins allowed to submit work (-allow-origin)
 	limits   *limiters
+	appURL   string // the wallet app, where names are registered (-app-url)
 
 	blockCache *byteLRU // getblock (verbosity 2) of confirmed blocks, by hash
 	txCache    *byteLRU // getrawtransaction of confirmed transactions, by txid
@@ -95,6 +97,7 @@ func main() {
 	poolWallet := flag.String("pool-wallet", "", "run the mining pool, paying out from this wallet file; created from POOL_MNEMONIC when missing, unlocked with POOL_WALLET_PASSWORD (empty: no pool)")
 	poolFee := flag.Float64("pool-fee", 1, "pool fee in percent of each block the pool finds")
 	poolMin := flag.String("pool-min-payout", "0.1", "smallest pool balance that is paid out, in ARG")
+	appURL := flag.String("app-url", defaultAppURL, "the wallet app's URL, linked from the name pages (names are registered there)")
 	flag.Parse()
 
 	var params *consensus.Params
@@ -150,6 +153,7 @@ func main() {
 		go followSwapAsset(*swapURL, log.Printf)
 	}
 	s := newServer(params, client, ix, newWorkServer(client, params, *referralPct, log.Printf), tmpl, *ipHeader, *allowOrigin)
+	s.appURL = strings.TrimRight(strings.TrimSpace(*appURL), "/")
 	if *poolWallet != "" {
 		if err := startPool(s.work, params, client, *poolWallet, *poolFee, *poolMin, filepath.Join(netDir, "pool-ledger.json")); err != nil {
 			log.Fatalf("pool: %v", err)
@@ -235,10 +239,13 @@ func orDefault(v, d string) string {
 	return v
 }
 
+// defaultAppURL is where the name pages send people to register a name.
+const defaultAppURL = "https://app.argonmine.com"
+
 // newServer wires the explorer's handlers and caches.
 func newServer(params *consensus.Params, client *wallet.Client, ix *Indexer, work *workServer, tmpl *template.Template, ipHeader, allowOrigin string) *server {
 	s := &server{params: params, client: client, ix: ix, work: work, tmpl: tmpl, start: time.Now(),
-		clientIP: clientIPFrom(ipHeader), origins: parseOrigins(allowOrigin), limits: newLimiters(),
+		clientIP: clientIPFrom(ipHeader), origins: parseOrigins(allowOrigin), limits: newLimiters(), appURL: defaultAppURL,
 		blockCache: newByteLRU(blockCacheBytes), txCache: newByteLRU(txCacheBytes)}
 	if ix != nil {
 		ix.onRewind = func() { s.blockCache.purge(); s.txCache.purge() }
@@ -279,6 +286,14 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/pool/api/work", s.limit(l.work, true, s.apiPoolWork))
 	mux.HandleFunc("/pool/api/work/submit", s.limit(l.share, true, s.apiWorkSubmit))
 	page("/pool", s.poolPage)
+	// Names (names.go).
+	page("/names", s.namesPage)
+	page("/name/", s.namePage)
+	page("/api/names", s.apiNamesByOwner)
+	page("/api/names/info", s.apiNamesInfo)
+	page("/api/names/recent", s.apiNamesRecent)
+	page("/api/name/", s.apiName)
+	page("/api/resolve/", s.apiResolve)
 	page("/api/pool/stats", s.apiPoolStats)
 	page("/api/pool/miner/", s.apiPoolMiner)
 	heavy("/api/pool/ledger", s.apiPoolLedger)
@@ -354,6 +369,8 @@ func newTemplates() (*template.Template, error) {
 		"num":      func(v any) string { return numFmt(v) },
 		"dur":      fmtDuration,
 		"pct":      func(f float64) string { return strconv.FormatFloat(f, 'f', 2, 64) + "%" },
+		"display":  names.Display,
+		"date":     func(t uint64) string { return time.Unix(int64(t), 0).UTC().Format("2 Jan 2006") },
 		// sym names an asset: its display symbol, or a shortened id when the
 		// index has not seen its issuance. Both arguments may be nil (map data).
 		"sym": func(display, id any) string {
@@ -378,6 +395,7 @@ type page struct {
 	Height  int64
 	Tip     uint32
 	Err     string
+	App     string // the wallet app's URL
 	Data    any
 }
 
@@ -387,7 +405,7 @@ func (s *server) render(w http.ResponseWriter, name, title string, data any) {
 	p := page{
 		Title: title, Head: template.HTML(ui.Head(template.HTMLEscapeString(title + " · " + ui.Brand + " explorer"))), Mark: template.HTML(ui.Mark),
 		Brand: ui.Brand, Coin: ui.Coin, UIJS: ui.AssetPath("ui.js"),
-		Network: s.params.Name, Height: h, Tip: tip, Err: publicErr, Data: data,
+		Network: s.params.Name, Height: h, Tip: tip, Err: publicErr, App: s.appURL, Data: data,
 	}
 	if err := s.tmpl.ExecuteTemplate(w, name, p); err != nil {
 		log.Printf("render %s: %v", name, err)
@@ -676,6 +694,10 @@ func (s *server) decorateTx(raw []byte) map[string]any {
 			}
 		}
 	}
+	// A name operation (docs/NAMES.md): said in words beside the raw memo.
+	if v := s.nameOpOf(tx, &typed); v != nil {
+		tx["nameOp"] = v
+	}
 	return tx
 }
 
@@ -802,8 +824,10 @@ type addressData struct {
 	Before   uint32 // paging cursor in effect (0 = newest)
 	Older    uint32 // cursor for the next page (0 = none)
 	Swap     *swapInfo
-	Treasury bool // the network's treasury (consensus/treasury.go)
-	Pool     bool // the mining pool's payout address (pool.go)
+	Treasury bool        // the network's treasury (consensus/treasury.go)
+	Pool     bool        // the mining pool's payout address (pool.go)
+	Name     string      // the name shown for the address (names.go), "" when it has none
+	Names    []ownedName // every name it holds, oldest first
 }
 
 // isTreasury reports whether addr is the network's treasury.
@@ -847,7 +871,8 @@ func (s *server) address(w http.ResponseWriter, r *http.Request) {
 	h, _, _ := s.ix.status()
 	const per = 100
 	t := s.ix.totals(addr)
-	d := addressData{Address: addr, Totals: t, Balance: satSub(t.Received, t.Sent), Stats: addressStats(t), Holdings: s.ix.holdings(t), Tip: h, Maturing: s.ix.maturing(addr, h), Swap: swapOf(s.params.HRP, addr), Treasury: isTreasury(s.params, addr), Pool: s.isPoolAddress(addr)}
+	d := addressData{Address: addr, Totals: t, Balance: satSub(t.Received, t.Sent), Stats: addressStats(t), Holdings: s.ix.holdings(t), Tip: h, Maturing: s.ix.maturing(addr, h), Swap: swapOf(s.params.HRP, addr), Treasury: isTreasury(s.params, addr), Pool: s.isPoolAddress(addr),
+		Name: s.ix.displayName(addr), Names: s.ownedNames(addr)}
 	if v, err := strconv.ParseUint(r.URL.Query().Get("before"), 10, 32); err == nil && v > 0 {
 		d.Before = uint32(v)
 		d.History = s.ix.addressHistoryBefore(addr, uint32(v), per)
@@ -876,6 +901,11 @@ func (s *server) search(w http.ResponseWriter, r *http.Request) {
 	default:
 		if _, err := strconv.ParseUint(q, 10, 32); err == nil {
 			http.Redirect(w, r, "/block/"+q, http.StatusFound)
+			return
+		}
+		// "alice.arg", or a label the index knows, is a name.
+		if label := names.Normalize(q); strings.HasSuffix(q, "."+names.Suffix) || names.Valid(label) && s.ix.hasName(label) {
+			http.Redirect(w, r, "/name/"+label, http.StatusFound)
 			return
 		}
 		s.notFound(w, q)

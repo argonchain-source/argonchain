@@ -55,7 +55,13 @@ func main() {
 	sweepMin := flag.String("fee-sweep-min", "1", "earned fees of a coin paid to the treasury at once")
 	ipHeader := flag.String("client-ip-header", "", "request header naming the client address when a proxy is in front (right-most entry), e.g. X-Forwarded-For")
 	closed := flag.String("closed", "", "close every swap with this message (the service keeps answering /api/info, with no pairs)")
+	closedPairs := flag.String("closed-pairs", "", "close these directions only, e.g. ARG>UARG,WARG>UARG (left out of /api/info; their quotes are refused)")
 	flag.Parse()
+
+	closedSet, err := swap.ParseClosedPairs(*closedPairs)
+	if err != nil {
+		log.Fatalf("-closed-pairs: %v", err)
+	}
 
 	var params *consensus.Params
 	switch *network {
@@ -173,7 +179,7 @@ func main() {
 	}
 	m, err := swap.New(swap.Config{Params: params, Node: node, Wallet: w, UARG: uid, Price: p, SpreadBps: uint32(*spread), WrapFeeBps: uint32(*wrapFee),
 		MaxIn: map[string]consensus.Amount{swap.ARG: amt("max-arg", *maxARG), swap.WARG: amt("max-warg", *maxWARG), swap.UARG: amt("max-uarg", *maxUARG)},
-		MinIn: amt("min", *minIn), FeeRate: consensus.Amount(*feeRate), SplitARG: amtOrZero("split-arg", *splitARG), SplitUARG: amtOrZero("split-uarg", *splitUARG), LedgerPath: *ledger, Treasury: *treasury, FeeSweepMin: amt("fee-sweep-min", *sweepMin), ClientIPHeader: *ipHeader, Closed: strings.TrimSpace(*closed), Logf: log.Printf})
+		MinIn: amt("min", *minIn), FeeRate: consensus.Amount(*feeRate), SplitARG: amtOrZero("split-arg", *splitARG), SplitUARG: amtOrZero("split-uarg", *splitUARG), LedgerPath: *ledger, Treasury: *treasury, FeeSweepMin: amt("fee-sweep-min", *sweepMin), ClientIPHeader: *ipHeader, Closed: strings.TrimSpace(*closed), ClosedPairs: closedSet, Logf: log.Printf})
 	if err != nil {
 		log.Fatal(err)
 	}

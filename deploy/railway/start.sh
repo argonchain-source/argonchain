@@ -131,6 +131,7 @@ case "$ROLE" in
       -price "${SWAP_PRICE:?SWAP_PRICE is required (uARG per ARG, e.g. 0.10)}" \
       -spread-bps "${SWAP_SPREAD_BPS:-100}" -wrap-fee-bps "${SWAP_WRAP_FEE_BPS:-0}" \
       ${SWAP_CLOSED:+-closed "$SWAP_CLOSED"} \
+      ${SWAP_CLOSED_PAIRS:+-closed-pairs "$SWAP_CLOSED_PAIRS"} \
       -client-ip-header X-Forwarded-For
     ;;
   *)

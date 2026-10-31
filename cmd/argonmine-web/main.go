@@ -434,7 +434,7 @@ func serveQR(w http.ResponseWriter, r *http.Request) {
 // real paths (/mine, /wallet, ...) and switches screens client-side.
 func isAppPath(path string) bool {
 	switch strings.TrimSuffix(path, "/") {
-	case "", "/mine", "/wallet", "/dashboard", "/history", "/settings":
+	case "", "/mine", "/wallet", "/buy", "/names", "/dashboard", "/history", "/settings":
 		return true
 	}
 	return false
@@ -499,6 +499,7 @@ var docSources = []struct{ slug, path, group, title string }{
 	{"tokens", "docs/TOKENS.md", "Protocol", "Assets: ARG, wARG, uARG"},
 	{"bridge", "docs/BRIDGE.md", "Protocol", "Bridge"},
 	{"swaps", "docs/SWAP.md", "Protocol", "Swaps"},
+	{"names", "docs/NAMES.md", "Protocol", "Names"},
 	{"node", "docs/NODE.md", "Operate", "Run a node"},
 	{"seed-nodes", "deploy/README.md", "Operate", "Seed nodes"},
 	{"launch", "docs/LAUNCH.md", "Operate", "Launch runbook"},
@@ -511,7 +512,7 @@ var docSources = []struct{ slug, path, group, title string }{
 // page that renders them (its slug, under the docs base).
 var linkRewrites = map[string]string{
 	"docs/OVERVIEW.md": "overview", "docs/GETTING-STARTED.md": "getting-started", "docs/MINING.md": "mining", "docs/WAYS-TO-MINE.md": "ways-to-mine",
-	"docs/NODE.md": "node", "docs/FAQ.md": "faq", "docs/FEES.md": "fees", "docs/SWAP.md": "swaps",
+	"docs/NODE.md": "node", "docs/FAQ.md": "faq", "docs/FEES.md": "fees", "docs/SWAP.md": "swaps", "docs/NAMES.md": "names",
 	"docs/SPEC.md": "spec", "docs/ROADMAP.md": "roadmap", "docs/BRIDGE.md": "bridge", "docs/LAUNCH.md": "launch",
 	"docs/SECURITY-REVIEW.md": "security-review", "docs/TOKENS.md": "tokens", "docs/BRAND.md": "overview", "deploy/README.md": "seed-nodes",
 	"SECURITY.md": "security", "README.md": "overview",
@@ -603,6 +604,8 @@ func (s *site) export(dir string) error {
 		{"index.html", "app", "app", "App", nil},
 		{"mine/index.html", "app", "app", "App", nil},
 		{"wallet/index.html", "app", "app", "App", nil},
+		{"buy/index.html", "app", "app", "App", nil},
+		{"names/index.html", "app", "app", "App", nil},
 		{"history/index.html", "app", "app", "App", nil},
 		{"settings/index.html", "app", "app", "App", nil},
 		{"404.html", "notfound", "", "Not found", nil},

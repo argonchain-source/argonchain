@@ -33,6 +33,7 @@ import (
 //	c || addr || 0 || height(BE32) || txid -> coinbaseEntry (mining rewards, for the maturing sum)
 //	o || addr || 0 || txid || index(BE32) -> coinEntry (unspent outputs, for wallets that spend without a node)
 //	u || height(BE32)      -> blockUndo (to rewind a block on reorg)
+//	n, N, e, R, x, C       -> names (names_index.go)
 //
 // Lifetime totals use saturating arithmetic: asset amounts go up to 2^62 per
 // output, so plain sums of them could overflow int64. A total that reached
@@ -78,7 +79,7 @@ type AddrEntry struct {
 
 // indexVersion is bumped whenever the stored shapes change; a mismatch
 // rebuilds the index from genesis on start.
-const indexVersion = "6"
+const indexVersion = "7"
 
 // AssetTotals are an address's lifetime totals for one non-ARG asset.
 type AssetTotals struct {
@@ -187,6 +188,7 @@ type blockUndo struct {
 	Assets  []assetUndo `json:"assets,omitempty"`
 	Spent   []spentCoin `json:"spent,omitempty"`
 	Created []coinRef   `json:"created,omitempty"`
+	Names   []nameUndo  `json:"names,omitempty"`
 }
 
 type syncPoint struct {
@@ -666,6 +668,11 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 			undo.Addrs = append(undo.Addrs, undoEntry{Addr: addr, TxID: tx.TxID, Received: a.recv, Sent: a.sent, Assets: e.Assets, Coinbase: e.Coinbase, Referral: e.Referral})
 		}
 	}
+	nstate := newNameState(ix)
+	for ti := range blk.Tx {
+		ix.applyNames(blk, ti, &blk.Tx[ti], batch, &undo, nstate)
+	}
+	nstate.flush(batch)
 	state.write(batch)
 	ub, _ := json.Marshal(undo)
 	batch.Put(keyUndo(blk.Height), ub)
@@ -752,6 +759,9 @@ func (ix *Indexer) rewind(h uint32) error {
 					a.TxCount--
 				}
 			}
+			nstate := newNameState(ix)
+			ix.rewindNames(h, &undo, batch, nstate)
+			nstate.flush(batch)
 		}
 	}
 	state.write(batch)

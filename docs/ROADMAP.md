@@ -162,6 +162,16 @@ explorer loses its node, falls behind, or sees no block for an hour.
 | Plainer words on Mine and Settings | Planned |
 | A full test as a new user, on a phone and a laptop, start to finish | Partly done |
 
+### A11: Names and buying ARG
+
+**Priority P1 · In progress (2026-10-31).**
+
+| Item | Status |
+|---|---|
+| Names: `alice.arg` for an address, registered from the app, paid in ARG to the treasury ([Names](docs/NAMES.md)) | In progress |
+| Send to a name; names on the explorer and the dashboard | In progress |
+| Buy ARG: pay USDC or USDT on four chains, receive ARG; the swap sells ARG one way | In progress |
+
 ### A10: Documentation
 
 **Priority P2 · In progress.**

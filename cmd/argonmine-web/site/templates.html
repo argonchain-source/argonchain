@@ -377,6 +377,82 @@
     .content { padding-bottom: 96px; }
     .onboard { min-height: calc(100vh - 56px - 96px); }
   }
+  /* names */
+  .nm { display: flex; flex-direction: column; gap: var(--sp-5); width: 100%; max-width: 640px; margin: 0 auto; }
+  .nm-hero { position: relative; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-6); border-radius: 20px; overflow: hidden; isolation: isolate; }
+  .nm-hero::before { content: ""; position: absolute; z-index: -1; right: -140px; top: -160px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(closest-side, var(--accent-soft), transparent); pointer-events: none; }
+  .nm-head { display: flex; flex-direction: column; gap: 6px; }
+  .nm-head h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 750; letter-spacing: -0.03em; line-height: 1.1; }
+  .nm-search { display: flex; align-items: center; gap: 2px; min-width: 0; height: 68px; padding: 0 var(--sp-4); border-radius: 16px; border: 1px solid var(--hair); background: var(--sunken); transition: border-color .15s var(--ease); }
+  .nm-search:focus-within { border-color: var(--border); }
+  .nm-search.bad { border-color: var(--danger); }
+  .nm-search input { flex: 1 1 auto; min-width: 0; height: 100%; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.025em; outline: none; }
+  .nm-search input::placeholder { color: var(--ink-3); font-weight: 400; }
+  .nm-suf { flex: none; font-size: 30px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink-3); }
+  .nm-res:empty { display: none; }
+  .nm-line { display: flex; align-items: flex-start; gap: var(--sp-2); padding: 0 var(--sp-1); font-size: var(--fs-3); line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
+  .nm-line svg.icon { flex: none; margin-top: 2px; }
+  .nm-line.bad { color: var(--danger); }
+  .nm-card { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); border-radius: 16px; border: 1px solid var(--hair); background: var(--surface); }
+  .nm-name { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; min-width: 0; }
+  .nm-name b { font-size: var(--fs-6); font-weight: 750; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .nm-price { font-size: var(--fs-4); font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .nm-card .swap-kv { padding-top: var(--sp-3); }
+  .nm-card .swap-kv dd.wide { display: flex; justify-content: space-between; gap: var(--sp-3); }
+  .nm-reg { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--hair); }
+  .nm-reg .btn { height: 44px; padding: 0 20px; border-radius: 12px; font-size: var(--fs-4); }
+  .stp { display: inline-flex; align-items: center; height: 44px; border-radius: 12px; border: 1px solid var(--hair); background: var(--sunken); }
+  .stp button { width: 44px; height: 100%; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 20px; font-weight: 500; cursor: pointer; border-radius: 12px; }
+  .stp button:hover:not(:disabled) { color: var(--ink); }
+  .stp button:disabled { opacity: .3; cursor: default; }
+  .stp span { min-width: 76px; text-align: center; font-size: var(--fs-3); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .stp span b { color: var(--ink); font-weight: 700; font-size: var(--fs-4); }
+  .nm-total { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+  .nm-total span { font-size: var(--fs-2); color: var(--ink-3); }
+  .nm-total b { font-size: var(--fs-5); font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .nm-total.c { align-items: center; text-align: center; }
+  .nm-total.c b { font-size: var(--fs-6); }
+  .nm-big { font-size: var(--fs-7); font-weight: 750; letter-spacing: -0.025em; line-height: 1.15; overflow-wrap: anywhere; }
+  .nm-yr-k { font-size: var(--fs-3); font-weight: 600; color: var(--ink-2); margin-top: var(--sp-2); }
+  .nm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: 14px var(--sp-4); border-top: 1px solid var(--hair); }
+  .nm-row:first-child { border-top: 0; }
+  .nm-row-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .nm-row-n { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+  .nm-row-n b { font-size: var(--fs-5); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .nm-row-s { font-size: var(--fs-2); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .nm-row-a { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .nm-empty { padding: var(--sp-3) var(--sp-4) var(--sp-4); font-size: var(--fs-3); color: var(--ink-3); }
+  .nm-how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); padding: 0 var(--sp-2); }
+  .nm-how > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: var(--fs-3); color: var(--ink-3); line-height: 1.45; }
+  .nm-how b { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+  @media (max-width: 600px) {
+    .nm-hero { padding: var(--sp-4); }
+    .nm-search { height: 60px; padding: 0 var(--sp-3); }
+    .nm-search input, .nm-suf { font-size: 24px; }
+    .nm-reg { grid-template-columns: auto minmax(0, 1fr); }
+    .nm-reg .btn { grid-column: 1 / -1; width: 100%; }
+    .nm-row { grid-template-columns: minmax(0, 1fr); }
+    .nm-row-a { justify-content: flex-start; }
+    .nm-how { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  }
+
+  /* buy */
+  .buy { display: flex; flex-direction: column; gap: var(--sp-4); width: 100%; max-width: 480px; margin: 0 auto; }
+  .buy-card { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); border-radius: 20px; }
+  .buy-head { display: flex; flex-direction: column; gap: 6px; }
+  .buy-head h2 { font-size: var(--fs-6); font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; }
+  .buy-form { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .buy-get { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: 0 var(--sp-1); font-size: var(--fs-3); color: var(--ink-2); }
+  .buy-get b { min-width: 0; font-size: var(--fs-6); font-weight: 750; letter-spacing: -0.02em; color: var(--ink); text-align: right; overflow-wrap: anywhere; }
+  .buy-steps { padding: var(--sp-4); }
+  .buy-steps .swap-step { padding-bottom: var(--sp-4); }
+  .buy-steps .swap-step:last-child { padding-bottom: 0; }
+  .buy-steps .swap-step .s button { font-size: inherit; }
+  .buy-paused { display: flex; flex-direction: column; gap: 4px; padding: var(--sp-4); border-radius: 14px; background: var(--sunken); }
+  .buy-paused b { font-size: var(--fs-5); font-weight: 700; }
+  .buy-paused span { font-size: var(--fs-3); color: var(--ink-2); }
+  @media (max-width: 600px) { .buy-card { padding: var(--sp-4); } }
+
   /* Browser wallet: password rows, results, the address-only choice */
   .ob-link { align-self: center; padding: var(--sp-2) var(--sp-3); border: 0; background: none; color: var(--ink-2); font: inherit; font-size: var(--fs-3); cursor: pointer; border-radius: 8px; }
   .ob-link:hover { color: var(--ink); background: var(--surface-2); }
@@ -403,6 +479,8 @@
     <nav class="nav" aria-label="Sections">
       <a href="/mine" data-page="mine" class="active"><i data-icon="pickaxe"></i>Mine</a>
       <a href="/wallet" data-page="wallet"><i data-icon="wallet"></i>Wallet</a>
+      <a href="/buy" data-page="buy"><i data-icon="arrowDownLeft"></i>Buy {{.Coin}}</a>
+      <a href="/names" data-page="names"><i data-icon="user"></i>Names</a>
       <a href="/dashboard" data-page="dashboard"><i data-icon="activity"></i>Dashboard</a>
       <a href="/settings" data-page="settings"><i data-icon="settings"></i>Settings</a>
     </nav>
@@ -549,7 +627,7 @@
             <div class="w-head">
               <button class="w-acct" id="acctChip" type="button" aria-label="Copy your address">
                 <span class="w-idn" id="acctIdn" aria-hidden="true"></span>
-                <span class="w-acct-t"><b>Account 1</b><small id="acctAddr">–</small></span>
+                <span class="w-acct-t"><b id="acctName">Account 1</b><small id="acctAddr">–</small></span>
                 <i data-icon="copy"></i>
               </button>
               <span class="w-pill" id="bcNet">mainnet</span>
@@ -592,7 +670,7 @@
           <div class="db-who">
             <span class="db-av" id="dbIdn" aria-hidden="true"></span>
             <div class="db-who-t">
-              <div class="db-name"><h2>Account 1</h2><span class="w-pill" id="dbNet">…</span></div>
+              <div class="db-name"><h2 id="dbName">Account 1</h2><span class="w-pill" id="dbNet">…</span></div>
               <button class="db-addr" id="dbAddr" type="button" aria-label="Copy your address"><span id="dbAddrT">–</span><i data-icon="copy"></i></button>
               <div class="db-since" id="dbSince"></div>
             </div>
@@ -635,6 +713,50 @@
               <button class="btn btn-secondary db-mine-go" type="button" data-nav="mine"><i data-icon="pickaxe"></i>Open the miner</button>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <!-- BUY: USDC or USDT on another chain, bridged in as uARG and swapped to ARG -->
+      <section class="page" id="page-buy">
+        <div class="buy">
+          <div class="card buy-card">
+            <div class="buy-head"><span class="eyebrow">Buy {{.Coin}}</span><h2>Pay in dollars, receive {{.Coin}}</h2></div>
+            <div class="buy-form" id="buyForm">
+              <div class="swap-box">
+                <div class="swap-lbl"><label for="buyAmt">You pay</label></div>
+                <div class="swap-main"><span class="swap-cur" aria-hidden="true">$</span><input class="swap-amt" id="buyAmt" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false"><button class="swap-chip" id="buyChip" type="button" aria-label="Choose the token and network to pay with"></button></div>
+                <div class="swap-foot"><span id="buyFoot"></span><span class="swap-bal" id="buyBal"></span></div>
+              </div>
+              <div class="buy-get"><span>You receive about</span><b class="num" id="buyGet">–</b></div>
+              <div class="w-steps buy-steps"><ol class="swap-steps" id="buySteps"></ol></div>
+              <div class="w-conn" id="buyConn" hidden><span class="w-conn-ic" id="buyConnIc" aria-hidden="true"></span><span class="w-conn-t" id="buyConnT"></span><button class="swap-inl" id="buyDisc" type="button">Disconnect</button></div>
+              <div class="swap-note bad" id="buyErr" role="alert"></div>
+              <button class="btn btn-primary swap-go" id="buyGo" type="button" disabled>Loading</button>
+              <button class="swap-link" id="buyUseAddr" type="button" hidden>Use a deposit address</button>
+              <button class="swap-link" id="buyCancel" type="button" hidden>Cancel</button>
+            </div>
+            <div class="buy-paused" id="buyPaused" hidden><b>Buying is paused</b><span id="buyPausedS"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NAMES: yourname.arg -->
+      <section class="page" id="page-names">
+        <div class="nm">
+          <div class="card nm-hero">
+            <div class="nm-head"><span class="eyebrow">Names</span><h2>A name for your address</h2></div>
+            <div class="nm-search" id="nmBox">
+              <input id="nmQ" placeholder="yourname" maxlength="36" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" aria-label="Name to look up" aria-describedby="nmRes">
+              <span class="nm-suf" aria-hidden="true">.arg</span>
+            </div>
+            <div class="nm-res" id="nmRes" aria-live="polite"></div>
+          </div>
+          <div class="card list-card nm-mine">
+            <div class="list-head"><h2>Your names</h2><span class="chip" id="nmCount" hidden></span></div>
+            <div id="nmList"></div>
+            <div class="nm-empty" id="nmEmpty">No names yet. Look one up above.</div>
+          </div>
+          <div class="nm-how" id="nmHow"></div>
         </div>
       </section>
 
@@ -740,6 +862,8 @@
      <div class="more-grab" aria-hidden="true"></div>
      <div class="more-h"><h2 id="moreTitle">More</h2><button class="btn btn-ghost btn-icon" id="moreClose" type="button" aria-label="Close"><i data-icon="x"></i></button></div>
      <nav class="more-list" aria-label="More">
+       <a href="/buy" data-page="buy"><span class="mi"><i data-icon="arrowDownLeft"></i></span><span class="mt"><b>Buy {{.Coin}}</b><small>Pay USDC or USDT, receive {{.Coin}}</small></span><i data-icon="chevronRight" class="mx"></i></a>
+       <a href="/names" data-page="names"><span class="mi"><i data-icon="user"></i></span><span class="mt"><b>Names</b><small>yourname.arg for your address</small></span><i data-icon="chevronRight" class="mx"></i></a>
        {{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="swap"></i></span><span class="mt"><b>Bridge</b><small>USDC and USDT in and out</small></span><i data-icon="external" class="mx"></i></a>{{end}}
        <a href="{{.Cfg.Explorer}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="search"></i></span><span class="mt"><b>Explorer</b><small>Blocks and transactions</small></span><i data-icon="external" class="mx"></i></a>
        <a href="{{.DocsURL}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="layers"></i></span><span class="mt"><b>Docs</b><small>How {{.Brand}} works</small></span><i data-icon="external" class="mx"></i></a>
@@ -756,7 +880,7 @@
       <div class="swap-label" id="sdToL">To</div>
       <div class="swap-addr-row" id="sdToBox">
         <span class="swap-who" aria-hidden="true"><i data-icon="user"></i></span>
-        <input id="sdTo" placeholder="{{.Brand}} address" spellcheck="false" autocomplete="off" autocapitalize="none" aria-labelledby="sdToL" aria-describedby="sdNote">
+        <input id="sdTo" placeholder="{{.Brand}} address or name" spellcheck="false" autocomplete="off" autocapitalize="none" aria-labelledby="sdToL" aria-describedby="sdNote">
         <button class="swap-more" id="sdPick" type="button" aria-label="Select an address"><i data-icon="chevronRight"></i></button>
       </div>
       <div class="swap-note" id="sdNote" aria-live="polite"></div>
@@ -907,6 +1031,52 @@
     <div class="w-foot"><div class="w-two"><button class="btn btn-secondary swap-go" id="recvShare" type="button" hidden><i data-icon="share"></i>Share</button><button class="btn btn-primary swap-go" id="btnCopyRecv" type="button"><i data-icon="copy"></i>Copy address</button></div></div>
   </div>
 </div>
+<div class="w-flow" id="flName" role="dialog" aria-modal="true" aria-labelledby="flNameT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flNameT">Name</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="to" data-title="Transfer">
+    <div class="w-body">
+      <div class="nm-big" id="nmToName"></div>
+      <div class="swap-label" id="nmToL">New owner</div>
+      <div class="swap-addr-row" id="nmToBox">
+        <span class="swap-who" aria-hidden="true"><i data-icon="user"></i></span>
+        <input id="nmTo" placeholder="Address or name" spellcheck="false" autocomplete="off" autocapitalize="none" aria-labelledby="nmToL" aria-describedby="nmToNote">
+        <button class="swap-more" id="nmToPaste" type="button" aria-label="Paste" hidden><i data-icon="clipboard"></i></button>
+      </div>
+      <div class="swap-note" id="nmToNote" aria-live="polite"></div>
+      <div class="banner warn"><i data-icon="alert"></i><div>A transfer cannot be undone. The new owner can renew the name, transfer it or let it go.</div></div>
+    </div>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="nmToGo" type="button" disabled>Enter an address</button></div>
+  </div>
+  <div class="w-view" data-view="years" data-title="Renew">
+    <div class="w-body c">
+      <div class="nm-big" id="nmYrName"></div>
+      <div class="nm-yr-k">Renew for</div>
+      <div id="nmYrStep"></div>
+      <div class="nm-total c"><span>Total</span><b id="nmYrTotal"></b></div>
+      <div class="hint" id="nmYrHint"></div>
+    </div>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="nmYrGo" type="button">Continue</button></div>
+  </div>
+  <div class="w-view" data-view="review" data-title="Review">
+    <div class="w-body" id="nmRvBody"></div>
+    <div class="w-foot"><div class="w-pw" id="nmPwBox" hidden><label for="nmPw">Password</label><input class="input" id="nmPw" type="password" autocomplete="current-password"></div><div class="error" id="nmRvErr" role="alert"></div><button class="btn btn-primary swap-go" id="nmRvGo" type="button">Confirm</button></div>
+  </div>
+  <div class="w-view" data-view="keys" data-title="Turn on sending">
+    <div class="w-body">
+      <p class="keys-note" id="nmKyNote"></p>
+      <div class="keys-form">
+        <textarea class="textarea mono" id="nmKyWords" placeholder="Your 24 words, separated by spaces" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" aria-label="Your recovery phrase"></textarea>
+        <div class="w-pw"><label for="nmKyPw1">New password for this wallet</label><input class="input" id="nmKyPw1" type="password" autocomplete="new-password"></div>
+        <div class="w-pw"><label for="nmKyPw2">Repeat password</label><input class="input" id="nmKyPw2" type="password" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <div class="w-foot"><div class="error" id="nmKyErr" role="alert"></div><button class="btn btn-primary swap-go" id="nmKyGo" type="button">Turn on and confirm</button></div>
+  </div>
+  <div class="w-view" data-view="done" data-title="Done">
+    <div class="w-body c" id="nmDoneBody"></div>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="nmDone" type="button">Done</button></div>
+  </div>
+</div>
 <div class="modal" id="forgetModal" role="dialog" aria-modal="true" aria-labelledby="forgetTitle">
   <div class="modal-card">
     <div class="modal-header"><h2 id="forgetTitle">Log out of this wallet?</h2><button class="btn btn-ghost btn-icon" id="forgetClose" aria-label="Close"><i data-icon="x"></i></button></div>
@@ -974,8 +1144,8 @@
   }
 
   // ---- pages ----
-  var titles = { mine: 'Mine', wallet: 'Wallet', dashboard: 'Dashboard', settings: 'Settings' };
-  var current = 'mine';
+  var titles = { mine: 'Mine', wallet: 'Wallet', buy: 'Buy ' + COIN, names: 'Names', dashboard: 'Dashboard', settings: 'Settings' };
+  var current = 'mine', shownPage = '';
   function show(p) {
     if (!titles[p]) p = 'mine';
     current = p;
@@ -990,6 +1160,9 @@
     if (p !== 'settings') { $('verifyWords').value = ''; $('verifyBox').hidden = true; $('verifyOut').textContent = ''; hideReveal(); }
     if (has && (p === 'wallet' || p === 'dashboard')) refreshChain();
     if (p === 'settings') setTimeout(markSection, 0);
+    // Names and Buy load their own data when they come into view.
+    var key = has ? p : '';
+    if (key !== shownPage) { shownPage = key; if (key === 'names') openNames(); else stopNamesPoll(); if (key === 'buy') openBuy(); }
   }
   // /history was the dashboard's address before it.
   function pageFromPath() {
@@ -1020,6 +1193,7 @@
     $('refByRow').hidden = !ref; $('refBy').textContent = ref || '–';
     $('refLine').hidden = !ref; $('refLineV').textContent = ref ? refPct + '% to ' + UI.fmt.short(ref, 8, 6) : '–';
     renderRefOffer(); renderSecurity(); renderDash();
+    if (addr) nmLoadMine(false);
     $('swAutostart').setAttribute('aria-checked', autostart ? 'true' : 'false');
     $('swWake').setAttribute('aria-checked', keepAwake ? 'true' : 'false');
     renderTheme(); renderMode();
@@ -1242,6 +1416,7 @@
     bridgeStatus = st;
     var id = hex64(st.asset);
     if (id && id !== UASSET) { UASSET = id; if (assetsKnown) { renderAssets(lastAssets); renderHistory(); } }
+    if (addr && typeof buy === 'object' && buy && !buy.run) buyRestore();
   }
   function getJSON(u, ms) {
     var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, ms) : 0;
@@ -1411,7 +1586,7 @@
   // full-screen page on phones. A flow is a stack of views; the back arrow
   // pops one, and closes the flow at the first. On phones the review opens as
   // a bottom sheet over the form. Esc closes; Tab stays inside the flow.
-  var FLOWS = { send: 'flSend', swap: 'flSwap', receive: 'flRecv' }, FL = null;
+  var FLOWS = { send: 'flSend', swap: 'flSwap', receive: 'flRecv', name: 'flName' }, FL = null;
   function isPhone() { return window.matchMedia && window.matchMedia('(max-width: 639px)').matches; }
   function openFlow(name, view) {
     if (FL) closeFlow(true);
@@ -1426,6 +1601,7 @@
     f.el.classList.remove('show', 'sheet-on'); $('flowScrim').classList.remove('show'); document.body.style.overflow = '';
     f.el.querySelectorAll('.w-view').forEach(function (v) { v.classList.remove('on', 'sheet'); });
     stopSwapTimers(); clearInterval(sw.qTimer);
+    if (buy && buy.run && buy.run.st.conv === 'review') { buy.run.st.conv = 'ready'; renderBuyIf(); }
     if (!quiet && f.back && f.back.focus) f.back.focus();
   }
   // showView(v): push v; showView(v, true): v alone; showView(v, base): base, then v.
@@ -1509,6 +1685,7 @@
     return '<svg viewBox="0 0 7 7" shape-rendering="crispEdges"><rect width="7" height="7" fill="hsl(' + hue + ',45%,88%)"/><g fill="hsl(' + hue + ',55%,42%)">' + cells + '</g></svg>';
   }
   function renderHome() {
+    applyDispName();
     $('acctIdn').innerHTML = addr ? identicon(addr) : '';
     $('acctAddr').textContent = addr ? UI.fmt.short(addr, 9, 6) : '–';
     $('argNet').textContent = netName();
@@ -1730,11 +1907,33 @@
   function coinSym(k) { return dispName(k); }
   // A withdrawal memo as typed or pasted, as K7M2-X9RT, or '' if it is not one.
   function memoOf(v) { var m = String(v || '').replace(/[\s-]/g, '').toUpperCase(); return /^[2-9A-HJ-NP-Z]{8}$/.test(m) ? m.slice(0, 4) + '-' + m.slice(4) : ''; }
+  // The To field takes a name (alice.arg, or alice) as well as an address:
+  // the name is resolved through the explorer and the payment goes to the
+  // address it names. Text that is or is becoming an address is never a name.
+  var sdName = { label: '', state: '', address: '', err: '' }, sdNameTimer = 0;
+  function sdNameOf(v) {
+    var l = nmNorm(v), lo = String(v || '').trim().toLowerCase();
+    if (!l || payloadOf(v) || (HRP + '1').indexOf(lo.slice(0, HRP.length + 1)) === 0) return '';
+    return nmCheck(l) ? '' : l;
+  }
+  function sdResolve(l) {
+    if (sdName.label === l) return;
+    sdName = { label: l, state: 'loading', address: '', err: '' };
+    clearTimeout(sdNameTimer);
+    sdNameTimer = setTimeout(function () {
+      resolveName(l).then(function (a) { if (sdName.label !== l) return; sdName.state = a ? 'ok' : 'none'; sdName.address = a; if (FL && FL.name === 'send') renderSend(); },
+        function (e) { if (sdName.label !== l) return; sdName.state = 'err'; sdName.err = netErr(e, 'The explorer'); if (FL && FL.name === 'send') renderSend(); });
+    }, 250);
+  }
   function sendProblem() {
-    var raw = $('sdAmt').value.trim(), u = toUnits(raw), to = $('sdTo').value.trim(), i = to ? addrInfo(to) : null;
+    var raw = $('sdAmt').value.trim(), u = toUnits(raw), typed = $('sdTo').value.trim(), nl = sdNameOf(typed), to = nl ? sdName.address : typed, i = to ? addrInfo(to) : null;
     if (HOLD_ARG && sdCoin !== 'UARG') return ['Not open yet', HOLD_ARG];
-    if (!to) return ['Enter an address'];
-    if (!i.valid) return ['Enter a valid address', to.length >= HRP.length + 60 ? 'Not a valid ' + BRAND + ' address.' : ''];
+    if (!typed) return ['Enter an address'];
+    if (nl) {
+      if (sdName.label !== nl || sdName.state === 'loading') return ['Checking the name'];
+      if (sdName.state === 'err') return ['Cannot check the name', sdName.err];
+      if (!to) return ['Name not found', 'No one owns ' + nmDisp(nl) + '.'];
+    } else if (!i.valid) return ['Enter a valid address', typed.length >= HRP.length + 60 ? 'Not a valid ' + BRAND + ' address.' : ''];
     if (to.toLowerCase() === addr) return ['Enter another address', 'This is your own address.'];
     if (i.bad) return ['Cannot send to this address', 'This is not a valid withdrawal address. Coins sent to it would be lost.'];
     if (i.swap) {
@@ -1768,17 +1967,19 @@
     $('sdUsd').textContent = sdUsd ? fmtTok(u || ZERO, 8, 8, 0) + ' uARG' : '$' + fmtTok(u || ZERO, 8, 2, 2);
     $('sdBalV').textContent = (sdUsd ? '$' : '') + fmtU(bal);
     $('sdBal').disabled = !(bal > ZERO);
-    var to = $('sdTo').value.trim(), i = to ? addrInfo(to) : null;
+    var typed = $('sdTo').value.trim(), nl = sdNameOf(typed);
+    if (nl) sdResolve(nl); else sdName = { label: '', state: '', address: '', err: '' };
+    var to = nl ? sdName.address : typed, i = to ? addrInfo(to) : null;
     // A withdrawal address pasted: uARG is the one coin it takes.
     if (to !== sdLastTo) { sdLastTo = to; if (i && i.swap && sdCoin !== 'UARG') { sdCoin = 'UARG'; sdMax = false; return renderSend(); } }
     var wdr = !!(i && i.swap && !i.swap.why), pr = sendProblem();
     $('sdMemoRow').hidden = !wdr;
-    $('sdToBox').classList.toggle('bad', !!(i && to && (!i.valid && to.length >= HRP.length + 60 || i.bad || (i.swap && i.swap.why))));
+    $('sdToBox').classList.toggle('bad', nl ? sdName.state === 'none' || sdName.state === 'err' : !!(i && to && (!i.valid && to.length >= HRP.length + 60 || i.bad || (i.swap && i.swap.why))));
     var mv = $('sdMemo').value.trim();
     $('sdMemoBox').classList.toggle('bad', !!(wdr && mv.replace(/[\s-]/g, '').length >= 8 && !memoOf(mv)));
     if (pr && pr[1] === 'memo') { note('sdNote', withdrawLine(i.swap), 'ok'); note('sdMemoNote', 'The memo has 8 letters and digits, like K7M2-X9RT.', 'bad'); }
     else if (pr && pr[1]) { note('sdNote', pr[1], 'bad'); note('sdMemoNote', ''); }
-    else { note('sdNote', wdr ? withdrawLine(i.swap) : ''); note('sdMemoNote', wdr && !mv ? 'Paste the memo shown with this address.' : ''); }
+    else { note('sdNote', wdr ? withdrawLine(i.swap) : nl && to ? nmDisp(nl) + ' \u2192 ' + UI.fmt.short(to, 10, 6) : '', nl && to && !wdr ? 'ok' : ''); note('sdMemoNote', wdr && !mv ? 'Paste the memo shown with this address.' : ''); }
     setGo($('sdGo'), pr ? pr[0] : 'Continue', !pr);
   }
   function withdrawLine(w) { return 'Withdraws ' + w.symbol + ' on ' + w.chain + ' to ' + UI.fmt.short(w.to, 6, 4) + '.'; }
@@ -1824,18 +2025,18 @@
   // Continue: the payment is built (unsigned) to show its exact fee.
   $('sdGo').onclick = function () {
     if (sendProblem()) return;
-    var u = toUnits($('sdAmt').value), to = $('sdTo').value.trim().toLowerCase(), k = sdCoin, max = sdMax, btn = this;
+    var u = toUnits($('sdAmt').value), typed = $('sdTo').value.trim(), nl = sdNameOf(typed), to = (nl ? sdName.address : typed).toLowerCase(), k = sdCoin, max = sdMax, btn = this;
     var ti = addrInfo(to), wdr = ti.swap || null, memo = wdr ? memoOf($('sdMemo').value) : '';
     btn.classList.add('is-loading'); note('sdNote', '');
     loadCoins().then(function () {
       return W('preview', { coins: CO.list, tip: CO.tip, asset: assetOf(k), to: to, amount: String(u), max: max, uarg: UASSET, memo: memo }).then(function (pre) {
-        return { k: k, to: to, u: big(pre.amount), max: max, pre: pre, topUp: null, memo: memo, wdr: wdr };
+        return { k: k, to: to, name: nl, u: big(pre.amount), max: max, pre: pre, topUp: null, memo: memo, wdr: wdr };
       }, function (e) {
         if (e.code !== 'fee' || k === 'ARG') throw e;
         return planTopUp(k).then(function (tu) {
           var bal = coinBal(k);
           if (u + tu.amount > bal) { if (!max) throw new Error('Leave ' + fmtU(tu.amount, 0) + ' ' + dispName(k) + ' to cover the network fee.'); u = bal - tu.amount; }
-          return { k: k, to: to, u: u, max: false, pre: null, topUp: tu, memo: memo, wdr: wdr };
+          return { k: k, to: to, name: nl, u: u, max: false, pre: null, topUp: tu, memo: memo, wdr: wdr };
         });
       });
     }).then(function (P) { sdPlan = P; showSendReview(); return lockState('sd'); })
@@ -1846,10 +2047,12 @@
     var P = sdPlan, sym = coinSym(P.k);
     var fee = P.pre ? fmtU(big(P.pre.fee), 0) + ' ' + COIN : fmtU(P.topUp.amount, 0) + ' ' + dispName(P.k) + ', swapped to ' + COIN;
     $('sdRvBody').innerHTML = amtRow('You send', fmtU(P.u), sym, P.k === 'UARG' ? '$' + fmt2(P.u, 8) : '', true) +
-      '<dl class="swap-kv">' + kvTo('To', P.to) + (P.wdr ? wdrRows(P) : '<dt>Network</dt><dd>' + esc(netName()) + '</dd>') + '<dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Arrives</dt><dd>' + (P.wdr ? 'The bridge sees it within seconds' : 'Next block, about 10 min') + '</dd></dl>';
+      '<dl class="swap-kv">' + toRows(P) + (P.wdr ? wdrRows(P) : '<dt>Network</dt><dd>' + esc(netName()) + '</dd>') + '<dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Arrives</dt><dd>' + (P.wdr ? 'The bridge sees it within seconds' : 'Next block, about 10 min') + '</dd></dl>';
     err('sdRvErr', '');
     showView('rv', 'form');
   }
+  // The recipient: a name with the address it resolved to, or the address.
+  function toRows(P) { return P.name ? '<dt>To</dt><dd>' + esc(nmDisp(P.name)) + '</dd>' + kvTo('Address', P.to) : kvTo('To', P.to); }
   function wdrRows(P) { return '<dt>Memo</dt><dd class="mono">' + esc(P.memo) + '</dd><dt>Withdrawal</dt><dd>' + esc(P.wdr.symbol + ' on ' + P.wdr.chain) + '</dd>' + kvTo('Paid to', P.wdr.to); }
   // Signs and sends the reviewed payment (the wallet is unlocked).
   function sendExec(P) {
@@ -1861,7 +2064,7 @@
       remember(P.to); $('sdAmt').value = ''; $('sdTo').value = ''; $('sdMemo').value = ''; sdMax = false; sdPlan = null;
       var said = P.wdr ? ' is on its way to the bridge, which pays out the ' + P.wdr.symbol + '.' : ' is on its way. It confirms in about 10 minutes.';
       $('sdDoneBody').innerHTML = '<div class="w-res"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Sent</h3><p>' + esc(fmtU(big(pay.amount)) + ' ' + coinSym(P.k) + said) + '</p>' +
-        '<dl class="swap-kv">' + kvTo('To', P.to) + (P.wdr ? wdrRows(P) : '') + '<dt>Network fee</dt><dd>' + esc(fmtU(big(pay.fee), 0) + ' ' + COIN) + '</dd>' + txRow(pay.txid) + '</dl></div>';
+        '<dl class="swap-kv">' + toRows(P) + (P.wdr ? wdrRows(P) : '') + '<dt>Network fee</dt><dd>' + esc(fmtU(big(pay.fee), 0) + ' ' + COIN) + '</dd>' + txRow(pay.txid) + '</dl></div>';
       showView('done', true); refreshChain();
     });
   }
@@ -1908,13 +2111,24 @@
   function openSwap() {
     sw.track = null; sw.trackDep = null; renderSwap(); loadStatus();
     loadCoins().then(function () { if (FL && FL.name === 'swap') computeSwap(); });
-    if (SWAP) makerInfo(true).then(function () { if (FL && FL.name === 'swap') computeSwap(); }, function () { if (FL && FL.name === 'swap') computeSwap(); });
+    if (SWAP) makerInfo(true).then(function () { if (FL && FL.name === 'swap') renderSwap(); }, function () { if (FL && FL.name === 'swap') computeSwap(); });
+  }
+  // The maker's pairs, between the coins of this chain.
+  function nativePairs() { return ((maker && maker.pairs) || []).filter(function (x) { return x && NATIVE.indexOf(x.from) >= 0 && NATIVE.indexOf(x.to) >= 0; }); }
+  function offeredFrom(k) { return nativePairs().some(function (x) { return x.from === k; }); }
+  // A direction the maker no longer lists (ARG or wARG sold for uARG, say)
+  // is replaced by one it does, the same coin first.
+  function fixPair() {
+    if (sw.dir !== 'native' || !maker || nativePair()) return;
+    var ps = nativePairs(), f = ps.filter(function (x) { return x.from === sw.from; })[0] || ps.filter(function (x) { return x.to === sw.to; })[0] || ps[0];
+    if (f) { sw.from = f.from; sw.to = f.to; }
   }
   function shortEta(s) { return String(s).replace(/^about /, '~').replace(/ hours?$/, ' h').replace(/ min$/, ' min'); }
   function nChip(k, pick) { return chipHTML(dispName(k), netName(), pick, true); }
   function renderSwap() {
-    pickDefault();
+    pickDefault(); fixPair();
     var r = swRoute(), loading = BRIDGE && !bridgeStatus && !bridgeDownNow, d = sw.dir;
+    $('swFlip').hidden = d === 'native' && !!maker && nativePairs().length > 0 && !pairOf(maker, sw.to, sw.from);
     var rChip = r ? chipHTML(r.t.symbol, r.c.name, true) : '<span class="swap-tok"><b>' + (loading ? 'Loading' : 'Select token') + '</b></span>' + UI.icon('chevronDown');
     setHTML($('swPayChip'), d === 'in' ? rChip : nChip(payKey(), true)); $('swPayChip').disabled = false; $('swPayChip').classList.toggle('empty', d === 'in' && !r);
     setHTML($('swGetChip'), d === 'out' ? rChip : nChip(getKey(), d !== 'in')); $('swGetChip').disabled = d === 'in'; $('swGetChip').classList.toggle('empty', d === 'out' && !r);
@@ -2017,7 +2231,7 @@
   }
   $('swSum').onclick = function () { sw.details = !sw.details; computeSwap(); };
   // Pickers: the coins of this chain first, then each other chain's tokens.
-  function nativeItem(k, sel) { return { key: 'n:' + k, html: tokIc(dispName(k), true, true), title: dispName(k), sub: k === 'UARG' ? 'Dollar token' : k === 'WARG' ? 'Wrapped ' + COIN : netName(), right: k === 'WARG' && !WASSET ? (SWAP ? 'Loading' : 'Unavailable') : CO.ok ? fmtU(coinBal(k), 0) : '', off: (k === 'WARG' && !WASSET) || (!SWAP && k !== 'UARG') || (!!HOLD_ARG && k !== 'UARG'), sel: sel }; }
+  function nativeItem(k, sel, no) { return { key: 'n:' + k, html: tokIc(dispName(k), true, true), title: dispName(k), sub: k === 'UARG' ? 'Dollar token' : k === 'WARG' ? 'Wrapped ' + COIN : netName(), right: no ? 'Not offered' : k === 'WARG' && !WASSET ? (SWAP ? 'Loading' : 'Unavailable') : CO.ok ? fmtU(coinBal(k), 0) : '', off: no || (k === 'WARG' && !WASSET) || (!SWAP && k !== 'UARG') || (!!HOLD_ARG && k !== 'UARG'), sel: sel }; }
   function routeItems(selKey) {
     var items = [], last = '';
     routes().forEach(function (r) {
@@ -2028,16 +2242,16 @@
   }
   function swapReset() { $('swPay').value = ''; sw.max = false; note('swToErr', ''); note('swInErr', ''); $('swToBox').classList.remove('bad'); }
   $('swPayChip').onclick = function () {
-    var items = [{ head: netName() }].concat(NATIVE.map(function (k) { return nativeItem(k, sw.from === k); }));
+    var items = [{ head: netName() }].concat(NATIVE.map(function (k) { return nativeItem(k, sw.from === k, !!maker && nativePairs().length > 0 && !offeredFrom(k)); }));
     openPicker('You pay', items, function (k) {
       swapReset();
       var c = k.slice(2);
-      sw.dir = 'native'; if (c === sw.to) sw.to = sw.from; sw.from = c;
+      sw.dir = 'native'; if (c === sw.to) sw.to = sw.from; sw.from = c; fixPair();
       renderSwap(); setTimeout(function () { $('swPay').focus(); }, 40);
     });
   };
   $('swGetChip').onclick = function () {
-    var items = [{ head: netName() }].concat(NATIVE.filter(function (k) { return k !== sw.from; }).map(function (k) { return nativeItem(k, sw.to === k); }));
+    var items = [{ head: netName() }].concat(NATIVE.filter(function (k) { return k !== sw.from; }).map(function (k) { return nativeItem(k, sw.to === k, !!maker && nativePairs().length > 0 && !pairOf(maker, sw.from, k)); }));
     openPicker('You receive', items, function (k) {
       swapReset();
       sw.dir = 'native'; sw.to = k.slice(2); renderSwap(); setTimeout(function () { $('swPay').focus(); }, 40);
@@ -2166,6 +2380,7 @@
   };
   function showNativeDone(P, sg) {
     clearInterval(sw.qTimer); $('swQuoteT').textContent = ''; sw.plan = null; swapReset();
+    if (buy.run && buy.run.st.conv === 'review' && P.from === 'UARG' && P.to === 'ARG') buyConverted(sg);
     $('swDoneBody').innerHTML = '<div class="w-res"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Swapped</h3><p>' + esc(fmtU(big(sg.amount_out)) + ' ' + dispName(P.to)) + ' is in your wallet. It confirms in the next block.</p>' +
       '<dl class="swap-kv"><dt>You paid</dt><dd>' + esc(fmtU(big(sg.amount_in)) + ' ' + dispName(P.from)) + '</dd>' + txRow(sg.txid) + '</dl></div>';
     showView('done', true);
@@ -2177,16 +2392,18 @@
   // chain; the guardians issue the uARG here. Every read goes through the
   // wallet (ui/evm.js). Without a wallet the deposit address below is the way.
   var wal = { bal: null, alw: null, key: '', seq: 0, err: '', busy: '' };
-  function loadWal() {
-    var r = swRoute(); wal.err = '';
+  function loadWal(r) {
+    r = r || swRoute(); wal.err = '';
     if (!r || !EVM.connected || EVM.chainId !== r.c.chain_id) { wal.bal = wal.alw = null; wal.key = ''; return; }
     var k = EVM.account + ':' + r.key; if (wal.key === k) return;
     wal.key = k; wal.bal = wal.alw = null; var seq = ++wal.seq;
     Promise.all([EVM.balanceOf(r.t.address, EVM.account), EVM.allowance(r.t.address, EVM.account, r.c.vault)]).then(function (x) {
-      if (seq !== wal.seq) return; wal.bal = x[0]; wal.alw = x[1]; computeSwap();
-    }).catch(function () { if (seq !== wal.seq) return; wal.err = 'Balance unavailable'; computeSwap(); });
+      if (seq !== wal.seq) return; wal.bal = x[0]; wal.alw = x[1]; inRender();
+    }).catch(function () { if (seq !== wal.seq) return; wal.err = 'Balance unavailable'; inRender(); });
   }
-  EVM.on(function () { wal.key = ''; if (FL && FL.name === 'swap' && sw.dir === 'in') { loadWal(); computeSwap(); } });
+  // Whichever screen is deposting redraws: Swap in, or Buy.
+  function inRender() { if (FL && FL.name === 'swap' && sw.dir === 'in') computeSwap(); if (current === 'buy') renderBuy(); }
+  EVM.on(function () { wal.key = ''; if (FL && FL.name === 'swap' && sw.dir === 'in') loadWal(); if (current === 'buy') loadWal(buyRoute()); inRender(); });
   // What the button does now, in order: connect, switch, enter an amount, approve and deposit.
   function inState() {
     var r = swRoute(), raw = $('swPay').value.trim(), dec = r.t.decimals, v = toDec(raw, Math.min(dec, 8)), vt = v === null ? null : v * pow10(Math.max(0, dec - 8)), min = big(r.t.min_deposit), sym = r.t.symbol;
@@ -2203,73 +2420,91 @@
     if (min > ZERO && vt < min) return { label: 'Minimum ' + fmt2(min, dec) + ' ' + sym, off: true };
     return { label: wal.alw !== null && wal.alw >= vt ? 'Deposit' : 'Approve and deposit', go: startDeposit };
   }
+  // The connected wallet, as a row: its icon (or an identicon) and account.
+  function connHTML() { var w = EVM.wallets().filter(function (x) { return x.info && x.info.name === EVM.name; })[0], ic = w ? EVM.icon(w) : ''; return ic ? '<img alt="" src="' + esc(ic) + '">' : '<span class="w-idn">' + identicon(EVM.account) + '</span>'; }
+  function connText(r) { return (EVM.name ? EVM.name + ' · ' : '') + UI.fmt.short(EVM.account, 6, 4) + (r && EVM.chainId !== r.c.chain_id ? ' · other network' : ''); }
   function renderConn() {
     var on = sw.dir === 'in' && EVM.connected, r = swRoute();
     $('swConn').hidden = !on;
     if (!on) return;
-    var w = EVM.wallets().filter(function (x) { return x.info && x.info.name === EVM.name; })[0], ic = w ? EVM.icon(w) : '';
-    setHTML($('swConnIc'), ic ? '<img alt="" src="' + esc(ic) + '">' : '<span class="w-idn">' + identicon(EVM.account) + '</span>');
-    $('swConnT').textContent = (EVM.name ? EVM.name + ' · ' : '') + UI.fmt.short(EVM.account, 6, 4) + (r && EVM.chainId !== r.c.chain_id ? ' · other network' : '');
+    setHTML($('swConnIc'), connHTML()); $('swConnT').textContent = connText(r);
   }
-  function inBusy(label) { wal.busy = label || ''; computeSwap(); }
-  function inErr(m) { note('swInErr', m || '', 'bad'); }
-  function connectWallet() {
-    inErr('');
+  function inBusy(label) { wal.busy = label || ''; inRender(); }
+  function inErr(m) { swapHost.err(m); }
+  // The screen asking for the wallet: its route, where its errors go, and
+  // how it offers a choice of wallets.
+  var swapHost = { route: swRoute, err: function (m) { note('swInErr', m || '', 'bad'); }, pick: function (title, items, cb) { openPicker(title, items, cb); } };
+  function connectWallet(H) {
+    H = H || swapHost; H.err('');
     var list = EVM.wallets();
     var go = function () {
       inBusy('Waiting for ' + (EVM.name || 'your wallet'));
-      EVM.connect().then(function () { inBusy(''); var r = swRoute(); if (r && EVM.chainId !== r.c.chain_id) return switchChain(); })
-        .catch(function (e) { inBusy(''); if (String(e && e.message) === 'Choose a wallet') pickWallet(go); else inErr(EVM.why(e)); });
+      EVM.connect().then(function () { inBusy(''); var r = H.route(); if (r && EVM.chainId !== r.c.chain_id) return switchChain(H); })
+        .catch(function (e) { inBusy(''); if (String(e && e.message) === 'Choose a wallet') pickWallet(go, H); else H.err(EVM.why(e)); });
     };
-    if (list.length > 1 && !EVM.name) { pickWallet(go); return; }
+    if (list.length > 1 && !EVM.name) { pickWallet(go, H); return; }
     go();
   }
-  function pickWallet(then) {
+  function pickWallet(then, H) {
     var list = EVM.wallets();
-    openPicker('Connect a wallet', list.map(function (w, i) {
+    (H || swapHost).pick('Connect a wallet', list.map(function (w, i) {
       var ic = EVM.icon(w);
       return { key: String(i), html: '<span class="w-wal-ic">' + (ic ? '<img alt="" src="' + esc(ic) + '">' : esc(String(w.info.name || '?').slice(0, 2))) + '</span>', title: w.info.name || 'Wallet', sub: 'Installed' };
     }), function (k) { EVM.use(list[Number(k)]); then(); });
   }
-  function switchChain() {
-    var r = swRoute(); if (!r) return; inErr('');
+  function switchChain(H) {
+    H = H || swapHost; var r = H.route(); if (!r) return; H.err('');
     inBusy('Switching to ' + r.c.name);
-    return EVM.ensureChain(r.c).then(function () { inBusy(''); wal.key = ''; loadWal(); computeSwap(); }).catch(function (e) { inBusy(''); inErr(EVM.why(e)); });
+    return EVM.ensureChain(r.c).then(function () { inBusy(''); wal.key = ''; loadWal(r); inRender(); }).catch(function (e) { inBusy(''); H.err(EVM.why(e)); });
   }
   $('swDisc').onclick = function () { EVM.disconnect(); wal.key = ''; inErr(''); computeSwap(); };
   $('swUseAddr').onclick = function () { showDeposit(); };
   $('swDepConn').onclick = function () { backView(); connectWallet(); };
+  // A deposit's plan and progress. render() draws it where it is shown;
+  // live() says whether it is still the deposit being followed (the Swap
+  // screen's, or the Buy screen's); watching() whether to keep polling.
+  function depositPlan(r, v) {
+    var dp = { r: r, v: v, approve: !(wal.alw !== null && wal.alw >= v), st: {}, sub: {}, hash: '', block: null, status: '', err: '', amount: null, issue: '', render: function () {}, live: function () { return true; }, watching: function () { return true; }, after: null };
+    dp.st = { approve: dp.approve ? 'now' : 'skip', deposit: dp.approve ? 'wait' : 'now', conf: 'wait', done: 'wait' };
+    return dp;
+  }
   // The deposit, step by step, until the uARG is here.
   function startDeposit() {
-    var r = swRoute(), c = r.c, t = r.t, dec = t.decimals, v = toDec($('swPay').value.trim(), Math.min(dec, 8)) * pow10(Math.max(0, dec - 8));
-    var dp = { r: r, v: v, approve: !(wal.alw !== null && wal.alw >= v), st: {}, sub: {}, hash: '', block: null, status: '', err: '', amount: null, issue: '' };
-    dp.st = { approve: dp.approve ? 'now' : 'skip', deposit: dp.approve ? 'wait' : 'now', conf: 'wait', done: 'wait' };
+    var r = swRoute(), t = r.t, dec = t.decimals, v = toDec($('swPay').value.trim(), Math.min(dec, 8)) * pow10(Math.max(0, dec - 8));
+    var dp = depositPlan(r, v);
+    dp.render = renderDp; dp.live = function () { return sw.dp === dp; }; dp.watching = function () { return sw.dp === dp && !!FL && FL.name === 'swap'; };
     sw.dp = dp; inErr('');
     FL.el.querySelector('.w-view[data-view="dprog"]').dataset.title = 'Deposit ' + t.symbol;
     showView('dprog', 'form'); renderDp();
+    runDeposit(dp, function () { wal.key = ''; $('swPay').value = ''; });
+  }
+  // Approve (when needed) and deposit through the connected wallet, then
+  // follow the deposit; sent() runs once the deposit is on its chain.
+  function runDeposit(dp, sent) {
+    var c = dp.r.c, t = dp.r.t, v = dp.v, dec = t.decimals;
     (async function () {
       var at = dp.approve ? 'approve' : 'deposit';
       try {
         await EVM.ensureChain(c);
         if (dp.approve) {
-          dp.sub.approve = 'Confirm in your wallet'; renderDp();
+          dp.sub.approve = 'Confirm in your wallet'; dp.render();
           var h1 = await EVM.approve(t.address, c.vault, v);
-          dp.sub.approve = 'Approving ' + t.symbol; renderDp();
+          dp.sub.approve = 'Approving ' + t.symbol; dp.render();
           var rc1 = await EVM.receipt(h1);
           if (rc1.status !== '0x1') throw new Error('The approval failed on ' + c.name + '. Nothing was taken.');
           dp.st.approve = 'done'; dp.sub.approve = fmt2(v, dec) + ' ' + t.symbol; dp.st.deposit = 'now';
         }
-        at = 'deposit'; dp.sub.deposit = 'Confirm in your wallet'; renderDp();
+        at = 'deposit'; dp.sub.deposit = 'Confirm in your wallet'; dp.render();
         var h = await EVM.deposit(c.vault, t.address, v, addr);
-        dp.hash = String(h); dp.sub.deposit = 'Sending'; renderDp();
+        dp.hash = String(h); dp.sub.deposit = 'Sending'; dp.render();
         var rc = await EVM.receipt(h);
         if (rc.status !== '0x1') throw new Error('The deposit failed on ' + c.name + '. Nothing was taken.');
-        dp.block = BigInt(rc.blockNumber); dp.st.deposit = 'done'; dp.sub.deposit = ''; dp.st.conf = 'now'; renderDp();
-        wal.key = ''; $('swPay').value = '';
+        dp.block = BigInt(rc.blockNumber); dp.st.deposit = 'done'; dp.sub.deposit = ''; dp.st.conf = 'now'; dp.render();
+        if (sent) sent();
         watchDeposit(dp);
       } catch (e) {
-        if (sw.dp !== dp) return;
-        dp.st[at] = 'bad'; dp.err = EVM.why(e); renderDp();
+        if (!dp.live()) return;
+        dp.st[at] = 'bad'; dp.err = EVM.why(e); dp.render();
       }
     })();
   }
@@ -2300,12 +2535,12 @@
   // Follows the deposit: confirmations from the wallet's chain (or the
   // bridge's view of it), then the bridge's record until the uARG is issued.
   function watchDeposit(dp) {
-    if (sw.dp !== dp || !FL || FL.name !== 'swap') return;
+    if (!dp.watching()) return;
     var c = dp.r.c, need = n0(c.confirmations);
     var head = EVM.chainId === c.chain_id ? EVM.blockNumber().then(function (b) { return b; }) : loadStatus(true).then(function () { var x = (bridgeStatus.chains || []).filter(function (y) { return n0(y.chain_id) === c.chain_id; })[0]; return x && x.head ? BigInt(x.head) : null; });
     // The chain's head and final block (depProgress) come with the status, refreshed every 15 s.
     Promise.all([head.catch(function () { return null; }), getJSON(BRIDGE + '/api/deposit/' + dp.hash, 10000).catch(function () { return null; }), loadStatus(Date.now() - stAt > 15000)]).then(function (x) {
-      if (sw.dp !== dp) return;
+      if (!dp.live()) return;
       if (x[0] !== null && dp.block !== null) dp.confs = x[0] >= dp.block ? Number(x[0] - dp.block) + 1 : 0;
       var d = x[1];
       if (d && d.status) {
@@ -2314,9 +2549,9 @@
         if (d.status === 'confirmed') { dp.st.conf = 'done'; dp.st.done = 'done'; }
         if (d.status === 'reorged' || d.status === 'unclaimable') { dp.st.conf = 'bad'; dp.err = d.error || 'This deposit cannot be issued. Its transaction is ' + UI.fmt.short(dp.hash, 10, 6) + '.'; }
       }
-      renderDp();
+      dp.render();
       if (dp.st.done !== 'done' && !dp.err) setTimeout(function () { watchDeposit(dp); }, 4000);
-      else { refreshChain(); }
+      else { refreshChain(); if (dp.after) dp.after(); }
     });
   }
 
@@ -2370,22 +2605,30 @@
     getJSON(BRIDGE + '/api/deposit-address/status' + depQuery(c), 15000).then(function (s) {
       if (seq !== sw.depSeq) return;
       if (!s || String(s.chain_id) !== String(c.chain_id) || String(s.to || '').toLowerCase() !== addr) throw new Error('bad answer');
-      var dep = (s.deposits || []).filter(function (x) { return n0(x.created) >= since; })[0], bal = (s.balances || []).filter(function (b) { return big(b.amount) > ZERO; })[0];
-      var sweep = (s.sweeps || []).filter(function (x) { return n0(x.created) >= since && (x.status === 'pending' || x.status === 'sent'); })[0];
-      if (dep) {
-        var recv = fmt2(big(dep.token_amount) + big(dep.token_fee), dep.decimals) + ' ' + dep.token_symbol;
-        var p = depProgress(dep);
-        if (dep.status === 'confirmed') depSteps(4, { recv: recv, done: esc(fmtU(big(dep.amount)) + ' uARG') + (hex64(dep.issue_tx) ? ' · ' + txLink(EXPLORER + '/tx/' + hex64(dep.issue_tx), 'View') : '') });
-        else if (dep.status === 'issued' || p.stage === 'final') depSteps(3, { recv: recv, conf: esc('Final on ' + c.name) });
-        else if (dep.status === 'pending') depSteps(2, { recv: recv, conf: esc(cap(p.text)) + (p.pct < 100 ? '<span class="swap-bar"><i style="width:' + Math.round(p.pct) + '%"></i></span>' : '') });
-        else depSteps(2, { recv: recv, bad: dep.error || 'The bridge could not issue this deposit' });
-      } else if (bal || sweep) {
-        var below = bal && big(bal.min_deposit) > big(bal.amount);
-        depSteps(below ? 1 : 2, { recv: bal ? fmt2(big(bal.amount), bal.decimals) + ' ' + bal.symbol + (below ? ' · below the minimum of ' + fmt2(big(bal.min_deposit), bal.decimals) : '') : '', conf: below ? '' : esc('On ' + c.name) });
-      } else depSteps(0);
+      var vw = depAddrView(s, c, since); depSteps(vw.stage, vw.info);
     }).catch(function () {}).then(function () {
       if (seq === sw.depSeq) sw.depTimer = setTimeout(function () { pollDeposit(seq); }, 10000);
     });
+  }
+  // Where a deposit to this address's deposit address on chain c stands,
+  // from the bridge's status of it: the stage of depSteps, what each step
+  // says (recv and bad are text, conf and done markup), and the deposit.
+  function depAddrView(s, c, since) {
+    var dep = (s.deposits || []).filter(function (x) { return n0(x.created) >= since; })[0], bal = (s.balances || []).filter(function (b) { return big(b.amount) > ZERO; })[0];
+    var sweep = (s.sweeps || []).filter(function (x) { return n0(x.created) >= since && (x.status === 'pending' || x.status === 'sent'); })[0];
+    if (dep) {
+      var recv = fmt2(big(dep.token_amount) + big(dep.token_fee), dep.decimals) + ' ' + dep.token_symbol;
+      var p = depProgress(dep);
+      if (dep.status === 'confirmed') return { stage: 4, info: { recv: recv, done: esc(fmtU(big(dep.amount)) + ' uARG') + (hex64(dep.issue_tx) ? ' · ' + txLink(EXPLORER + '/tx/' + hex64(dep.issue_tx), 'View') : '') }, dep: dep };
+      if (dep.status === 'issued' || p.stage === 'final') return { stage: 3, info: { recv: recv, conf: esc('Final on ' + c.name) }, dep: dep };
+      if (dep.status === 'pending') return { stage: 2, info: { recv: recv, conf: esc(cap(p.text)) + (p.pct < 100 ? '<span class="swap-bar"><i style="width:' + Math.round(p.pct) + '%"></i></span>' : '') }, dep: dep };
+      return { stage: 2, info: { recv: recv, bad: dep.error || 'The bridge could not issue this deposit' }, dep: dep };
+    }
+    if (bal || sweep) {
+      var below = bal && big(bal.min_deposit) > big(bal.amount);
+      return { stage: below ? 1 : 2, info: { recv: bal ? fmt2(big(bal.amount), bal.decimals) + ' ' + bal.symbol + (below ? ' · below the minimum of ' + fmt2(big(bal.min_deposit), bal.decimals) : '') : '', conf: below ? '' : esc('On ' + c.name) }, dep: null };
+    }
+    return { stage: 0, info: {}, dep: null };
   }
   $('swCopy').onclick = function () { var r = swRoute(), d = r && sw.dep[String(r.c.chain_id)]; if (d) UI.copy(d.address, 'Deposit address'); };
   $('swShare').onclick = function () { var r = swRoute(), d = r && sw.dep[String(r.c.chain_id)]; if (d) share(d.address, 'Deposit address'); };
@@ -2441,13 +2684,561 @@
     b.onclick = function () { filter = b.dataset.f; histShown = 40; document.querySelectorAll('#filters button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); renderHistory(); };
   });
 
+  // ---- Names: yourname.arg (docs/NAMES.md) ----
+  // A name is registered, renewed, transferred or made primary with an
+  // ordinary payment that carries a "NMS1 <op> <label> [years]" memo; the
+  // explorer indexes it. The rules are the names package's (3 to 32
+  // characters of a-z, 0-9 and hyphens; 1 to 5 years; a price by length);
+  // /api/names/info says what this network charges and where it is paid.
+  // On a network without a treasury the memo rides on the smallest payment
+  // the wallet makes (its dust limit), back to this address.
+  var NM_MIN = BigInt(546);
+  var nmInfo = null, nmInfoLoad = null, nmQ = '', nmSeq = 0, nmTimer = 0, nmYears = 1, nmLast = null, nmPoll = 0, nmPlan = null;
+  var nmMine = null, nmMineLoad = null, nmDispName = '', nmPend = {}, nmRenew = { label: '', years: 1 }, nmTfr = { label: '', q: '', to: '', name: '', state: '', err: '' }, nmTfrTimer = 0;
+  function nmNorm(v) { v = String(v || '').trim().toLowerCase(); return v.slice(-4) === '.arg' ? v.slice(0, -4) : v; }
+  function nmCheck(l) {
+    if (l.length < 3 || l.length > 32) return 'A name is 3 to 32 characters.';
+    if (!/^[a-z0-9-]+$/.test(l)) return 'Lowercase letters, digits and hyphens only.';
+    if (l[0] === '-' || l[l.length - 1] === '-') return 'A name cannot start or end with a hyphen.';
+    return '';
+  }
+  function nmDisp(l) { return l + '.arg'; }
+  function nmOpPast(op) { return op === 'register' ? 'registered' : op === 'renew' ? 'renewed' : op === 'transfer' ? 'transferred' : 'set as primary'; }
+  function nmOpTitle(op) { return op === 'register' ? 'Register' : op === 'renew' ? 'Renew' : op === 'transfer' ? 'Transfer' : 'Set as primary'; }
+  function nmArg(u) { return fmtU(u, 0) + ' ' + COIN; }
+  function nmFree() { return !!nmInfo && !nmInfo.treasury; }
+  function nmPriceYear(l) { if (!nmInfo) return ZERO; return nmInfo.prices[String(Math.min(5, Math.max(3, l.length)))] || ZERO; }
+  function nmDate(ts) { return ts ? new Date(ts * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '–'; }
+  // "in 11 months": blocks left at ten minutes each.
+  function nmIn(blocks) {
+    var secs = blocks * BLOCK_SECS, d = secs / 86400;
+    if (secs < 3600) return 'within the hour';
+    if (secs < 86400) return 'in ' + Math.max(1, Math.round(secs / 3600)) + ' hours';
+    if (d < 60) return 'in ' + Math.round(d) + (Math.round(d) === 1 ? ' day' : ' days');
+    if (d < 700) return 'in ' + Math.round(d / 30.4) + ' months';
+    var y = d / 365; return 'in ' + (y >= 2 ? Math.round(y) + ' years' : y.toFixed(1) + ' years');
+  }
+  function nmHeight() { return tip || (nmInfo ? nmInfo.height : 0); }
+  // The rules and prices of this network, once per session (refreshed when the screen opens).
+  function nmInfoGet(force) {
+    if (!force && nmInfo) return Promise.resolve(nmInfo);
+    if (nmInfoLoad) return nmInfoLoad;
+    nmInfoLoad = getJSON(EXPLORER + '/api/names/info', 10000).then(function (j) {
+      j = j || {};
+      var prices = {}; Object.keys(j.prices || {}).forEach(function (k) { prices[String(k)] = big(j.prices[k]); });
+      var t = String(j.treasury || '').toLowerCase();
+      nmInfo = { treasury: re.test(t) ? t : '', prices: prices, blocks_per_year: n0(j.blocks_per_year) || 52560, grace_blocks: n0(j.grace_blocks) || 4320, years_max: Math.max(1, Math.min(5, n0(j.years_max) || 5)), height: n0(j.height) };
+      nmInfoLoad = null; renderNmHow(); return nmInfo;
+    }, function (e) { nmInfoLoad = null; throw e; });
+    return nmInfoLoad;
+  }
+  // The explorer's record of one name, with every field checked.
+  function nmSanit(j, l) {
+    j = j || {};
+    var owner = String(j.owner || '').toLowerCase();
+    return { label: l, status: String(j.status || ''), reason: String(j.reason || ''), owner: re.test(owner) ? owner : '', primary: !!j.primary, registered_time: n0(j.registered_time), expires_height: n0(j.expires_height), expires_time: n0(j.expires_time), txid: hex64(j.txid), price: big(j.price) };
+  }
+  // The address a name stands for, '' when the name is not active.
+  var rsCache = {};
+  function resolveName(l) {
+    var c = rsCache[l]; if (c && Date.now() - c.at < 30000) return Promise.resolve(c.address);
+    var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : 0;
+    return fetch(EXPLORER + '/api/resolve/' + encodeURIComponent(l), ctl ? { signal: ctl.signal } : undefined).then(function (r) {
+      clearTimeout(t);
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      var a = j && j.name === l ? String(j.address || '').toLowerCase() : '';
+      if (!re.test(a)) a = '';
+      rsCache[l] = { at: Date.now(), address: a }; return a;
+    });
+  }
+  function renderNmHow() {
+    var free = nmFree(), p = nmInfo ? nmInfo.prices : {}, px = function (n, d) { return nmArg(p[n] || big(d)); };
+    $('nmHow').innerHTML = '<div><b>Send to it</b><span>' + esc(nmDisp('alice')) + ' works wherever an address does.</span></div>' +
+      '<div><b>' + (free ? 'Free on this network' : esc(px('5', 1000000000) + ' a year')) + '</b><span>' + (free ? 'Only the network fee.' : esc(px('4', 5000000000) + ' for four characters, ' + px('3', 25000000000) + ' for three. Paid to the treasury.')) + '</span></div>' +
+      '<div><b>1 to 5 years</b><span>Renew any time. 30 days of grace after it expires.</span></div>';
+  }
+  function stepper(n, max) {
+    return '<div class="stp" role="group" aria-label="Years"><button type="button" data-d="-1" aria-label="One year fewer"' + (n <= 1 ? ' disabled' : '') + '>&minus;</button><span><b>' + n + '</b> ' + (n === 1 ? 'year' : 'years') + '</span><button type="button" data-d="1" aria-label="One year more"' + (n >= max ? ' disabled' : '') + '>+</button></div>';
+  }
+  function nmYearsMax() { return nmInfo ? nmInfo.years_max : 5; }
+  // ---- the search ----
+  $('nmQ').addEventListener('input', function () {
+    var raw = this.value, shown = raw.toLowerCase();
+    if (shown.slice(-4) === '.arg') shown = shown.slice(0, -4);
+    if (shown !== raw) { var pos = Math.max(0, this.selectionStart - (raw.length - shown.length)); this.value = shown; try { this.setSelectionRange(pos, pos); } catch (e) {} }
+    nmQuery(nmNorm(shown));
+  });
+  $('nmQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var b = $('nmRes').querySelector('[data-nm="register"]'); if (b) b.click(); } });
+  function nmQuery(l, now) {
+    clearTimeout(nmTimer); nmQ = l; nmLast = null; var seq = ++nmSeq;
+    if (!l) { renderNmRes(null); return; }
+    var why = nmCheck(l);
+    if (why) { renderNmRes({ status: 'invalid', reason: why, label: l }); return; }
+    renderNmRes({ status: 'checking', label: l });
+    nmTimer = setTimeout(function () { nmLookup(l, seq); }, now ? 0 : 250);
+  }
+  function nmLookup(l, seq) {
+    Promise.all([nmInfoGet(), getJSON(EXPLORER + '/api/name/' + encodeURIComponent(l), 10000)]).then(function (x) {
+      if (seq !== nmSeq) return; nmLast = nmSanit(x[1], l); renderNmRes(nmLast);
+    }, function (e) { if (seq !== nmSeq) return; renderNmRes({ status: 'error', reason: netErr(e, 'The explorer'), label: l }); });
+  }
+  function nmBadge(st, mine) {
+    var m = { available: ['Available', 'ok'], registered: [mine ? 'Yours' : 'Registered', mine ? 'accent' : ''], grace: ['Expired', 'warn'], pending: ['Pending', 'warn'], reserved: ['Reserved', ''] }[st] || [st, ''];
+    return '<span class="badge' + (m[1] ? ' badge-' + m[1] : '') + '">' + esc(m[0]) + '</span>';
+  }
+  function nmLine(icon, html, bad) { return '<div class="nm-line' + (bad ? ' bad' : '') + '">' + UI.icon(icon) + '<span>' + html + '</span></div>'; }
+  function renderNmRes(r) {
+    var box = $('nmRes'); $('nmBox').classList.toggle('bad', !!r && r.status === 'invalid');
+    if (!r) { box.innerHTML = ''; return; }
+    if (r.status === 'invalid') { box.innerHTML = nmLine('alert', esc(r.reason || 'This is not a valid name.'), true); return; }
+    if (r.status === 'checking') { box.innerHTML = nmLine('search', 'Checking ' + esc(nmDisp(r.label))); return; }
+    if (r.status === 'error') { box.innerHTML = nmLine('alert', esc(r.reason) + ' <button class="swap-inl" type="button" data-nm="retry">Try again</button>', true); return; }
+    var mine = !!addr && r.owner === addr, pend = nmPend[r.label], free = nmFree() || r.price <= ZERO, max = nmYearsMax();
+    if (nmYears > max) nmYears = max;
+    var html = '<div class="nm-card"><div class="nm-name"><b>' + esc(nmDisp(r.label)) + '</b>' + nmBadge(r.status, mine) + '</div>';
+    if (r.status === 'available') {
+      html += '<div class="nm-price">' + esc(free ? 'Free on this network' : nmArg(r.price) + ' a year') + '</div>' +
+        '<div class="nm-reg">' + stepper(nmYears, max) + '<div class="nm-total"><span>' + (free ? 'Price' : 'Total') + '</span><b>' + esc(free ? 'Free' : nmArg(r.price * BigInt(nmYears))) + '</b></div><button class="btn btn-primary" type="button" data-nm="register">Register</button></div>';
+    } else if (r.status === 'registered' || r.status === 'grace') {
+      var grace = r.status === 'grace', left = r.expires_height - nmHeight(), graceEnd = r.expires_time + (nmInfo ? nmInfo.grace_blocks : 4320) * BLOCK_SECS;
+      html += '<dl class="swap-kv"><dt>Owner</dt><dd>' + (mine ? 'You' : esc(UI.fmt.short(r.owner, 10, 6))) + '</dd>' +
+        '<dt>' + (grace ? 'Expired' : 'Expires') + '</dt><dd>' + esc(grace ? nmDate(r.expires_time) + ' · the owner can renew until ' + nmDate(graceEnd) : nmDate(r.expires_time) + (left > 0 ? ' · ' + nmIn(left) : '')) + '</dd>' +
+        '<dt>Explorer</dt><dd><a class="link" href="' + explorerLink('name', r.label) + '" target="_blank" rel="noopener">View on explorer</a></dd></dl>';
+      if (mine) html += nmLine('info', 'Renew or transfer it under Your names.');
+    } else if (r.status === 'pending') {
+      html += nmLine('info', pend ? 'You claimed this name. It is yours after the next block.' : 'Someone is claiming this name. It settles in the next block.');
+    } else if (r.status === 'reserved') {
+      html += nmLine('info', 'Reserved for the project.');
+    } else html += nmLine('info', esc(r.reason || r.status || 'Unknown'));
+    box.innerHTML = html + '</div>';
+  }
+  $('nmRes').addEventListener('click', function (e) {
+    var d = e.target.closest('[data-d]');
+    if (d) { nmYears = Math.max(1, Math.min(nmYearsMax(), nmYears + Number(d.dataset.d))); if (nmLast) renderNmRes(nmLast); return; }
+    var b = e.target.closest('[data-nm]'); if (!b) return;
+    if (b.dataset.nm === 'retry') nmQuery(nmQ, true);
+    else if (b.dataset.nm === 'register' && nmLast && nmLast.status === 'available') nmBegin('register', nmLast.label, nmYears);
+  });
+  // ---- the operations: review, password, send ----
+  // Register and renew pay the treasury the price; transfer and primary pay
+  // the smallest amount (to the new owner, or back to this address) so the
+  // memo has a transaction to ride on.
+  function nmBegin(op, label, years, to, toName) {
+    if (!addr) return;
+    var title = nmOpTitle(op), view = $('flName').querySelector('.w-view[data-view="review"]');
+    view.dataset.title = title;
+    if (!FL || FL.name !== 'name') openFlow('name', 'review'); else showView('review');
+    nmPlan = null; $('nmRvBody').innerHTML = nmLine('refresh', 'Preparing'); err('nmRvErr', ''); $('nmRvGo').disabled = true; $('nmRvGo').textContent = title; $('nmPwBox').hidden = true;
+    Promise.all([nmInfoGet(), loadCoins()]).then(function () {
+      var paid = op === 'register' || op === 'renew', py = nmLast && nmLast.label === label && nmLast.price > ZERO ? nmLast.price : nmPriceYear(label), free = nmFree() || py <= ZERO;
+      var P = { op: op, label: label, years: years || 0, to: to || '', toName: toName || '', paid: paid && !free, perYear: py, pre: null, err: '' };
+      P.amount = P.paid ? py * BigInt(years) : NM_MIN;
+      P.dest = P.paid ? nmInfo.treasury : op === 'transfer' ? to : addr;
+      P.memo = 'NMS1 ' + op + ' ' + label + (paid ? ' ' + years : '');
+      return W('preview', { coins: CO.list, tip: CO.tip, asset: '', to: P.dest, amount: String(P.amount), max: false, uarg: UASSET, memo: P.memo }).then(function (pre) { P.pre = pre; P.amount = big(pre.amount); return P; },
+        function (e) { P.err = e.code === 'fee' ? 'Names are paid in ' + COIN + ' and this wallet has none. Mine a block or receive some ' + COIN + ' first.' : friendly(e); return P; });
+    }).then(function (P) { if (!FL || FL.name !== 'name') return; nmPlan = P; showNmReview(); if (!P.err) return lockState('nm'); })
+      .catch(function (e) { if (!FL || FL.name !== 'name') return; $('nmRvBody').innerHTML = ''; err('nmRvErr', netErr(e, 'The explorer')); });
+  }
+  function showNmReview() {
+    var P = nmPlan, fee = P.pre ? nmArg(big(P.pre.fee)) : '–', yrs = P.years + (P.years === 1 ? ' year' : ' years');
+    var head = P.paid ? amtRow('You pay', fmtU(P.amount), COIN, yrs + ' · ' + nmArg(P.perYear) + ' a year', true)
+      : '<div class="swap-rv-amt"><div><div class="k">' + esc(nmOpTitle(P.op)) + '</div><div class="v">' + esc(nmDisp(P.label)) + '</div></div></div>';
+    var rows = '';
+    if (P.paid) rows += '<dt>Name</dt><dd>' + esc(nmDisp(P.label)) + '</dd><dt>Years</dt><dd>' + P.years + '</dd><dt>Paid to</dt><dd>The treasury</dd>';
+    else if (P.op === 'register' || P.op === 'renew') rows += '<dt>Years</dt><dd>' + P.years + '</dd><dt>Price</dt><dd>Free on this network</dd>';
+    if (P.op === 'transfer') rows += (P.toName ? '<dt>New owner</dt><dd>' + esc(nmDisp(P.toName)) + '</dd>' + kvTo('Address', P.to) : kvTo('New owner', P.to)) + '<dt>Sends</dt><dd>' + esc(fmtU(NM_MIN) + ' ' + COIN + ' to the new owner') + '</dd>';
+    else if (!P.paid) rows += '<dt>Sends</dt><dd>' + esc(fmtU(NM_MIN) + ' ' + COIN + ' back to you') + '</dd>';
+    rows += '<dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Takes effect</dt><dd>Next block, about 10 min</dd>';
+    $('nmRvBody').innerHTML = head + '<dl class="swap-kv">' + rows + '</dl>' + (P.op === 'transfer' ? '<div class="banner warn">' + UI.icon('alert') + '<div>This cannot be undone.</div></div>' : '');
+    err('nmRvErr', P.err || ''); $('nmRvGo').disabled = !!P.err; $('nmRvGo').textContent = nmOpTitle(P.op);
+    if (FL.stack[FL.stack.length - 1] !== 'review') showView('review');
+  }
+  function nmExec(P) {
+    return payNow({ asset: '', to: P.dest, amount: String(P.amount), max: false, memo: P.memo }, P.pre).then(function (pay) {
+      addPend({ txid: pay.txid, kind: 'name', op: P.op, label: P.label, amount: String(pay.amount), to: P.dest, spent: pay.spent, incoming: pay.change });
+      var cur = nmMine ? nmMine.names.filter(function (x) { return x.name === P.label; })[0] : null;
+      nmPend[P.label] = { op: P.op, txid: pay.txid, years: P.years, to: P.to, time: Date.now(), expiresBefore: cur ? cur.expires_height : 0 };
+      var d = nmDisp(P.label), yrs = P.years + (P.years === 1 ? ' year' : ' years');
+      var said = P.op === 'register' ? d + ' is yours after the next block.' : P.op === 'renew' ? d + ' is renewed for ' + yrs + ' after the next block.' :
+        P.op === 'transfer' ? d + ' belongs to ' + (P.toName ? nmDisp(P.toName) : UI.fmt.short(P.to, 10, 6)) + ' after the next block.' : d + ' is the name shown for your address after the next block.';
+      $('nmDoneBody').innerHTML = '<div class="w-res"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Sent</h3><p>' + esc(said) + '</p>' +
+        '<dl class="swap-kv">' + (P.paid ? '<dt>Paid</dt><dd>' + esc(nmArg(big(pay.amount))) + '</dd>' : '') + '<dt>Network fee</dt><dd>' + esc(nmArg(big(pay.fee))) + '</dd>' + txRow(pay.txid) + '</dl></div>';
+      nmPlan = null; showView('done', true); refreshChain(); renderNmMine(); nmPollStart();
+      if (P.op === 'register' && nmQ === P.label) nmQuery(P.label, true);
+    });
+  }
+  function nmFailed(P, e, errId) {
+    if (e && e.code === 'changed') { P.pre = e.pay; P.amount = big(e.pay.amount); showNmReview(); err('nmRvErr', friendly(e)); return; }
+    if (errId === 'nmKyErr' && hasKeys()) { showView('review', true); errId = 'nmRvErr'; }
+    if (errId === 'nmRvErr') reviewErr('nm', e); else err(errId, netErr(e, 'The network'));
+  }
+  $('nmRvGo').onclick = function () {
+    var P = nmPlan, btn = this; if (!P || P.err) return;
+    if (!hasKeys()) { showKeys('nm'); return; }
+    btn.classList.add('is-loading'); err('nmRvErr', '');
+    unlockWith('nm').then(function () { return nmExec(P); })
+      .catch(function (e) { nmFailed(P, e, 'nmRvErr'); })
+      .then(function () { btn.classList.remove('is-loading'); });
+  };
+  $('nmKyGo').onclick = function () {
+    var P = nmPlan, btn = this; if (!P) return;
+    btn.classList.add('is-loading'); err('nmKyErr', '');
+    sealFrom('nm').then(function () { return nmExec(P); })
+      .catch(function (e) { nmFailed(P, e, 'nmKyErr'); })
+      .then(function () { btn.classList.remove('is-loading'); });
+  };
+  $('nmPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('nmRvGo').click(); } });
+  $('nmDone').onclick = function () { closeFlow(); };
+  // ---- renew: how many years ----
+  function renderNmYears() {
+    var py = nmPriceYear(nmRenew.label), free = nmFree() || py <= ZERO;
+    $('nmYrName').textContent = nmDisp(nmRenew.label);
+    $('nmYrStep').innerHTML = stepper(nmRenew.years, nmYearsMax());
+    $('nmYrTotal').textContent = free ? 'Free on this network' : nmArg(py * BigInt(nmRenew.years));
+    $('nmYrHint').textContent = free ? '' : nmArg(py) + ' a year, paid to the treasury.';
+  }
+  $('nmYrStep').addEventListener('click', function (e) { var d = e.target.closest('[data-d]'); if (!d) return; nmRenew.years = Math.max(1, Math.min(nmYearsMax(), nmRenew.years + Number(d.dataset.d))); renderNmYears(); });
+  $('nmYrGo').onclick = function () { nmBegin('renew', nmRenew.label, nmRenew.years); };
+  // ---- transfer: the new owner, an address or a name ----
+  function nmToTarget() {
+    var v = $('nmTo').value.trim(), l = sdNameOf(v);
+    if (l) return { name: l };
+    if (payloadOf(v)) return { to: v.toLowerCase() };
+    return { bad: v.length >= HRP.length + 60 ? 'Not a valid ' + BRAND + ' address.' : '' };
+  }
+  function renderNmTo() {
+    var v = $('nmTo').value.trim(), t = nmToTarget(), label = '', ok = false, msg = '', kind = '';
+    if (!v) label = 'Enter an address';
+    else if (t.name) {
+      if (nmTfr.q !== t.name) {
+        nmTfr.q = t.name; nmTfr.state = 'loading'; nmTfr.to = ''; clearTimeout(nmTfrTimer);
+        nmTfrTimer = setTimeout(function () {
+          resolveName(t.name).then(function (a) { if (nmTfr.q !== t.name) return; nmTfr.state = a ? 'ok' : 'none'; nmTfr.to = a; renderNmTo(); },
+            function (e) { if (nmTfr.q !== t.name) return; nmTfr.state = 'err'; nmTfr.err = netErr(e, 'The explorer'); renderNmTo(); });
+        }, 250);
+      }
+      if (nmTfr.state === 'loading') label = 'Checking the name';
+      else if (nmTfr.state === 'err') { label = 'Cannot check the name'; msg = nmTfr.err; kind = 'bad'; }
+      else if (!nmTfr.to) { label = 'Name not found'; msg = 'No one owns ' + nmDisp(t.name) + '.'; kind = 'bad'; }
+      else if (nmTfr.to === addr) { label = 'Enter another address'; msg = nmDisp(t.name) + ' is your own address.'; kind = 'bad'; }
+      else { ok = true; msg = nmDisp(t.name) + ' \u2192 ' + UI.fmt.short(nmTfr.to, 10, 6); kind = 'ok'; nmTfr.name = t.name; }
+    } else if (t.to) {
+      nmTfr.q = ''; nmTfr.name = '';
+      if (t.to === addr) { label = 'Enter another address'; msg = 'This is your own address.'; kind = 'bad'; } else { ok = true; nmTfr.to = t.to; }
+    } else { nmTfr.q = ''; label = 'Enter a valid address'; msg = t.bad; kind = t.bad ? 'bad' : ''; }
+    $('nmToBox').classList.toggle('bad', kind === 'bad' && !!msg);
+    note('nmToNote', msg, kind);
+    setGo($('nmToGo'), ok ? 'Continue' : label, ok);
+  }
+  $('nmTo').addEventListener('input', renderNmTo);
+  $('nmTo').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!$('nmToGo').disabled) $('nmToGo').click(); } });
+  $('nmToGo').onclick = function () { if (!nmTfr.to) return; nmBegin('transfer', nmTfr.label, 0, nmTfr.to, nmTfr.name); };
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    $('nmToPaste').hidden = false;
+    $('nmToPaste').onclick = function () { navigator.clipboard.readText().then(function (t) { $('nmTo').value = String(t || '').trim(); renderNmTo(); }).catch(function () { UI.toast('The browser did not allow pasting. Type the address instead.', 'warn'); }); };
+  }
+  // ---- your names ----
+  function applyDispName() { var t = nmDispName ? nmDisp(nmDispName) : 'Account 1'; $('acctName').textContent = t; $('dbName').textContent = t; }
+  function nmLoadMine(force) {
+    if (!addr) return Promise.resolve(null);
+    if (!force && nmMine) return Promise.resolve(nmMine);
+    if (nmMineLoad) return nmMineLoad;
+    var a = addr;
+    nmMineLoad = getJSON(EXPLORER + '/api/names?owner=' + encodeURIComponent(a), 10000).then(function (j) {
+      if (a !== addr) return nmMine;
+      j = j || {};
+      var names = (Array.isArray(j.names) ? j.names : []).map(function (x) {
+        x = x || {}; var l = nmNorm(String(x.name || ''));
+        return nmCheck(l) ? null : { name: l, expires_height: n0(x.expires_height), expires_time: n0(x.expires_time), primary: !!x.primary, grace: !!x.grace };
+      }).filter(Boolean);
+      nmMine = { primary: nmNorm(String(j.primary || '')), names: names, err: '' };
+      nmDispName = nmMine.primary || (names[0] ? names[0].name : '');
+      applyDispName(); renderNmMine(); return nmMine;
+    }, function (e) {
+      if (a === addr && !nmMine) { nmMine = { primary: '', names: [], err: netErr(e, 'The explorer'), stale: true }; renderNmMine(); }
+      return nmMine;
+    }).then(function (m) { nmMineLoad = null; return m; });
+    return nmMineLoad;
+  }
+  function renderNmMine() {
+    var m = nmMine, list = m ? m.names : [], claims = Object.keys(nmPend).filter(function (l) { return nmPend[l].op === 'register' && !list.some(function (x) { return x.name === l; }); });
+    var html = claims.map(function (l) {
+      return '<div class="nm-row"><div class="nm-row-t"><div class="nm-row-n"><b>' + esc(nmDisp(l)) + '</b><span class="badge badge-warn">Pending</span></div><div class="nm-row-s">Yours after the next block · ' + txLink(EXPLORER + '/tx/' + nmPend[l].txid, 'View') + '</div></div></div>';
+    }).join('');
+    html += list.map(function (x) {
+      var p = nmPend[x.name], left = x.expires_height - nmHeight(), s, b = function (act, label, cls) { return '<button class="btn ' + cls + ' btn-sm" type="button" data-act="' + act + '" data-l="' + esc(x.name) + '">' + label + '</button>'; };
+      if (p) s = (p.op === 'renew' ? 'Renewing' : p.op === 'transfer' ? 'Transferring' : 'Becoming your primary name') + ' · waiting for the next block';
+      else if (x.grace) s = 'Expired ' + nmDate(x.expires_time) + ' · renew by ' + nmDate(x.expires_time + (nmInfo ? nmInfo.grace_blocks : 4320) * BLOCK_SECS);
+      else s = 'Expires ' + (left > 0 ? nmIn(left) + ' · ' : '') + nmDate(x.expires_time);
+      var acts = p ? '' : b('renew', 'Renew', 'btn-secondary') + (x.grace ? '' : (x.primary ? '' : b('primary', 'Set as primary', 'btn-ghost')) + b('transfer', 'Transfer', 'btn-ghost'));
+      return '<div class="nm-row"><div class="nm-row-t"><div class="nm-row-n"><b>' + esc(nmDisp(x.name)) + '</b>' + (x.primary ? '<span class="badge badge-accent">Primary</span>' : '') + (x.grace ? '<span class="badge badge-warn">Expired</span>' : '') + (p ? '<span class="badge badge-warn">Pending</span>' : '') + '</div><div class="nm-row-s">' + esc(s) + '</div></div>' + (acts ? '<div class="nm-row-a">' + acts + '</div>' : '') + '</div>';
+    }).join('');
+    $('nmList').innerHTML = html;
+    var n = list.length + claims.length;
+    $('nmCount').hidden = !n; $('nmCount').textContent = n === 1 ? '1 name' : n + ' names';
+    $('nmEmpty').hidden = !!n;
+    $('nmEmpty').innerHTML = !m ? 'Loading' : m.err ? UI.icon('alert') + ' ' + esc(m.err) + ' <button class="swap-inl" type="button" data-act="reload">Try again</button>' : 'No names yet. Look one up above.';
+  }
+  $('nmList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var l = String(b.dataset.l || ''), act = b.dataset.act;
+    if (act === 'renew') { nmRenew = { label: l, years: 1 }; openFlow('name', 'years'); renderNmYears(); }
+    else if (act === 'primary') nmBegin('primary', l);
+    else if (act === 'transfer') { nmTfr = { label: l, q: '', to: '', name: '', state: '', err: '' }; $('nmTo').value = ''; $('nmToName').textContent = nmDisp(l); openFlow('name', 'to'); renderNmTo(); }
+  });
+  $('nmEmpty').addEventListener('click', function (e) { if (e.target.closest('[data-act="reload"]')) { nmMine = null; renderNmMine(); nmLoadMine(true); } });
+  // A claim is pending until the explorer shows it (the name's history has
+  // the transaction, or its state says so), checked every 15 s while the
+  // screen is open; one the network never took is dropped after six hours.
+  function nmPollStart() { clearInterval(nmPoll); nmPoll = 0; if (current === 'names' && Object.keys(nmPend).length) nmPoll = setInterval(nmPollTick, 15000); }
+  function stopNamesPoll() { clearInterval(nmPoll); nmPoll = 0; }
+  function nmPollTick() {
+    var labels = Object.keys(nmPend);
+    if (!labels.length || !addr) { stopNamesPoll(); return; }
+    labels.forEach(function (l) {
+      var p = nmPend[l];
+      if (Date.now() - p.time > 6 * 3600e3) { delete nmPend[l]; renderNmMine(); return; }
+      getJSON(EXPLORER + '/api/name/' + encodeURIComponent(l), 10000).then(function (j) {
+        if (nmPend[l] !== p) return;
+        var r = nmSanit(j, l), hist = Array.isArray(j && j.history) ? j.history : [], seen = hist.some(function (h) { return h && hex64(h.txid) === p.txid; });
+        var done = seen || (p.op === 'register' && r.status === 'registered' && r.owner === addr) || (p.op === 'transfer' && !!r.owner && r.owner === p.to) || (p.op === 'primary' && r.primary && r.owner === addr) || (p.op === 'renew' && r.expires_height > p.expiresBefore);
+        if (!done) { if (nmQ === l) { nmLast = r; renderNmRes(r); } return; }
+        delete nmPend[l];
+        UI.toast(nmDisp(l) + ' ' + nmOpPast(p.op) + '.', 'ok', 5000);
+        nmLoadMine(true); if (nmQ === l) nmQuery(l, true);
+        if (!Object.keys(nmPend).length) stopNamesPoll();
+      }).catch(function () {});
+    });
+  }
+  function openNames() {
+    if (!addr) return;
+    renderNmHow(); nmInfoGet(true).catch(function () {}); renderNmMine(); nmLoadMine(true); nmPollStart();
+    if (nmQ) nmQuery(nmQ, true);
+    setTimeout(function () { if (current === 'names' && !isPhone()) $('nmQ').focus(); }, 50);
+  }
+  function nmReset() {
+    nmMine = null; nmDispName = ''; nmPend = {}; nmLast = null; nmQ = ''; nmYears = 1; rsCache = {};
+    $('nmQ').value = ''; renderNmRes(null); applyDispName(); stopNamesPoll(); buyReset(true);
+  }
+
+  // ---- Buy ARG: USDC or USDT from another chain, in as uARG, swapped to ARG ----
+  // The deposit is the Swap screen's (the connected wallet approves and
+  // deposits to the vault, or the deposit address takes a transfer); the
+  // uARG it credits is swapped to ARG through the swap service's uARG to ARG
+  // pair as soon as the coins are spendable, by itself while the wallet is
+  // unlocked, after the password otherwise. A buy in progress survives a
+  // reload (buy.run in this browser) and keeps going on any screen.
+  var buy = { key: '', run: null, timer: 0, go: null };
+  try { buy.key = localStorage.getItem('buy.route') || ''; } catch (e) {}
+  var buyHost = { route: function () { return buyRoute(); }, err: function (m) { note('buyErr', m || '', 'bad'); }, pick: function (title, items, cb) { openFlow('swap', 'pick'); openPicker(title, items, cb); } };
+  function buyRoute() {
+    var rs = routes(), r = rs.filter(function (x) { return x.key === buy.key; })[0];
+    if (!r) { r = rs.filter(function (x) { return !x.c.unavailable; })[0] || rs[0] || null; if (r) buy.key = r.key; }
+    return r;
+  }
+  function buyPair() { return maker && !maker.closed ? pairOf(maker, 'UARG', 'ARG') : null; }
+  function buyAmount(r) { var raw = $('buyAmt').value.trim(), dec = r.t.decimals, v = toDec(raw, Math.min(dec, 8)); return { raw: raw, v: v, vt: v === null ? null : v * pow10(Math.max(0, dec - 8)) }; }
+  // What vt token units buy: less the bridge's deposit fee, as uARG, at the maker's rate.
+  function buyEst(r, vt) {
+    var p = buyPair(); if (!r || !p || vt === null || !vt) return null;
+    var rt = toDec(String(p.rate || ''), 8); if (rt === null) return null;
+    return tokToArg(vt - feeOf(vt, r.c.deposit_fee_bps), r.t.decimals) * rt / E8;
+  }
+  function openBuy() {
+    if (!addr) return;
+    buyRestore(); renderBuy();
+    loadStatus().then(function () { buyRestore(); renderBuyIf(); });
+    loadCoins().then(renderBuyIf);
+    if (SWAP) whenReady(function () { makerInfo(true).then(renderBuyIf, renderBuyIf); });
+  }
+  function renderBuyIf() { if (current === 'buy') renderBuy(); }
+  function renderBuy() {
+    var r = buyRoute(), p = buyPair(), R = buy.run, loading = (BRIDGE && !bridgeStatus && !bridgeDownNow) || (SWAP && !maker && !makerErr);
+    var paused = !SWAP || !BRIDGE || !!HOLD_ARG || (!!maker && !p);
+    $('buyForm').hidden = paused; $('buyPaused').hidden = !paused;
+    if (paused) { $('buyPausedS').textContent = !SWAP || !BRIDGE ? 'Not offered here.' : HOLD_ARG ? HOLD_ARG : maker.closed ? maker.closed : 'The swap service is not selling ' + COIN + ' right now. Try again later.'; return; }
+    var busy = !!(R && !R.done && !R.err);
+    setHTML($('buyChip'), r ? chipHTML(r.t.symbol, r.c.name, !busy) : '<span class="swap-tok"><b>' + (loading ? 'Loading' : 'Select token') + '</b></span>' + UI.icon('chevronDown'));
+    $('buyChip').classList.toggle('empty', !r); $('buyChip').disabled = busy; $('buyAmt').disabled = busy;
+    if (R && R.v !== null && R.r) { var shown = fmtTok(R.v, R.r.t.decimals, Math.min(R.r.t.decimals, 8), 0, true); if ($('buyAmt').value !== shown) $('buyAmt').value = shown; }
+    var a = r ? buyAmount(r) : { raw: '', v: null, vt: null }, dec = r ? r.t.decimals : 6, bps = r ? r.c.deposit_fee_bps : 0;
+    var est = R && R.v !== null ? buyEst(R.r, R.v) : buyEst(r, a.vt), onChain = r && EVM.connected && EVM.chainId === r.c.chain_id;
+    setHTML($('buyBal'), onChain && wal.bal !== null ? '<span>Balance ' + esc(fmt2(wal.bal, dec)) + '</span>' + (busy ? '' : '<button class="swap-max" type="button" data-max' + (wal.bal > ZERO ? '' : ' disabled') + '>Max</button>') : onChain && wal.err ? '<span>' + esc(wal.err) + '</span>' : '');
+    $('buyFoot').textContent = r ? (bps ? 'Fee ' + pct(bps) + ' · ' : '') + depEta(r.c) + (big(r.t.min_deposit) > ZERO ? ' · from ' + fmt2(big(r.t.min_deposit), dec) + ' ' + r.t.symbol : '') : '';
+    $('buyGet').textContent = R && R.conv ? fmtTok(R.conv.out, 8, 2, 0) + ' ' + COIN : est !== null ? fmtTok(est, 8, 2, 0) + ' ' + COIN : '–';
+    renderBuySteps(R, r);
+    var on = EVM.connected && !!r; $('buyConn').hidden = !on;
+    if (on) { setHTML($('buyConnIc'), connHTML()); $('buyConnT').textContent = connText(r); }
+    var st = buyState(r, a); setGo($('buyGo'), st.label, !st.off); buy.go = st.go || null;
+    $('buyUseAddr').hidden = busy || !!(R && R.done) || !CONNECT_EVM || !EVM.has() || !r || !r.c.vault;
+    $('buyCancel').hidden = !busy || !((R.mode === 'address' && !(R.addr && R.addr.stage)) || (R.mode === 'wallet' && R.dp && !R.dp.hash));
+  }
+  // What the button does now, in order: connect, switch, enter an amount, approve and buy.
+  function buyState(r, a) {
+    var R = buy.run;
+    if (R && (R.done || R.err)) return { label: R.err ? 'Start over' : 'Buy more', go: function () { buyReset(); } };
+    if (R) return R.st.conv === 'ready' ? { label: 'Convert to ' + COIN, go: buyConvert } : { label: R.st.conv === 'review' ? 'Confirm the swap' : R.st.conv === 'now' ? 'Converting' : R.mode === 'address' ? 'Waiting for your deposit' : 'In progress', off: true };
+    if (wal.busy) return { label: wal.busy, off: true };
+    if (BRIDGE && !bridgeStatus && !bridgeDownNow) return { label: 'Loading', off: true };
+    if (!r) return { label: bridgeDownNow ? 'Bridge unreachable' : 'Nothing to pay with right now', off: true };
+    if (!maker) return { label: makerErr ? 'Swap service unavailable' : 'Loading', off: true };
+    if (r.c.unavailable) return { label: r.c.name + ' is unavailable', off: true };
+    var dec = r.t.decimals, min = big(r.t.min_deposit), sym = r.t.symbol;
+    if (a.raw && a.v === null) return { label: 'Enter a valid amount', off: true };
+    if (a.raw && a.vt !== null && a.vt < min) return { label: 'Minimum ' + fmt2(min, dec) + ' ' + sym, off: true };
+    if (!CO.ok) return { label: 'Loading balance', off: true };
+    if (!CONNECT_EVM || !EVM.has() || !r.c.vault) return { label: 'Continue', go: buyShowAddress };
+    if (!EVM.connected) return { label: 'Connect wallet', go: function () { connectWallet(buyHost); } };
+    if (EVM.chainId !== r.c.chain_id) return { label: 'Switch to ' + r.c.name, go: function () { switchChain(buyHost); } };
+    loadWal(r);
+    if (wal.bal === null) return { label: wal.err || 'Loading balance', off: true };
+    if (!a.vt) return { label: 'Enter an amount', off: true };
+    if (a.vt > wal.bal) return { label: 'Insufficient ' + sym, off: true };
+    return { label: wal.alw !== null && wal.alw >= a.vt ? 'Buy' : 'Approve and buy', go: buyStart };
+  }
+  function renderBuySteps(R, r) {
+    var sym = r ? r.t.symbol : 'USDC', chain = r ? r.c.name : 'another chain', html;
+    if (!R) {
+      $('buySteps').innerHTML = step('wait', 'Pay', esc(sym + ' on ' + chain + (CONNECT_EVM && EVM.has() && r && r.c.vault ? ' from your wallet' : ' to your deposit address'))) +
+        step('wait', 'Bridged', esc('Credited here as uARG, ' + (r ? depEta(r.c) : 'about 20 min'))) + step('wait', 'Converted to ' + COIN, 'Swapped at the current rate');
+      return;
+    }
+    var c = R.r.c, t = R.r.t, dec = t.decimals, scan = c.explorer;
+    if (R.mode === 'wallet') {
+      var dp = R.dp, tx = dp.hash && scan && /^0x[0-9a-fA-F]{64}$/.test(dp.hash) ? ' · ' + txLink(scan + '/tx/' + dp.hash, 'View') : '';
+      var payK = dp.st.deposit === 'done' ? 'done' : dp.st.approve === 'bad' || dp.st.deposit === 'bad' ? 'bad' : 'now';
+      var payS = payK === 'bad' ? esc(dp.err) : payK === 'done' ? esc(fmt2(dp.v, dec) + ' ' + t.symbol + ' on ' + c.name) + tx : dp.st.approve === 'now' ? esc('Approve ' + t.symbol + (dp.sub.approve ? ' · ' + dp.sub.approve : '')) : esc(dp.sub.deposit || 'Deposit ' + t.symbol);
+      html = step(payK, 'Pay', payS);
+      var need = n0(c.confirmations), conf = dp.rec ? depProgress(dp.rec) : { text: (dp.confs || 0) + ' of ' + need + ' confirmations', pct: need ? Math.min(dp.confs || 0, need) / need * 100 : 0, stage: 'confirming' };
+      var brK = dp.st.done === 'done' ? 'done' : dp.st.conf === 'bad' ? 'bad' : dp.st.conf === 'now' || dp.st.done === 'now' ? 'now' : 'wait';
+      var got = dp.amount !== null ? dp.amount : tokToArg(dp.v - feeOf(dp.v, c.deposit_fee_bps), dec);
+      var brS = brK === 'bad' ? esc(dp.err) : brK === 'done' ? esc(fmtU(got) + ' uARG in your wallet') : dp.st.done === 'now' ? esc('Issued · waiting for the next ' + netName() + ' block') :
+        brK === 'now' ? (conf.stage === 'confirming' ? esc(cap(conf.text)) + (conf.pct < 100 ? '<span class="swap-bar"><i style="width:' + Math.round(conf.pct) + '%"></i></span>' : '') : esc('Final on ' + c.name + ' · the guardians are signing')) : '';
+      html += step(brK, 'Bridged', brS);
+    } else {
+      var a = R.addr || { stage: 0, info: {} }, inf = a.info || {};
+      html = step(a.stage >= 1 ? 'done' : 'now', 'Pay', a.stage >= 1 ? esc(inf.recv || '') : esc('Send ' + t.symbol + ' on ' + c.name + ' to your deposit address') + ' · <button class="swap-inl" type="button" data-buy="addr">Show address</button>');
+      html += step(inf.bad ? 'bad' : a.stage >= 4 ? 'done' : a.stage >= 2 ? 'now' : 'wait', 'Bridged', inf.bad ? esc(inf.bad) : a.stage >= 4 ? (inf.done || '') : a.stage === 3 ? esc('Issuing uARG · the guardians are signing') : a.stage === 2 ? (inf.conf || '') : '');
+    }
+    var cv = R.st.conv, cvK = cv === 'done' ? 'done' : cv === 'wait' ? 'wait' : 'now';
+    var cvS = cv === 'done' ? esc(fmtU(R.conv.out) + ' ' + COIN + ' · confirms in the next block') + (hex64(R.conv.txid) ? ' · ' + txLink(EXPLORER + '/tx/' + hex64(R.conv.txid), 'View') : '') :
+      cv === 'ready' ? esc(fmtU(R.uGot) + ' uARG ready to convert') : cv === 'now' ? 'Converting' : cv === 'review' ? 'Confirm the swap' : '';
+    html += step(cvK, 'Converted to ' + COIN, cvS);
+    $('buySteps').innerHTML = html;
+  }
+  function buyStart() {
+    var r = buyRoute(), a = r ? buyAmount(r) : null; if (!r || !a || !a.vt || !CO.ok) return;
+    buyHost.err('');
+    var dp = depositPlan(r, a.vt), R = { r: r, v: a.vt, mode: 'wallet', dp: dp, since: Math.floor(Date.now() / 1000), uBefore: confirmedOf(UASSET), st: { conv: 'wait' }, addr: null, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
+    dp.render = renderBuyIf; dp.live = dp.watching = function () { return buy.run === R; };
+    buy.run = R; buyTimers(); renderBuy();
+    runDeposit(dp, function () { wal.key = ''; buySave(); });
+  }
+  // Without a connected wallet: this address's deposit address on the
+  // chosen chain, shown the way Swap in shows it.
+  function buyShowAddress() {
+    var r = buyRoute(); if (!r || !CO.ok) return;
+    if (!buy.run) {
+      var a = buyAmount(r);
+      buy.run = { r: r, v: a.vt, mode: 'address', dp: null, since: Math.floor(Date.now() / 1000), uBefore: confirmedOf(UASSET), st: { conv: 'wait' }, addr: { stage: 0, info: {} }, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
+      buySave(); buyTimers(); renderBuy();
+    }
+    sw.dir = 'in'; sw.key = buy.run.r.key; openFlow('swap', 'dep'); showDeposit();
+  }
+  function buyTimers() { clearInterval(buy.timer); buy.timer = setInterval(buyTick, 10000); }
+  // Every ten seconds while a buy is open: the deposit address's status
+  // (that path), and the wallet's uARG. Once the bridge has credited the
+  // deposit and the coins are spendable, the conversion.
+  function buyTick() {
+    var R = buy.run; if (!R || R.done || R.err) { clearInterval(buy.timer); buy.timer = 0; return; }
+    if (R.mode === 'address' && BRIDGE) {
+      loadStatus(Date.now() - stAt > 15000);
+      getJSON(BRIDGE + '/api/deposit-address/status' + depQuery(R.r.c), 15000).then(function (s) {
+        if (buy.run !== R || !s || String(s.chain_id) !== String(R.r.c.chain_id) || String(s.to || '').toLowerCase() !== addr) return;
+        R.addr = depAddrView(s, R.r.c, R.since - 600); if (R.addr.dep && n0(R.addr.dep.amount)) R.uExp = big(R.addr.dep.amount); renderBuyIf();
+      }).catch(function () {});
+    }
+    if (R.st.conv !== 'wait') return;
+    loadCoins().then(function () {
+      if (buy.run !== R || !CO.ok || R.st.conv !== 'wait') return;
+      var gain = confirmedOf(UASSET) - R.uBefore, p = buyPair();
+      var credited = R.mode === 'wallet' ? R.dp.st.done === 'done' || (R.dp.amount !== null && gain >= R.dp.amount) : (R.addr && R.addr.stage >= 4) || (R.uExp > ZERO && gain >= R.uExp);
+      if (credited && gain > ZERO && p && gain >= big(p.min)) { R.uGot = gain; buyReady(R); }
+    });
+  }
+  function buyReady(R) {
+    R.st.conv = 'ready'; renderBuyIf();
+    W('status').then(function (x) { if (buy.run === R && x.unlocked && R.st.conv === 'ready') buyConvert(); }, function () {});
+  }
+  function buyConvert() {
+    var R = buy.run; if (!R || R.st.conv !== 'ready') return;
+    var p = buyPair(); if (!p) { buyHost.err('The swap service is not selling ' + COIN + ' right now. Your uARG is in your wallet.'); return; }
+    var u = R.uGot; if (big(p.max) > ZERO && u > big(p.max)) u = big(p.max);
+    R.st.conv = 'now'; buyHost.err(''); renderBuyIf();
+    W('status').then(function (x) {
+      if (x.unlocked) return nativeQuote('UARG', 'ARG', u).then(execNative).then(function (sg) { buyConverted(sg); });
+      // Locked: the Swap screen's review asks for the password and signs.
+      R.st.conv = 'review'; renderBuyIf();
+      sw.dir = 'native'; sw.from = 'UARG'; sw.to = 'ARG'; sw.max = false; $('swPay').value = plainU(u);
+      openFlow('swap'); renderSwap();
+      return reviewNative();
+    }).catch(function (e) {
+      if (buy.run !== R) return;
+      R.st.conv = 'ready'; buyHost.err(netErr(e, 'The swap service')); renderBuyIf();
+      if (FL && FL.name === 'swap') note('swInErr', netErr(e, 'The swap service'), 'bad');
+    });
+  }
+  function buyConverted(sg) {
+    var R = buy.run; if (!R) return;
+    R.st.conv = 'done'; R.done = true; R.conv = { txid: String(sg.txid || ''), out: big(sg.amount_out), inn: big(sg.amount_in) };
+    buySave(); renderBuyIf(); refreshChain();
+    if (current !== 'buy') UI.toast(fmtU(R.conv.out) + ' ' + COIN + ' bought. It confirms in the next block.', 'ok', 6000);
+  }
+  function buyReset(quiet) { clearInterval(buy.timer); buy.timer = 0; buy.run = null; save('buy.run', null); if (!quiet) { buyHost.err(''); $('buyAmt').value = ''; renderBuy(); } }
+  // A buy in progress is kept in this browser so a reload picks it up.
+  function buySave() {
+    var R = buy.run;
+    save('buy.run', R && !R.done && !R.err ? JSON.stringify({ addr: addr, key: R.r.key, v: R.v === null ? '' : String(R.v), mode: R.mode, since: R.since, uBefore: String(R.uBefore), hash: R.dp ? R.dp.hash : '' }) : null);
+  }
+  function buyRestore() {
+    if (buy.run || !addr) return;
+    var x = null; try { x = JSON.parse(localStorage.getItem('buy.run') || 'null'); } catch (e) {}
+    if (!x || typeof x !== 'object') return;
+    if (x.addr !== addr || !(Date.now() / 1000 - n0(x.since) < 86400)) { save('buy.run', null); return; }
+    var r = routes().filter(function (q) { return q.key === x.key; })[0]; if (!r) return; // the chains are not known yet
+    var R = { r: r, v: /^\d+$/.test(String(x.v)) ? BigInt(x.v) : null, mode: x.mode === 'wallet' ? 'wallet' : 'address', dp: null, since: n0(x.since), uBefore: big(x.uBefore), st: { conv: 'wait' }, addr: { stage: 0, info: {} }, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
+    if (R.mode === 'wallet') {
+      if (R.v === null || !/^0x[0-9a-fA-F]{64}$/.test(String(x.hash || ''))) { save('buy.run', null); return; } // never sent
+      var dp = depositPlan(r, R.v); dp.approve = false; dp.st = { approve: 'skip', deposit: 'done', conf: 'now', done: 'wait' }; dp.hash = String(x.hash);
+      dp.render = renderBuyIf; dp.live = dp.watching = function () { return buy.run === R; }; R.dp = dp;
+      buy.run = R; watchDeposit(dp);
+    } else buy.run = R;
+    buyTimers();
+  }
+  $('buyAmt').addEventListener('input', renderBuy);
+  $('buyAmt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!$('buyGo').disabled) $('buyGo').click(); } });
+  $('buyGo').onclick = function () { if (buy.go && !this.disabled) buy.go(); };
+  $('buyBal').addEventListener('click', function (e) { if (!e.target.closest('[data-max]')) return; var r = buyRoute(); if (r && wal.bal !== null) { $('buyAmt').value = fmtTok(wal.bal, r.t.decimals, Math.min(r.t.decimals, 8), 0, true); renderBuy(); $('buyAmt').focus(); } });
+  $('buyChip').onclick = function () {
+    if (buy.run && !buy.run.done && !buy.run.err) return;
+    buyHost.pick('Pay with', routeItems(buy.key), function (k) { if (k.indexOf('r:') !== 0) return; buy.key = k.slice(2); save('buy.route', buy.key); wal.key = ''; buyHost.err(''); renderBuy(); });
+  };
+  $('buySteps').addEventListener('click', function (e) { if (e.target.closest('[data-buy="addr"]')) buyShowAddress(); });
+  $('buyUseAddr').onclick = function () { buyShowAddress(); };
+  $('buyCancel').onclick = function () { buyReset(); };
+  $('buyDisc').onclick = function () { EVM.disconnect(); wal.key = ''; buyHost.err(''); renderBuy(); };
+
   // ---- dashboard: the account at a glance ----
   var mineSum = null;
   function tokLogo(sym) { var img = UI.token ? UI.token(sym) : ''; return '<span class="lg">' + (img || esc(sym.slice(0, 3))) + '</span>'; }
   function renderDash() {
     setHTML($('dbIdn'), addr ? identicon(addr) : ''); setHTML($('setIdn'), addr ? identicon(addr) : '');
     $('dbAddrT').textContent = addr || '–';
-    $('dbNet').textContent = netw || '…';
+    $('dbNet').textContent = netw || '…'; applyDispName();
     var oldest = hist.length ? hist[hist.length - 1] : null, txs = n0((lastAddr || {}).txcount);
     $('dbSince').textContent = !addr ? '' : oldest && hist.length < 500 ? 'Active since ' + new Date(n0(oldest.time) * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) :
       txs ? plural(txs, 'transaction', 'transactions') : 'No activity yet';
@@ -2814,7 +3605,7 @@
     renderDash();
   }
   function resetChain() {
-    CO = { list: [], tip: 0, ok: false }; hist = []; renderHistory(); renderMineStats({ history: [] }); renderAssets([]); assetsKnown = false; closeFlow(true); renderBridge([], []); renderPend();
+    CO = { list: [], tip: 0, ok: false }; hist = []; renderHistory(); renderMineStats({ history: [] }); renderAssets([]); assetsKnown = false; closeFlow(true); renderBridge([], []); renderPend(); nmReset();
     argBal = 0; ['balance', 'assetBal', 'meBal'].forEach(function (id) { $(id).textContent = '–'; });
     $('assetMat').textContent = '';
   }
@@ -2983,8 +3774,9 @@
       var title, v;
       if (x.kind === 'swap') { title = 'Swap · ' + dispName(x.from) + ' to ' + dispName(x.to); v = '<div class="v"><div class="pos">+' + esc(fmtU(big(x.amountOut), 0) + ' ' + dispName(x.to)) + '</div><div class="neg">−' + esc(fmtU(big(x.amountIn), 0) + ' ' + dispName(x.from)) + '</div></div>'; }
       else if (x.kind === 'out') { title = 'Swap · uARG to ' + x.sym + ' on ' + x.chain; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
+      else if (x.kind === 'name') { title = 'Name · ' + nmDisp(nmNorm(x.label)) + ' ' + nmOpPast(x.op); v = big(x.amount) > NM_MIN ? '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + COIN) + '</div>' : '<div class="v"></div>'; }
       else { title = 'Sent ' + x.sym; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + x.sym) + '</div>'; }
-      return '<a class="rowi" href="' + explorerLink('tx', x.txid) + '" target="_blank" rel="noopener"><span class="ic out">' + UI.icon(x.kind === 'send' ? 'send' : 'swap') + '</span><div><div class="t">' + esc(title) + '</div><div class="s">Waiting for the next block</div></div>' + v + '</a>';
+      return '<a class="rowi" href="' + explorerLink('tx', x.txid) + '" target="_blank" rel="noopener"><span class="ic out">' + UI.icon(x.kind === 'send' ? 'send' : x.kind === 'name' ? 'user' : 'swap') + '</span><div><div class="t">' + esc(title) + '</div><div class="s">Waiting for the next block</div></div>' + v + '</a>';
     }).join('');
     $('pendItems').innerHTML = html ? '<div class="group-h">Waiting</div>' + html : ''; $('pendItems').hidden = !html;
     syncEmpty();
