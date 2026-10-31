@@ -479,7 +479,6 @@
     <nav class="nav" aria-label="Sections">
       <a href="/mine" data-page="mine" class="active"><i data-icon="pickaxe"></i>Mine</a>
       <a href="/wallet" data-page="wallet"><i data-icon="wallet"></i>Wallet</a>
-      <a href="/buy" data-page="buy"><i data-icon="arrowDownLeft"></i>Buy {{.Coin}}</a>
       <a href="/names" data-page="names"><i data-icon="user"></i>Names</a>
       <a href="/dashboard" data-page="dashboard"><i data-icon="activity"></i>Dashboard</a>
       <a href="/settings" data-page="settings"><i data-icon="settings"></i>Settings</a>
@@ -862,7 +861,6 @@
      <div class="more-grab" aria-hidden="true"></div>
      <div class="more-h"><h2 id="moreTitle">More</h2><button class="btn btn-ghost btn-icon" id="moreClose" type="button" aria-label="Close"><i data-icon="x"></i></button></div>
      <nav class="more-list" aria-label="More">
-       <a href="/buy" data-page="buy"><span class="mi"><i data-icon="arrowDownLeft"></i></span><span class="mt"><b>Buy {{.Coin}}</b><small>Pay USDC or USDT, receive {{.Coin}}</small></span><i data-icon="chevronRight" class="mx"></i></a>
        <a href="/names" data-page="names"><span class="mi"><i data-icon="user"></i></span><span class="mt"><b>Names</b><small>yourname.arg for your address</small></span><i data-icon="chevronRight" class="mx"></i></a>
        {{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="swap"></i></span><span class="mt"><b>Bridge</b><small>USDC and USDT in and out</small></span><i data-icon="external" class="mx"></i></a>{{end}}
        <a href="{{.Cfg.Explorer}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="search"></i></span><span class="mt"><b>Explorer</b><small>Blocks and transactions</small></span><i data-icon="external" class="mx"></i></a>
@@ -1144,7 +1142,7 @@
   }
 
   // ---- pages ----
-  var titles = { mine: 'Mine', wallet: 'Wallet', buy: 'Buy ' + COIN, names: 'Names', dashboard: 'Dashboard', settings: 'Settings' };
+  var titles = { mine: 'Mine', wallet: 'Wallet', names: 'Names', dashboard: 'Dashboard', settings: 'Settings' };
   var current = 'mine', shownPage = '';
   function show(p) {
     if (!titles[p]) p = 'mine';

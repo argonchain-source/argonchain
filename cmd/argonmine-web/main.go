@@ -434,7 +434,7 @@ func serveQR(w http.ResponseWriter, r *http.Request) {
 // real paths (/mine, /wallet, ...) and switches screens client-side.
 func isAppPath(path string) bool {
 	switch strings.TrimSuffix(path, "/") {
-	case "", "/mine", "/wallet", "/buy", "/names", "/dashboard", "/history", "/settings":
+	case "", "/mine", "/wallet", "/names", "/dashboard", "/history", "/settings":
 		return true
 	}
 	return false
@@ -604,7 +604,6 @@ func (s *site) export(dir string) error {
 		{"index.html", "app", "app", "App", nil},
 		{"mine/index.html", "app", "app", "App", nil},
 		{"wallet/index.html", "app", "app", "App", nil},
-		{"buy/index.html", "app", "app", "App", nil},
 		{"names/index.html", "app", "app", "App", nil},
 		{"history/index.html", "app", "app", "App", nil},
 		{"settings/index.html", "app", "app", "App", nil},

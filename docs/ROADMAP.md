@@ -170,7 +170,7 @@ explorer loses its node, falls behind, or sees no block for an hour.
 |---|---|
 | Names: `alice.arg` for an address, registered from the app, paid in ARG to the treasury ([Names](docs/NAMES.md)) | In progress |
 | Send to a name; names on the explorer and the dashboard | In progress |
-| Buy ARG: pay USDC or USDT on four chains, receive ARG; the swap sells ARG one way | In progress |
+| Buying ARG from the project was built and withdrawn (2026-10-31): a page where the project sells its own coins at its own price is a presale, whatever it is called | Decided |
 
 ### A10: Documentation
 
