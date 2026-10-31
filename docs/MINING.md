@@ -364,6 +364,37 @@ Below that, blocks come more slowly. This stops one machine from filling
 the first blocks after launch in seconds. (The retired public testnet had
 a floor of `0x1F7FFFFF`, 512 attempts.)
 
+#### The first three days
+
+The network's hashrate went from under 1,000 attempts per second to
+several million within a day of launch, a rise of about five thousand
+times. The difficulty rule answers that over a day, so for most of the
+first three days blocks came every 20 seconds to a few minutes instead
+of every 10 minutes. By 2026-10-31 the chain stood at block 2,190 where
+the schedule says about 380, with about 110,000 ARG mined instead of
+about 19,000.
+
+What that means:
+
+- **Those coins are mined and stay mined.** The chain's rules were
+  followed; the early miners, the project's own wallet among them, got
+  about five times the coins the schedule intended. Nothing is rolled
+  back.
+- **The rule is correcting itself.** Every block ahead of schedule makes
+  the next one harder. Block times rose from 20 seconds to about 4
+  minutes by the third day and settle at 10 minutes once the difficulty
+  matches the hashrate, about a day later at a steady hashrate. From
+  then on the emission runs at the designed 144 blocks a day.
+- **The lead stays.** ASERT keeps the chain on an absolute schedule from
+  genesis, so the chain remains about 12 days ahead of it and the
+  difficulty carries that forever. It changes nothing for a miner: the
+  target follows the hashrate from here.
+- **There is no fork.** A shorter half-life would answer a jump like this
+  faster, but it also lets hashrate that comes and goes swing the
+  difficulty around, which hurts the small miners most. The rule stays
+  as specified; what the launch showed is that a chain anyone can mine
+  gets its hashrate in a day, not a month.
+
 ## The work protocol
 
 The browser app mines through the explorer, which acts as a **work
