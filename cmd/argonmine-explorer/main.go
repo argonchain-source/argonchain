@@ -93,6 +93,7 @@ func main() {
 	allowOrigin := flag.String("allow-origin", "http://127.0.0.1:8370,http://localhost:8370,http://127.0.0.1:8372,http://localhost:8372", "comma-separated web app origins whose pages may submit work (POST /api/work/submit) from a browser; * allows any")
 	bridgeURL := flag.String("bridge-url", "", "bridge URL whose /api/status names the genuine uARG asset id (read at start and every 10 minutes)")
 	uargAsset := flag.String("uarg-asset", "", "the genuine uARG asset id (64 hex); overrides -bridge-url")
+	namesTreasury := flag.String("names-treasury", "", "on a network without a treasury (testnet, regtest): the address that collects name fees; names cannot be registered there without it")
 	swapURL := flag.String("swap-url", "", "swap service whose /api/info names the wARG issuer (read at start and every 10 minutes)")
 	poolWallet := flag.String("pool-wallet", "", "run the mining pool, paying out from this wallet file; created from POOL_MNEMONIC when missing, unlocked with POOL_WALLET_PASSWORD (empty: no pool)")
 	poolFee := flag.Float64("pool-fee", 1, "pool fee in percent of each block the pool finds")
@@ -124,6 +125,15 @@ func main() {
 		}
 	}
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
+	// Names are paid to the treasury; a test network without one needs a
+	// stand-in, and without that names cannot be registered there.
+	if err := names.SetStandInTreasury(params, *namesTreasury); err != nil {
+		log.Fatal(err)
+	}
+	if names.TreasuryAddress(params) == "" {
+		log.Printf("names: %s has no treasury and -names-treasury is not set: names cannot be registered", params.Name)
+	}
 
 	client := wallet.NewClient(*rpcURL, *token)
 	ix, err := newIndexer(filepath.Join(netDir, "explorer-index"), client, params, log.Printf)

@@ -58,7 +58,21 @@ func TestPrices(t *testing.T) {
 		t.Fatal("price by years")
 	}
 	if Price(consensus.RegTest, "abc", 3) != 0 || TreasuryAddress(consensus.RegTest) != "" {
-		t.Fatal("regtest is free")
+		t.Fatal("regtest without a stand-in: no treasury, no price")
+	}
+	// A stand-in makes a test network charge like mainnet.
+	if err := SetStandInTreasury(consensus.RegTest, "rarg1qnkvwnnl9rpy4sujx4rv8ayk05un6svdnwptzpl2jfw582642uupqeuhtdg"); err != nil {
+		t.Fatal(err)
+	}
+	defer SetStandInTreasury(consensus.RegTest, "")
+	if !HasTreasury(consensus.RegTest) || Price(consensus.RegTest, "abc", 1) != 250*consensus.UnitsPerCoin || TreasuryAddress(consensus.RegTest)[:5] != "rarg1" {
+		t.Fatal("stand-in treasury")
+	}
+	if TreasuryAddress(consensus.MainNet) == TreasuryAddress(consensus.RegTest) {
+		t.Fatal("the stand-in must not replace a real treasury")
+	}
+	if err := SetStandInTreasury(consensus.RegTest, "arg1notregtest"); err == nil {
+		t.Fatal("wrong-network stand-in accepted")
 	}
 	if a := TreasuryAddress(p); a == "" || a[:4] != "arg1" {
 		t.Fatalf("treasury %q", a)
@@ -128,9 +142,9 @@ func TestApply(t *testing.T) {
 	if _, ok := Apply(p, nil, Op{OpRegister, "pool", 1}, Tx{Signer: TreasuryAddress(p), Paid: 50 * consensus.UnitsPerCoin}, 1); !ok {
 		t.Fatal("treasury refused a reserved name")
 	}
-	// Free on regtest.
-	if _, ok := Apply(consensus.RegTest, nil, reg, Tx{Signer: alice}, 1); !ok {
-		t.Fatal("regtest register")
+	// Nothing is free: a network with no treasury and no stand-in registers nothing.
+	if _, ok := Apply(consensus.RegTest, nil, reg, Tx{Signer: alice, Paid: 1000 * consensus.UnitsPerCoin}, 1); ok {
+		t.Fatal("registered with nowhere to pay")
 	}
 	if _, ok := Apply(p, nil, reg, Tx{Paid: 1000 * consensus.UnitsPerCoin}, 1); ok {
 		t.Fatal("no signer")

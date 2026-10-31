@@ -309,7 +309,7 @@ func TestPagesRender(t *testing.T) {
 	}
 	// Names pages with nothing registered yet (names_test.go has the rest).
 	out = render("names", namesPageData{Free: true, Suffix: "arg", HRP: "rarg", Prices: []priceRow{{Length: "3 characters"}}, Recent: []nameRow{}})
-	if !strings.Contains(out, "No names yet") || !strings.Contains(out, "Free") {
+	if !strings.Contains(out, "No names yet") || !strings.Contains(out, "Not available") {
 		t.Error("empty names page lacks its empty state")
 	}
 	out = render("name", s.nameData("nobody"))

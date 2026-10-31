@@ -303,16 +303,32 @@ func TestIndexerNames(t *testing.T) {
 		t.Error("alice's expiry key survived the rewind")
 	}
 
-	// Free on a network without a treasury: a register that pays nothing.
-	free := namesIndexer(t, consensus.RegTest)
-	if err := free.apply(testBlock(0, "", coinbaseTx("cb0", 50*coin))); err != nil {
+	// Nothing is free. On a network without a treasury a register is
+	// ignored, however much it pays, unless a stand-in collects the price.
+	off := namesIndexer(t, consensus.RegTest)
+	if err := off.apply(testBlock(0, "", coinbaseTx("cb0", 50*coin))); err != nil {
 		t.Fatal(err)
 	}
-	if err := free.apply(testBlock(1, "hash0", coinbaseTx("cb1", 50*coin), nameTx("f1", aliceAddr, "NMS1 register alice 1", pay(aliceAddr, 1)))); err != nil {
+	if err := off.apply(testBlock(1, "hash0", coinbaseTx("cb1", 50*coin), nameTx("f1", aliceAddr, "NMS1 register alice 1", pay(aliceAddr, 1000)))); err != nil {
 		t.Fatal(err)
 	}
-	if d := free.displayName(aliceAddr); d != "alice" {
-		t.Errorf("free register: display name %q", d)
+	if d := off.displayName(aliceAddr); d != "" {
+		t.Errorf("registered with nowhere to pay: display name %q", d)
+	}
+	standIn := randomAddr(t, consensus.RegTest)
+	if err := names.SetStandInTreasury(consensus.RegTest, standIn); err != nil {
+		t.Fatal(err)
+	}
+	defer names.SetStandInTreasury(consensus.RegTest, "")
+	on := namesIndexer(t, consensus.RegTest)
+	if err := on.apply(testBlock(0, "", coinbaseTx("cb0", 50*coin))); err != nil {
+		t.Fatal(err)
+	}
+	if err := on.apply(testBlock(1, "hash0", coinbaseTx("cb1", 50*coin), nameTx("f1", aliceAddr, "NMS1 register alice 1", pay(aliceAddr, 1)), nameTx("f2", aliceAddr, "NMS1 register bob 1", pay(standIn, 250)))); err != nil {
+		t.Fatal(err)
+	}
+	if d := on.displayName(aliceAddr); d != "bob" {
+		t.Errorf("stand-in treasury: display name %q, want bob (alice paid nobody)", d)
 	}
 }
 

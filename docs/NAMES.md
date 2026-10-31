@@ -37,8 +37,9 @@ Reserved labels (`argonmine`, `treasury`, `pool`, `bridge`, `swap`,
 `explorer`, `docs`, `app`, `www`, `admin`, `support`, `team`, `official`)
 can be registered only by the treasury itself.
 
-On a network without a treasury (testnet, regtest) names are free: the
-transaction carries the memo and pays nothing but the network fee.
+Nothing is free. On a network without a treasury (testnet, regtest) the
+explorer is given a stand-in address that collects the price
+(`-names-treasury`); without one, names cannot be registered there.
 
 ## On the chain
 
@@ -79,7 +80,7 @@ The explorer serves names at these endpoints (all GET, JSON, CORS open):
 
 | Endpoint | Answer |
 |---|---|
-| `/api/names/info` | rules and prices: `suffix`, `min_len`, `max_len`, `blocks_per_year`, `grace_blocks`, `years_max`, `prices` (units per year by length: `"3"`, `"4"`, `"5"` meaning 5 or more), `treasury` (address, `""` when names are free), `reserved`, `count` (active names), `height` |
+| `/api/names/info` | rules and prices: `suffix`, `min_len`, `max_len`, `blocks_per_year`, `grace_blocks`, `years_max`, `prices` (units per year by length: `"3"`, `"4"`, `"5"` meaning 5 or more), `treasury` (the address paid; `""` when names cannot be registered on this network), `reserved`, `count` (active names), `height` |
 | `/api/name/{label}` | one name: `name`, `status` (`available`, `registered`, `grace`, `pending`, `reserved`, `invalid`), `reason` for invalid, `owner`, `primary` (bool), `registered_height`, `registered_time`, `expires_height`, `expires_time` (estimate), `txid`, `price` (units per year for this label), `history` (newest first: `op`, `height`, `time`, `txid`, `from`, `to`, `years`) |
 | `/api/resolve/{label}` | `name`, `address`; 404 when the name is not active |
 | `/api/names?owner={address}` | `address`, `primary` (label or `""`), `names` (each: `name`, `expires_height`, `expires_time`, `primary`, `grace`) |

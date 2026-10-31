@@ -2755,7 +2755,7 @@
   function renderNmHow() {
     var free = nmFree(), p = nmInfo ? nmInfo.prices : {}, px = function (n, d) { return nmArg(p[n] || big(d)); };
     $('nmHow').innerHTML = '<div><b>Send to it</b><span>' + esc(nmDisp('alice')) + ' works wherever an address does.</span></div>' +
-      '<div><b>' + (free ? 'Free on this network' : esc(px('5', 1000000000) + ' a year')) + '</b><span>' + (free ? 'Only the network fee.' : esc(px('4', 5000000000) + ' for four characters, ' + px('3', 25000000000) + ' for three. Paid to the treasury.')) + '</span></div>' +
+      '<div><b>' + (free ? 'Not available here' : esc(px('5', 1000000000) + ' a year')) + '</b><span>' + (free ? 'This network has no treasury to pay.' : esc(px('4', 5000000000) + ' for four characters, ' + px('3', 25000000000) + ' for three. Paid to the treasury.')) + '</span></div>' +
       '<div><b>1 to 5 years</b><span>Renew any time. 30 days of grace after it expires.</span></div>';
   }
   function stepper(n, max) {
@@ -2798,8 +2798,8 @@
     if (nmYears > max) nmYears = max;
     var html = '<div class="nm-card"><div class="nm-name"><b>' + esc(nmDisp(r.label)) + '</b>' + nmBadge(r.status, mine) + '</div>';
     if (r.status === 'available') {
-      html += '<div class="nm-price">' + esc(free ? 'Free on this network' : nmArg(r.price) + ' a year') + '</div>' +
-        '<div class="nm-reg">' + stepper(nmYears, max) + '<div class="nm-total"><span>' + (free ? 'Price' : 'Total') + '</span><b>' + esc(free ? 'Free' : nmArg(r.price * BigInt(nmYears))) + '</b></div><button class="btn btn-primary" type="button" data-nm="register">Register</button></div>';
+      html += '<div class="nm-price">' + esc(free ? 'Not available on this network: it has no treasury to pay.' : nmArg(r.price) + ' a year') + '</div>' +
+        (free ? '' : '<div class="nm-reg">' + stepper(nmYears, max) + '<div class="nm-total"><span>Total</span><b>' + esc(nmArg(r.price * BigInt(nmYears))) + '</b></div><button class="btn btn-primary" type="button" data-nm="register">Register</button></div>');
     } else if (r.status === 'registered' || r.status === 'grace') {
       var grace = r.status === 'grace', left = r.expires_height - nmHeight(), graceEnd = r.expires_time + (nmInfo ? nmInfo.grace_blocks : 4320) * BLOCK_SECS;
       html += '<dl class="swap-kv"><dt>Owner</dt><dd>' + (mine ? 'You' : esc(UI.fmt.short(r.owner, 10, 6))) + '</dd>' +
@@ -2847,7 +2847,7 @@
       : '<div class="swap-rv-amt"><div><div class="k">' + esc(nmOpTitle(P.op)) + '</div><div class="v">' + esc(nmDisp(P.label)) + '</div></div></div>';
     var rows = '';
     if (P.paid) rows += '<dt>Name</dt><dd>' + esc(nmDisp(P.label)) + '</dd><dt>Years</dt><dd>' + P.years + '</dd><dt>Paid to</dt><dd>The treasury</dd>';
-    else if (P.op === 'register' || P.op === 'renew') rows += '<dt>Years</dt><dd>' + P.years + '</dd><dt>Price</dt><dd>Free on this network</dd>';
+    else if (P.op === 'register' || P.op === 'renew') rows += '<dt>Years</dt><dd>' + P.years + '</dd><dt>Price</dt><dd>Not available on this network</dd>';
     if (P.op === 'transfer') rows += (P.toName ? '<dt>New owner</dt><dd>' + esc(nmDisp(P.toName)) + '</dd>' + kvTo('Address', P.to) : kvTo('New owner', P.to)) + '<dt>Sends</dt><dd>' + esc(fmtU(NM_MIN) + ' ' + COIN + ' to the new owner') + '</dd>';
     else if (!P.paid) rows += '<dt>Sends</dt><dd>' + esc(fmtU(NM_MIN) + ' ' + COIN + ' back to you') + '</dd>';
     rows += '<dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Takes effect</dt><dd>Next block, about 10 min</dd>';
@@ -2896,7 +2896,7 @@
     var py = nmPriceYear(nmRenew.label), free = nmFree() || py <= ZERO;
     $('nmYrName').textContent = nmDisp(nmRenew.label);
     $('nmYrStep').innerHTML = stepper(nmRenew.years, nmYearsMax());
-    $('nmYrTotal').textContent = free ? 'Free on this network' : nmArg(py * BigInt(nmRenew.years));
+    $('nmYrTotal').textContent = free ? 'Not available on this network' : nmArg(py * BigInt(nmRenew.years));
     $('nmYrHint').textContent = free ? '' : nmArg(py) + ' a year, paid to the treasury.';
   }
   $('nmYrStep').addEventListener('click', function (e) { var d = e.target.closest('[data-d]'); if (!d) return; nmRenew.years = Math.max(1, Math.min(nmYearsMax(), nmRenew.years + Number(d.dataset.d))); renderNmYears(); });

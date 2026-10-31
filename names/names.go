@@ -99,16 +99,40 @@ func IsReserved(label string) bool {
 	return false
 }
 
-// HasTreasury reports whether names cost anything on this network.
+// standIn collects name fees on a network without a treasury (testnet,
+// regtest), so nothing is free anywhere; set once at start-up by the
+// explorer's -names-treasury. A network with a treasury ignores it.
+var standIn string
+
+// SetStandInTreasury names the address that collects name fees on a
+// network without a treasury of its own. It must be an address of that
+// network; "" turns names off there.
+func SetStandInTreasury(p *consensus.Params, addr string) error {
+	addr = strings.ToLower(strings.TrimSpace(addr))
+	if addr != "" {
+		if _, err := wallet.DecodeAddress(p.HRP, addr); err != nil {
+			return fmt.Errorf("names treasury: %w", err)
+		}
+	}
+	standIn = addr
+	return nil
+}
+
+// HasTreasury reports whether names can be bought on this network: it has
+// a treasury, or a stand-in collects the fees.
 func HasTreasury(p *consensus.Params) bool {
+	return hasOwnTreasury(p) || standIn != ""
+}
+
+func hasOwnTreasury(p *consensus.Params) bool {
 	return p != nil && p.TreasuryHeight != 0 && len(p.TreasuryKey) == consensus.P2PKPayloadLen
 }
 
-// TreasuryAddress is the address name fees are paid to, or "" on a network
-// without a treasury.
+// TreasuryAddress is the address name fees are paid to: the network's
+// treasury, else the stand-in, else "" (names cannot be registered).
 func TreasuryAddress(p *consensus.Params) string {
-	if !HasTreasury(p) {
-		return ""
+	if !hasOwnTreasury(p) {
+		return standIn
 	}
 	a, err := wallet.EncodeAddress(p.HRP, consensus.OutputTypeP2PK, p.TreasuryKey)
 	if err != nil {
@@ -265,7 +289,7 @@ func Apply(p *consensus.Params, cur *Record, op Op, tx Tx, height uint32) (next 
 	status := Status(cur, height)
 	switch op.Kind {
 	case OpRegister:
-		if status != StatusAvailable {
+		if status != StatusAvailable || TreasuryAddress(p) == "" {
 			return Record{}, false
 		}
 		if IsReserved(op.Label) && tx.Signer != TreasuryAddress(p) {
@@ -276,7 +300,7 @@ func Apply(p *consensus.Params, cur *Record, op Op, tx Tx, height uint32) (next 
 		}
 		return Record{Label: op.Label, Owner: tx.Signer, Registered: height, RegTxID: tx.TxID, Expires: height + uint32(op.Years)*BlocksPerYear}, true
 	case OpRenew:
-		if status == StatusAvailable || cur.Owner != tx.Signer {
+		if status == StatusAvailable || cur.Owner != tx.Signer || TreasuryAddress(p) == "" {
 			return Record{}, false
 		}
 		if tx.Paid < Price(p, op.Label, op.Years) {

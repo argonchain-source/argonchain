@@ -214,12 +214,12 @@
 <div class="grid cols-3">
   <div class="card stat"><span class="stat-label">Names registered</span><span class="stat-value sm num">{{num .Data.Count}}</span><span class="stat-hint">active at height {{num .Height}}</span></div>
   <div class="card stat"><span class="stat-label">Last 24 hours</span><span class="stat-value sm num">{{num .Data.Day}}</span><span class="stat-hint">new registrations</span></div>
-  <div class="card stat"><span class="stat-label">Price</span>{{if .Data.Free}}<span class="stat-value sm">Free</span><span class="stat-hint">no treasury on {{.Network}}: only the network fee</span>{{else}}<span class="stat-value sm"><span class="num">from {{coin .Data.From}}</span><span class="stat-unit">{{.Coin}} a year</span></span><span class="stat-hint">paid to the treasury, 1 to 5 years at once</span>{{end}}</div>
+  <div class="card stat"><span class="stat-label">Price</span>{{if .Data.Free}}<span class="stat-value sm">Not available</span><span class="stat-hint">{{.Network}} has no treasury to pay</span>{{else}}<span class="stat-value sm"><span class="num">from {{coin .Data.From}}</span><span class="stat-unit">{{.Coin}} a year</span></span><span class="stat-hint">paid to the treasury, 1 to 5 years at once</span>{{end}}</div>
 </div>
 <div class="two">
   <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Price per year</h2><span class="muted small">by length</span></div>
   <div class="table-wrap"><table class="table"><thead><tr><th>Label</th><th class="num">Per year</th></tr></thead><tbody>
-  {{range .Data.Prices}}<tr><td>{{.Length}}</td><td class="num">{{if $.Data.Free}}free{{else}}{{coin .Price}} {{$.Coin}}{{end}}</td></tr>{{end}}
+  {{range .Data.Prices}}<tr><td>{{.Length}}</td><td class="num">{{if $.Data.Free}}–{{else}}{{coin .Price}} {{$.Coin}}{{end}}</td></tr>{{end}}
   </tbody></table></div>
   <div class="card-body"><p class="hint">A label is 3 to 32 characters: lowercase letters, digits and hyphens, not at either end. A year is 52,560 blocks. After expiry the owner alone can renew for 30 days (4,320 blocks); then the name is free again.</p></div></div>
   <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>How it works</h2></div>
@@ -252,10 +252,10 @@
   <dt>Registered</dt><dd>block <a class="link" href="/block/{{.Data.Rec.Registered}}">{{num .Data.Rec.Registered}}</a>, {{when .Data.RegisteredTime}} UTC<div class="muted small mono">in <a class="link" href="/tx/{{.Data.Rec.RegTxID}}">{{.Data.Rec.RegTxID}}</a></div></dd>
   <dt>Expires</dt><dd>block {{num .Data.Rec.Expires}}, about {{date .Data.ExpiresTime}} <span class="muted">({{.Data.ExpiresIn}})</span></dd>
   <dt>Primary</dt><dd>{{if .Data.Rec.Primary}}yes: shown for the owner's address{{else}}not set{{if .Data.OwnerName}}{{if eq .Data.OwnerName .Data.Label}}: shown for the owner's address as its oldest name{{end}}{{end}}{{end}}</dd>
-  <dt>Price</dt><dd>{{if .Data.Free}}free on {{.Network}}{{else}}{{coin .Data.Price}} {{.Coin}} a year{{end}}</dd>
+  <dt>Price</dt><dd>{{if .Data.Free}}not available on {{.Network}}{{else}}{{coin .Data.Price}} {{.Coin}} a year{{end}}</dd>
 </dl></div>
 {{else if ne .Data.Status "invalid"}}
-<div class="card"><div class="empty"><i data-icon="user" class="lg"></i><h3>{{if eq .Data.Status "reserved"}}Reserved{{else if eq .Data.Status "pending"}}Being registered{{else}}Available{{end}}</h3><p>{{if eq .Data.Status "reserved"}}Only the treasury can register {{.Data.Display}}.{{else if eq .Data.Status "pending"}}A transaction in the mempool claims {{.Data.Display}}. It may still lose to another one.{{else}}{{.Data.Display}} is free. {{if .Data.Free}}Registering it costs only the network fee on {{.Network}}.{{else}}It costs {{coin .Data.Price}} {{.Coin}} a year, for 1 to 5 years.{{end}}{{end}}</p>{{if eq .Data.Status "available"}}<a class="btn btn-primary btn-sm" href="{{.App}}/names" rel="noopener">Register it in the app</a>{{end}}</div></div>
+<div class="card"><div class="empty"><i data-icon="user" class="lg"></i><h3>{{if eq .Data.Status "reserved"}}Reserved{{else if eq .Data.Status "pending"}}Being registered{{else}}Available{{end}}</h3><p>{{if eq .Data.Status "reserved"}}Only the treasury can register {{.Data.Display}}.{{else if eq .Data.Status "pending"}}A transaction in the mempool claims {{.Data.Display}}. It may still lose to another one.{{else}}{{.Data.Display}} is free. {{if .Data.Free}}Names cannot be registered on {{.Network}}: it has no treasury to pay.{{else}}It costs {{coin .Data.Price}} {{.Coin}} a year, for 1 to 5 years.{{end}}{{end}}</p>{{if and (eq .Data.Status "available") (not .Data.Free)}}<a class="btn btn-primary btn-sm" href="{{.App}}/names" rel="noopener">Register it in the app</a>{{end}}</div></div>
 {{else}}
 <div class="card"><div class="empty"><i data-icon="alert" class="lg"></i><h3>Not a valid name</h3><p>{{.Data.Reason}}. A name is 3 to 32 characters: lowercase letters, digits and hyphens, not at either end.</p><a class="btn btn-secondary btn-sm" href="/names">All names</a></div></div>
 {{end}}
