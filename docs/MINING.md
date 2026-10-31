@@ -34,12 +34,12 @@ Your browser asks the explorer for a block to work on, makes attempts in
 the background, and sends back what it finds. The explorer passes blocks
 to the network. The Mine page offers two ways to be paid:
 
-- **Pool** (the default). The block pays the pool, and the pool pays every
-  miner in proportion to the work they did, a little at a time. See [Pool
-  mining](#pool-mining).
-- **Solo.** The block pays your address directly, the whole reward at
-  once. The explorer never holds your coins. Before mining a template,
-  the app checks that it really pays your address.
+- **Solo** (the default). The block pays your address directly, the whole
+  reward at once. The explorer never holds your coins. Before mining a
+  template, the app checks that it really pays your address.
+- **Pool.** The block pays the pool, and the pool pays every miner in
+  proportion to the work they did, a little at a time. One tap on the
+  Mine page. See [Pool mining](#pool-mining).
 
 Solo suits a server or a desktop with many cores; the pool suits a phone
 or a laptop, which would otherwise wait months for a block.

@@ -10,7 +10,7 @@ when you can spend it and how long a block takes, see
 
 | | Phone or tablet | Computer | Rented server (VPS) |
 |---|---|---|---|
-| How | The browser app, in the pool | The browser app, or the node | The node, as a service |
+| How | The browser app, best in the pool | The browser app, or the node | The node, as a service |
 | Attempts per second | The fewest | More | The most for the money, and around the clock |
 | Runs while | The app is open on the screen | The tab or the program is open | Always |
 | Costs | Battery and some warmth | Electricity | A monthly fee |
@@ -24,10 +24,10 @@ What all three have in common:
   finds.
 - **The same work.** A phone, a laptop and a server all hash real block
   headers with Argon2id; a block from any of them pays the full reward.
-- **Pool or solo.** The app mines in the pool by default: every block the
-  pool finds is shared by everyone in it, by work done, less a 1% fee.
-  Solo, the whole block pays your address when you find one. The node
-  always mines solo. See [Pool mining](docs/MINING.md#pool-mining).
+- **Solo or pool.** Solo, the default, the whole block pays your address
+  when you find one. In the pool, one tap on the Mine page, every block
+  the pool finds is shared by everyone in it, by work done, less a 1%
+  fee. The node always mines solo. See [Pool mining](docs/MINING.md#pool-mining).
 - **The same lock.** A reward can be spent 100 blocks after the block that
   paid it, about 17 hours at 10-minute blocks. Until then the app shows it
   as **Maturing**.
@@ -64,10 +64,9 @@ Then make it comfortable to leave running:
   a charger, out of direct sunlight and not under a pillow or in a bag.
 
 What to expect: a phone makes the fewest attempts of the three, and fewer
-still when it is warm. Solo, it can wait months for a block, which is why
-the app puts it in the pool: the Mine page then shows **Estimated per
-day**, and payouts of 0.1 ARG or more arrive by themselves as pool blocks
-mature. A computer or a server mines more, pool or solo.
+still when it is warm. Solo, it can wait months for a block, so choose
+**Pool** on the Mine page: it then shows **Estimated per day**, and
+payouts of 0.1 ARG or more arrive by themselves as pool blocks mature. A computer or a server mines more, pool or solo.
 
 ## On a computer
 

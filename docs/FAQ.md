@@ -44,12 +44,11 @@ A solved block the network turned down, almost always because another
 miner's block at the same height arrived first. Only that attempt is lost.
 
 **Is there a pool?**
-Yes, since 2026-10-30, and it is the default in the browser app. Miners in
+Yes, since 2026-10-30: choose Pool on the Mine page of the app. Miners in
 the pool share every block it finds in proportion to their work, so a
 phone earns a little every day instead of waiting months for a whole
 block. The fee is 1%. Solo mining, where the whole block pays your address
-and nobody holds funds in between, is one tap away on the Mine page and is
-what nodes do. See [Pool mining](docs/MINING.md#pool-mining) and the
+and nobody holds funds in between, stays the default and is what nodes do. See [Pool mining](docs/MINING.md#pool-mining) and the
 [pool page](https://explorer.argonmine.com/pool).
 
 **Does the pool hold my coins?**
