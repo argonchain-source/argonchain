@@ -55,6 +55,10 @@ type Config struct {
 	// DownloadsUpstream is the file service holding the node release
 	// archives, served at /downloads/ (downloads.go); empty: off.
 	DownloadsUpstream string
+	// AnnounceURL and AnnounceText, when set, are a post the app shows once
+	// per device in a card at the top of the screen, with a link to it.
+	AnnounceURL  string
+	AnnounceText string
 }
 
 type docEntry struct {
@@ -129,7 +133,12 @@ func main() {
 	flag.StringVar(&cfg.SwapUpstream, "swap-upstream", "", "swap service URL on the private network, served at /swap/api/ (e.g. http://swap.railway.internal:8410); empty: off")
 	flag.StringVar(&cfg.HoldARG, "hold-arg", "", "message shown by the app instead of sending or swapping ARG and wARG (uARG stays); empty: everything on")
 	flag.StringVar(&cfg.DownloadsUpstream, "downloads-upstream", "", "file service with the node release archives on the private network, served at /downloads/ (e.g. http://downloads.railway.internal:8080); empty: off")
+	flag.StringVar(&cfg.AnnounceURL, "announce-url", "", "a post the app points to once per device, e.g. https://x.com/argonminechain/status/…; empty: no card")
+	flag.StringVar(&cfg.AnnounceText, "announce-text", "", "the line the announcement card shows with the link")
 	flag.Parse()
+	if cfg.AnnounceURL != "" && !strings.HasPrefix(cfg.AnnounceURL, "https://") {
+		log.Fatal("-announce-url must start with https://")
+	}
 
 	s, err := newSite(cfg)
 	if err != nil {

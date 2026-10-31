@@ -115,6 +115,13 @@
   .mode-hint { font-size: var(--fs-2); color: var(--ink-3); margin: -6px 0 0; line-height: 1.45; }
   .nudge { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); font-size: var(--fs-2); line-height: 1.4; }
   .nudge > div { flex: 1; } .nudge .btn { flex-shrink: 0; }
+  .announce { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow-1); }
+  .announce .an-ic { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; }
+  .announce .an-ic svg { width: 18px; height: 18px; }
+  .announce > div { flex: 1; min-width: 0; } .announce small { display: block; color: var(--ink-3); font-size: var(--fs-2); margin-bottom: 1px; }
+  .announce b { font-weight: 600; font-size: var(--fs-3); line-height: 1.35; display: block; color: var(--ink); }
+  .announce .an-act { display: flex; gap: 6px; flex: none; }
+  @media (max-width: 560px) { .announce { flex-wrap: wrap; } .announce .an-act { width: 100%; justify-content: flex-end; } }
   .mode-pool .solo-only, .mode-solo .pool-only { display: none; }
   .mine-btn { height: 60px; font-size: var(--fs-5); border-radius: 14px; gap: 10px; width: 100%; }
   .mine-btn svg { width: 20px; height: 20px; }
@@ -509,6 +516,7 @@
     <div class="content">
       <div id="errorBanner" class="banner warn" style="display:none" role="alert"><i data-icon="alert"></i><div id="errorText"></div></div>
       <div id="refOffer" class="banner info" role="region" aria-label="Invitation" hidden><i data-icon="users"></i><div class="ref-offer"><div id="refOfferText"></div><div class="row" style="gap:6px"><button class="btn btn-primary btn-sm" id="refAccept" type="button">Accept</button><button class="btn btn-ghost btn-sm" id="refIgnore" type="button">Ignore</button></div></div></div>
+      <div id="announce" class="announce" role="region" aria-label="New post" hidden><span class="an-ic"><i data-icon="share"></i></span><div><small>{{.Brand}} just posted</small><b id="announceText"></b></div><div class="an-act"><a class="btn btn-primary btn-sm" id="announceGo" href="#" target="_blank" rel="noopener">Open on X</a><button class="btn btn-ghost btn-sm" id="announceHide" type="button" aria-label="Dismiss">Dismiss</button></div></div>
 
       <!-- ONBOARDING -->
       <section class="onboard" id="onboard" hidden>
@@ -1149,6 +1157,7 @@
     current = p;
     var has = !!addr;
     $('onboard').hidden = has;
+    if (has) showAnnounce();
     // A wallet from the earlier version, which kept only its address here, logs in again.
     $('obLegacy').hidden = has || !legacyAddr;
     if (legacyAddr) $('obLegacyText').textContent = 'Log in with your 24 words to keep using wallet ' + UI.fmt.short(legacyAddr, 10, 6) + '.';
@@ -1400,6 +1409,19 @@
   var BRIDGE = '{{.Cfg.Bridge}}'.replace(/\/+$/, '');
   // While ARG has no market, the app sends and swaps uARG only (-hold-arg).
   var HOLD_ARG = '{{.Cfg.HoldARG}}';
+  // A post the app points to once per device: shown after the wallet is
+  // open, gone for good once opened or dismissed.
+  var ANNOUNCE = { url: '{{.Cfg.AnnounceURL}}', text: '{{.Cfg.AnnounceText}}' };
+  function announceSeen() { try { return localStorage.getItem('announce.seen') === ANNOUNCE.url; } catch (e) { return true; } }
+  function announceDone() { try { localStorage.setItem('announce.seen', ANNOUNCE.url); } catch (e) {} $('announce').hidden = true; }
+  function showAnnounce() {
+    if (!ANNOUNCE.url || !addr || announceSeen()) return;
+    $('announceText').textContent = ANNOUNCE.text || 'A new post from ' + BRAND + '.';
+    $('announceGo').href = ANNOUNCE.url;
+    $('announce').hidden = false;
+  }
+  $('announceGo').addEventListener('click', announceDone);
+  $('announceHide').onclick = announceDone;
   var argBal = 0, uarg = null, assetsKnown = false, bridgeStatus = null, netw = '';
   var E8 = BigInt('100000000'), BPS = BigInt('10000'), ZERO = BigInt(0), TEN = BigInt(10);
   function big(v) { try { return BigInt(typeof v === 'number' ? Math.trunc(v) : String(v == null || v === '' ? 0 : v)); } catch (e) { return ZERO; } }

@@ -55,6 +55,8 @@ case "$ROLE" in
       ${SITE_DOMAIN:+-domain "$SITE_DOMAIN"} \
       ${SWAP_UPSTREAM:+-swap-upstream "$SWAP_UPSTREAM"} \
       ${HOLD_ARG:+-hold-arg "$HOLD_ARG"} \
+      ${ANNOUNCE_URL:+-announce-url "$ANNOUNCE_URL"} \
+      ${ANNOUNCE_TEXT:+-announce-text "$ANNOUNCE_TEXT"} \
       ${DOWNLOADS_UPSTREAM:+-downloads-upstream "$DOWNLOADS_UPSTREAM"} \
       $EXTRA
     ;;
