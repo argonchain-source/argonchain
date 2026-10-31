@@ -109,6 +109,11 @@
   .hero-meta > div + div { border-left: 1px solid var(--hair); padding-left: var(--sp-3); }
   .hero-meta .k { font-size: var(--fs-2); color: var(--ink-3); } .hero-meta .v { font-weight: 650; font-variant-numeric: tabular-nums; font-size: var(--fs-5); margin-top: 2px; }
   .control { padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); }
+  .seg { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border: 1px solid var(--hair); border-radius: 12px; }
+  .seg button { flex: 1; height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-2); font: inherit; font-weight: 650; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .10); }
+  .mode-hint { font-size: var(--fs-2); color: var(--ink-3); margin: -6px 0 0; line-height: 1.45; }
+  .mode-pool .solo-only, .mode-solo .pool-only { display: none; }
   .mine-btn { height: 60px; font-size: var(--fs-5); border-radius: 14px; gap: 10px; width: 100%; }
   .mine-btn svg { width: 20px; height: 20px; }
   .kvl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -488,22 +493,29 @@
             <div class="hero-sub" id="rateHint">Press Start to mine in this tab.</div>
             <div class="hero-chart" id="spark"></div>
             <div class="hero-meta">
-              <div><div class="k">Found this session</div><div class="v" id="blocks">0</div></div>
+              <div><div class="k" id="foundK">Found this session</div><div class="v" id="blocks">0</div></div>
               <div><div class="k">Hashes</div><div class="v" id="hashes">0</div></div>
               <div><div class="k">Rejected</div><div class="v" id="rejected">0</div></div>
               <div><div class="k">Running</div><div class="v" id="runtime">–</div></div>
             </div>
           </div>
           <div class="card control">
+            <div class="seg" id="modeSeg" role="group" aria-label="Mining mode"><button type="button" data-mode="pool" aria-pressed="true">Pool</button><button type="button" data-mode="solo" aria-pressed="false">Solo</button></div>
+            <p class="mode-hint" id="modeHint"></p>
             <button class="btn btn-primary mine-btn" id="btnMine" disabled><i data-icon="play"></i><span>Loading miner…</span></button>
             <div class="status-line" id="mineStatus"></div>
             <ul class="kvl">
               <li><span>Working on block</span><b id="workHeight">–</b></li>
               <li><span>Block reward</span><b id="rewardNow">–</b></li>
               <li><span>Network hashrate</span><b id="netRate">–</b></li>
-              <li><span>Your share</span><b id="share">–</b></li>
-              <li class="hi"><span>Expected time to a block</span><b id="expected">–</b></li>
-              <li id="refLine" hidden><span>Inviter share</span><b id="refLineV">–</b></li>
+              <li class="pool-only"><span>Pool hashrate</span><b id="poolRate">–</b></li>
+              <li class="pool-only"><span>Your part of the pool</span><b id="poolPart">–</b></li>
+              <li class="pool-only hi"><span>Estimated per day</span><b id="poolDay">–</b></li>
+              <li class="pool-only"><span>Owed to you</span><b id="poolOwed">–</b></li>
+              <li class="pool-only"><span>Paid by the pool</span><b id="poolPaid">–</b></li>
+              <li class="solo-only"><span>Your share</span><b id="share">–</b></li>
+              <li class="solo-only hi"><span>Expected time to a block</span><b id="expected">–</b></li>
+              <li class="solo-only" id="refLine" hidden><span>Inviter share</span><b id="refLineV">–</b></li>
             </ul>
           </div>
         </div>
@@ -609,12 +621,12 @@
               <div class="db-link" id="refLink">–</div>
               <div class="db-ref-acts"><button class="btn btn-primary" id="shareRef" type="button"><i data-icon="share"></i>Share link</button><button class="btn btn-secondary" id="copyRef" type="button"><i data-icon="copy"></i>Copy</button></div>
               <div class="db-ref-stats"><div><b class="num" id="refEarnedV">0</b><span>{{.Coin}} earned</span></div><div><b class="num" id="refBlocks">0</b><span>blocks by friends</span></div></div>
-              <div class="db-by" id="refByRow" hidden><div><span class="k">Invited by</span><span class="mono" id="refBy">–</span><span class="d"><span id="refPctB">5</span>% of each block you find goes to them.</span></div><button class="btn btn-ghost btn-sm" id="refRemove" type="button">Remove</button></div>
+              <div class="db-by" id="refByRow" hidden><div><span class="k">Invited by</span><span class="mono" id="refBy">–</span><span class="d"><span id="refPctB">5</span>% of each block you find mining solo goes to them.</span></div><button class="btn btn-ghost btn-sm" id="refRemove" type="button">Remove</button></div>
             </div>
             <div class="card db-mine">
               <div class="db-mine-h"><h2>Miner</h2><span class="chip" id="dbMineChip">Idle</span></div>
               <div class="db-rate"><span class="num" id="dbRate">0</span><span class="u" id="dbRateU">H/s</span></div>
-              <ul class="kvl"><li><span>Network hashrate</span><b id="dbNetRate">–</b></li><li><span>Next block reward</span><b id="dbReward">–</b></li><li><span>Expected time to a block</span><b id="dbExpect">–</b></li></ul>
+              <ul class="kvl"><li><span>Network hashrate</span><b id="dbNetRate">–</b></li><li><span>Next block reward</span><b id="dbReward">–</b></li><li><span id="dbExpectK">Expected time to a block</span><b id="dbExpect">–</b></li></ul>
               <button class="btn btn-secondary db-mine-go" type="button" data-nav="mine"><i data-icon="pickaxe"></i>Open the miner</button>
             </div>
           </aside>
@@ -674,10 +686,11 @@
             <section class="st-sec" id="st-mining">
               <div class="st-h"><h2>Mining</h2></div>
               <div class="card st-card">
+                <div class="st-row"><span class="st-ic"><i data-icon="users"></i></span><div class="st-t"><b>Mining mode</b><span id="modeSetHint">Pool: steady small payouts. Solo: the whole block, rarely.</span></div><select class="select st-sel" id="selMode" aria-label="Mining mode"><option value="pool">Pool</option><option value="solo">Solo</option></select></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="play"></i></span><div class="st-t"><b>Start when the app opens</b></div><button class="switch" id="swAutostart" role="switch" aria-checked="false" aria-label="Start mining when the app opens"></button></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="cpu"></i></span><div class="st-t"><b>Processor cores</b><span>More cores mine faster and use more battery.</span></div><select class="select st-sel" id="selCores" aria-label="Processor cores used for mining"></select></div>
                 <div class="st-row"><span class="st-ic"><i data-icon="zap"></i></span><div class="st-t"><b>Keep the screen on</b><span>Stops a phone from sleeping while mining.</span></div><button class="switch" id="swWake" role="switch" aria-checked="false" aria-label="Keep the screen on while mining"></button></div>
-                <div class="st-row"><span class="st-ic"><i data-icon="server"></i></span><div class="st-t"><b>Mining server</b><span>It never holds your coins.</span></div><span class="st-val mono" id="workShow"></span></div>
+                <div class="st-row"><span class="st-ic"><i data-icon="server"></i></span><div class="st-t"><b>Mining server</b><span>Solo: it never holds your coins. Pool: it holds only what is on its way to miners.</span></div><span class="st-val mono" id="workShow"></span></div>
               </div>
             </section>
 
@@ -908,6 +921,11 @@
   var addr = '', created = false, ready = false, running = false, pendingAddr = '', phrase = '', rates = [], netRate = 0, myRate = 0;
   var autostart = false, keepAwake = false, wakeLock = null, startedAt = 0, hist = [], tip = 0, filter = 'all', ref = '', refPct = 5, refAgreed = 5, resume = false;
   var MATURITY = 100, BLOCK_SECS = 600, legacyAddr = '';
+  // Mining mode: 'pool' (shares, steady payouts from the pool) or 'solo'
+  // (whole blocks). Pool is the default; a wallet from before the pool
+  // existed is told once.
+  var mode = 'pool', liveMode = 'pool', modeNotice = false, poolInfo = null, poolMine = null, nextSubsidy = 0;
+  try { var savedMode = localStorage.getItem('mine.mode'); if (savedMode === 'solo' || savedMode === 'pool') mode = savedMode; else if (localStorage.getItem('mine.addr')) modeNotice = true; } catch (e) {}
   try { addr = localStorage.getItem('mine.addr') || ''; created = localStorage.getItem('mine.created') === '1'; autostart = localStorage.getItem('mine.autostart') === '1'; keepAwake = localStorage.getItem('mine.wake') === '1'; ref = localStorage.getItem('mine.ref') || ''; refAgreed = Math.max(0, Math.min(50, Number(localStorage.getItem('mine.refpct')) || 5)); resume = localStorage.getItem('mine.running') === '1'; } catch (e) {}
   var re = new RegExp('^' + HRP + '1[02-9ac-hj-np-z]{59}$');
   // Only well-formed addresses of this network are taken from storage.
@@ -1000,10 +1018,71 @@
     renderRefOffer(); renderSecurity(); renderDash();
     $('swAutostart').setAttribute('aria-checked', autostart ? 'true' : 'false');
     $('swWake').setAttribute('aria-checked', keepAwake ? 'true' : 'false');
-    renderTheme();
+    renderTheme(); renderMode();
     show(current);
     updateBtn();
   }
+  function idleStatus() { return mode === 'pool' ? 'Press Start to mine in the pool.' : 'Press Start to mine on your own.'; }
+  function miningStatus() {
+    if (mode === 'pool' && liveMode !== 'pool') return 'The pool is not available right now, so this tab mines solo until it is back. Blocks you find pay your address.';
+    return liveMode === 'pool' ? 'Mining in the pool. Your shares are credited as you go; payouts arrive once blocks mature.' : 'Mining solo. Blocks you find pay your address.';
+  }
+  function renderMode() {
+    $('page-mine').classList.toggle('mode-pool', mode === 'pool'); $('page-mine').classList.toggle('mode-solo', mode !== 'pool');
+    document.querySelectorAll('#modeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); });
+    $('selMode').value = mode;
+    var fee = poolInfo && poolInfo.enabled ? poolInfo.fee_percent : null;
+    $('modeHint').textContent = mode === 'pool'
+      ? 'Steady small payouts. Blocks pay the pool, which pays everyone by their share of the work' + (fee !== null ? ', less a ' + fee + '% fee.' : '.') + (poolInfo && poolInfo.enabled === false ? ' The pool is not available right now.' : '')
+      : 'The whole block is yours when you find one. On a phone that can take months.';
+    $('foundK').textContent = mode === 'pool' ? 'Shares this session' : 'Found this session';
+    $('dbExpectK').textContent = mode === 'pool' ? 'Estimated per day' : 'Expected time to a block';
+    if (!running) { $('mineStatus').textContent = ready ? idleStatus() : ''; $('rateHint').textContent = idleStatus(); }
+    renderPoolRows();
+  }
+  function setMode(m) {
+    if (m !== 'pool' && m !== 'solo') return;
+    if (m === mode) { renderMode(); return; }
+    mode = m; save('mine.mode', m);
+    var was = running;
+    if (was) stopMining();
+    renderMode();
+    if (was) startMining();
+  }
+  document.querySelectorAll('#modeSeg button').forEach(function (b) { b.onclick = function () { setMode(b.dataset.mode); }; });
+  $('selMode').onchange = function () { setMode(this.value); };
+  // The pool's address, fee and state come from the explorer; the miner is
+  // told the address so its job check can insist that pool jobs pay it.
+  function fetchPool() {
+    return fetch(EXPLORER + '/api/pool/stats').then(function (r) { return r.json(); }).then(function (p) {
+      poolInfo = { enabled: !!p.enabled && re.test(String(p.address || '')), address: String(p.address || '').toLowerCase(), fee_percent: n0(p.fee_percent), min_payout: n0(p.min_payout), hashrate: n0(p.hashrate) };
+      renderMode();
+      if (running && mode === 'pool' && liveMode !== 'pool' && poolInfo.enabled) { stopMining(); startMining(); }
+      if (modeNotice && poolInfo.enabled) { modeNotice = false; save('mine.mode', 'pool'); UI.toast('Mining now uses the pool by default: steady small payouts instead of whole blocks. Solo is one tap away on the Mine page.', 'info', 10000); }
+      return poolInfo;
+    }).catch(function () { return poolInfo; });
+  }
+  function fetchPoolMiner() {
+    if (!addr || mode !== 'pool') return Promise.resolve(null);
+    return fetch(EXPLORER + '/api/pool/miner/' + encodeURIComponent(addr)).then(function (r) { return r.json(); }).then(function (m) { poolMine = m; renderPoolRows(); return m; }).catch(function () { return null; });
+  }
+  function renderPoolRows() {
+    var m = poolMine || {}, pr = poolInfo ? poolInfo.hashrate : 0;
+    $('poolRate').textContent = pr ? UI.fmt.hashrate(pr) : '–';
+    var part = n0(m.round_total) ? 100 * n0(m.round_shares) / n0(m.round_total) : 0;
+    $('poolPart').textContent = n0(m.round_total) && n0(m.round_shares) ? part.toFixed(part < 1 ? 2 : 1) + '%' : '–';
+    $('poolOwed').textContent = UI.fmt.coin(n0(m.balance)) + ' ' + COIN + (n0(m.pending) ? ' · ' + UI.fmt.coin(n0(m.pending)) + ' maturing' : '');
+    $('poolPaid').textContent = UI.fmt.coin(n0(m.paid)) + ' ' + COIN;
+    // What this device's hashrate earns in a day at the 10-minute target:
+    // its part of the network, times 144 blocks, less the fee.
+    var fee = poolInfo ? poolInfo.fee_percent : 1;
+    if (running && myRate && netRate && nextSubsidy) {
+      var perDay = myRate / (netRate + myRate) * (86400 / BLOCK_SECS) * nextSubsidy * (1 - fee / 100);
+      $('poolDay').textContent = (perDay >= 1e8 ? UI.fmt.coin(perDay, 2) : UI.fmt.coin(perDay)) + ' ' + COIN;
+    } else $('poolDay').textContent = '–';
+    if (mode === 'pool') $('dbExpect').textContent = running ? $('poolDay').textContent : 'Start the miner';
+  }
+  setInterval(function () { if (mode === 'pool' && addr && (running || current === 'mine')) fetchPoolMiner(); }, 10000);
   function updateBtn() {
     var b = $('btnMine'); b.disabled = !ready || !addr;
     if (!ready) return;
@@ -2395,7 +2474,7 @@
     $('dbRate').textContent = parts[0]; $('dbRateU').textContent = parts[1] || 'H/s';
     setChip($('dbMineChip'), running ? 'Mining' : 'Idle', running ? 'accent' : '');
     $('dbNetRate').textContent = $('netRate').textContent; $('dbReward').textContent = $('rewardNow').textContent;
-    $('dbExpect').textContent = running ? $('expected').textContent : 'Start the miner';
+    $('dbExpect').textContent = running ? (mode === 'pool' ? $('poolDay').textContent : $('expected').textContent) : 'Start the miner';
   }
   $('dbAddr').onclick = function () { if (addr) UI.copy(addr, 'Address'); };
   $('histMore').onclick = function () { histShown += 40; renderHistory(); };
@@ -2515,17 +2594,29 @@
     cores = Math.max(1, Math.min(MAX_CORES, Number(this.value) || 1)); save('mine.cores', String(cores));
     if (running) startExtras();
   };
+  var poolStartTried = false;
   function startMining() {
     if (!ready || !addr || running) return;
-    mineArgs = { server: EXPLORER, address: addr, ref: ref, refPct: ref ? Math.min(refPct, refAgreed) : 0 };
+    liveMode = 'solo';
+    if (mode === 'pool') {
+      if (!poolInfo || !poolInfo.enabled) {
+        // The pool's address is needed before the first pool job can be
+        // checked: fetch it once and come back. A pool that is off does
+        // not stop anyone mining; the tab mines solo until it is back.
+        if (!poolStartTried) { poolStartTried = true; $('mineStatus').textContent = 'Contacting the pool…'; fetchPool().then(function () { startMining(); }); return; }
+      } else liveMode = 'pool';
+    }
+    poolStartTried = false;
+    if (liveMode === 'pool') mineArgs = { server: EXPLORER + '/pool', address: addr, pool: true, poolAddress: poolInfo.address, ref: '', refPct: 0 };
+    else mineArgs = { server: EXPLORER, address: addr, ref: ref, refPct: ref ? Math.min(refPct, refAgreed) : 0 };
     call('start', mineArgs).then(function (e) {
       if (e) { err('mineStatus', e); return; }
       running = true; startedAt = Date.now(); rates = []; save('mine.running', '1'); startExtras();
-      $('mineStatus').textContent = 'Mining. Blocks you find pay your address.'; $('rateHint').textContent = 'Live hashrate of this tab. Mining resumes after a reload.';
-      updateBtn(); updateExpected(); if (keepAwake) acquireWake();
+      $('mineStatus').textContent = miningStatus(); $('rateHint').textContent = 'Live hashrate of this tab. Mining resumes after a reload.';
+      updateBtn(); updateExpected(); if (keepAwake) acquireWake(); fetchPoolMiner();
     }).catch(function (e) { err('mineStatus', e.message); });
   }
-  function stopMining() { running = false; save('mine.running', null); call('stop').catch(function () {}); stopExtras(); mineArgs = null; $('mineStatus').textContent = 'Stopped.'; $('rateHint').textContent = 'Press Start to mine in this tab.'; releaseWake(); updateBtn(); updateExpected(); }
+  function stopMining() { running = false; save('mine.running', null); call('stop').catch(function () {}); stopExtras(); mineArgs = null; $('mineStatus').textContent = 'Stopped.'; $('rateHint').textContent = idleStatus(); releaseWake(); updateBtn(); updateExpected(); }
   function minerFailed(msg) { setChip($('stateChipTop'), 'Miner unavailable', 'danger'); err('mineStatus', 'This browser cannot run the miner (' + msg + ').'); }
   function minerRefused(msg) {
     if (!running) return;
@@ -2533,7 +2624,7 @@
     msg = String(msg || 'it failed the check');
     err('mineStatus', 'Mining stopped. A job from the mining server failed the check (' + msg + ').');
     setChip($('stateChip'), 'Job refused', 'danger'); setChip($('stateChipTop'), 'Job refused', 'danger');
-    UI.toast('Mining stopped. A job from the mining server did not pay your address correctly.', 'danger', 8000);
+    UI.toast(liveMode === 'pool' ? 'Mining stopped. A pool job did not pay the pool address correctly.' : 'Mining stopped. A job from the mining server did not pay your address correctly.', 'danger', 8000);
   }
   try {
     worker = new Worker('/static/miner-worker.js?v={{.StaticV}}');
@@ -2556,7 +2647,7 @@
   // The miner retries a failed job fetch every few seconds, so an error is
   // shown only once it has lasted half a minute (a phone waking up, or the
   // explorer restarting for an update, fails a few).
-  var polling = false, hadError = false, errSince = 0, lastBlocks = 0;
+  var polling = false, hadError = false, errSince = 0, lastBlocks = 0, lastBlockToast = 0;
   setInterval(function () {
     if (!ready || !running || polling) return;
     polling = true;
@@ -2564,20 +2655,24 @@
       var s = Object.assign({}, all[0] || {});
       all.slice(1).forEach(function (o) {
         if (!o) return;
-        ['hashrate', 'hashes', 'blocks', 'rejected'].forEach(function (k) { s[k] = (Number(s[k]) || 0) + (Number(o[k]) || 0); });
+        ['hashrate', 'hashes', 'blocks', 'shares', 'rejected'].forEach(function (k) { s[k] = (Number(s[k]) || 0) + (Number(o[k]) || 0); });
         if (!s.error && o.error) s.error = o.error;
       });
       polling = false;
       var parts = UI.fmt.hashrate(s.hashrate || 0).split(' ');
       $('hashrate').textContent = parts[0]; $('rateUnit').textContent = parts[1];
       myRate = Number(s.hashrate) || 0; rates.push(myRate); if (rates.length > 180) rates.shift(); UI.spark($('spark'), rates);
-      $('blocks').textContent = UI.fmt.int(s.blocks || 0); $('hashes').textContent = UI.fmt.int(s.hashes || 0); $('rejected').textContent = UI.fmt.int(s.rejected || 0);
-      if (s.blocks && s.blocks !== lastBlocks) { lastBlocks = s.blocks; UI.toast('Block found. The reward goes to your address.', 'ok', 5000); refreshChain(); }
+      $('blocks').textContent = UI.fmt.int((liveMode === 'pool' ? s.shares : s.blocks) || 0); $('hashes').textContent = UI.fmt.int(s.hashes || 0); $('rejected').textContent = UI.fmt.int(s.rejected || 0);
+      if (s.blocks && s.blocks !== lastBlocks) {
+        lastBlocks = s.blocks;
+        if (Date.now() - lastBlockToast > 30000) { lastBlockToast = Date.now(); UI.toast(liveMode === 'pool' ? 'Block found for the pool. Everyone in the round gets their part once it matures.' : 'Block found. The reward goes to your address.', 'ok', 6000); }
+        refreshChain(); fetchPoolMiner();
+      }
       $('runtime').textContent = UI.fmt.duration((Date.now() - startedAt) / 1000);
       $('workHeight').textContent = s.height ? UI.fmt.int(s.height) : '–';
       if (s.error) { errSince = errSince || Date.now(); if (Date.now() - errSince >= 30000) { err('mineStatus', s.error); hadError = true; } }
-      else { errSince = 0; if (hadError) { hadError = false; $('mineStatus').textContent = 'Mining. Blocks you find pay your address.'; } }
-      updateExpected(); renderDashMiner();
+      else { errSince = 0; if (hadError) { hadError = false; $('mineStatus').textContent = miningStatus(); } }
+      updateExpected(); renderDashMiner(); renderPoolRows();
     }).catch(function () { polling = false; });
   }, 1000);
   function updateExpected() {
@@ -2759,6 +2854,7 @@
       $('netHint').textContent = st.network + ' · block ' + UI.fmt.int(st.indexedHeight) + ' · ' + UI.fmt.hashrate(st.hashrate);
       netRate = Number(st.hashrate) || 0; updateExpected(); renderDashMiner();
       chainFailSince = 0; $('errorBanner').style.display = 'none';
+      fetchPool(); fetchPoolMiner();
     } catch (e) {
       chainFailSince = chainFailSince || Date.now();
       var down = Date.now() - chainFailSince;
@@ -2779,7 +2875,7 @@
       await uReady;
       await coinsP; renderBalances();
       renderAssets(a.assets || []);
-      $('rewardNow').textContent = UI.fmt.coin(a.nextSubsidy || 0) + ' ' + COIN;
+      nextSubsidy = n0(a.nextSubsidy); $('rewardNow').textContent = UI.fmt.coin(nextSubsidy) + ' ' + COIN;
       if (n0(a.referralPct) > 0) { refPct = n0(a.referralPct); $('refPctA').textContent = refPct; $('refPctB').textContent = refPct; if (ref) $('refLineV').textContent = refPct + '% to ' + UI.fmt.short(ref, 8, 6); renderRefOffer(); }
       lastAddr = a; hist = a.history || []; renderHistory(); renderMineStats(a); refreshBridge();
     } catch (e) {}
@@ -3006,6 +3102,7 @@
   if (addr && !hasKeys()) { legacyAddr = addr; addr = ''; created = false; }
   current = pageFromPath();
   render(); refreshChain(); setInterval(refreshChain, 15000);
+  // A wallet from before the pool is told once, the first time the pool is seen on.
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') refreshChain(); });
   if (SWAP) whenReady(function () { makerInfo().catch(function () {}); });
 })();

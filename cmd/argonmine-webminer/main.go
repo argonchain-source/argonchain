@@ -65,6 +65,7 @@ func stats(this js.Value, args []js.Value) any {
 		"hashes":   float64(client.Hashes()),
 		"rejected": float64(client.Rejected()),
 		"blocks":   float64(client.Blocks()),
+		"shares":   float64(client.Shares()),
 		"height":   float64(client.Height()),
 		"error":    client.LastError(),
 	})

@@ -18,11 +18,15 @@ case "$ROLE" in
       $EXTRA
     ;;
   explorer)
+    # With POOL_WALLET_PASSWORD set the explorer also runs the mining pool,
+    # paying out from a wallet on the volume (created from POOL_MNEMONIC the
+    # first time; docs/MINING.md, "Pool mining").
     # shellcheck disable=SC2086
     exec argonmine-explorer -network "$NET" -datadir /data \
       -rpc "${NODE_RPC:?NODE_RPC is required, e.g. http://node.railway.internal:19332}" \
       -token "${RPC_TOKEN:?RPC_TOKEN is required}" \
       -listen ":${PORT:-8380}" \
+      ${POOL_WALLET_PASSWORD:+-pool-wallet /data/pool-wallet.json} \
       $EXTRA
     ;;
   web)

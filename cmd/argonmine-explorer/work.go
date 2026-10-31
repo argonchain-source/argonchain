@@ -93,13 +93,18 @@ type workTemplate struct {
 // workJob is what the server remembers of a job: about half a kilobyte.
 type workJob struct {
 	id       string
-	address  string
+	address  string // the address credited: the payout address of a solo job, the miner of a pool job
 	tmpl     *workTemplate
 	header   consensus.Header // nonce 0
 	coinbase []byte           // full serialization
 	created  time.Time
-	nonces   []uint64 // submitted so far (at most workMaxSubmits)
+	nonces   []uint64 // submitted so far (at most workMaxSubmits, or workMaxShares for a pool job)
 	elem     *list.Element
+	// Pool jobs (pool.go): the coinbase pays the pool, and a hash at or
+	// below shareTarget is a share worth shareDiff expected hashes.
+	pool        bool
+	shareTarget *big.Int
+	shareDiff   uint64
 }
 
 // workJobJSON is the job as served: the miner protocol's job plus the
@@ -110,6 +115,11 @@ type workJobJSON struct {
 	MerkleBranch  []string `json:"merkle_branch"`
 	WitnessBranch []string `json:"witness_branch"`
 }
+
+// workMaxShares is how many submissions a pool job takes: a miner sends a
+// share about every 15 seconds and fetches a new job every 20, so a handful
+// is plenty; the cap bounds the Argon2id work one job can cause.
+const workMaxShares = 24
 
 type tmplCall struct {
 	done chan struct{}
@@ -124,6 +134,8 @@ type workServer struct {
 	referralPct int // percent of a block reward paid to a referrer when a miner names one
 
 	sem chan struct{} // one slot per CPU for the Argon2id check of a submission
+
+	pool *pool // the mining pool (pool.go); non-nil even when disabled
 
 	mu       sync.Mutex
 	tmpl     *workTemplate
@@ -148,8 +160,10 @@ func newWorkServer(client *wallet.Client, params *consensus.Params, referralPct 
 	if n < 1 {
 		n = 1
 	}
-	return &workServer{client: client, params: params, referralPct: referralPct, logf: logf,
+	ws := &workServer{client: client, params: params, referralPct: referralPct, logf: logf,
 		sem: make(chan struct{}, n), jobs: map[string]*workJob{}, order: list.New(), byAddr: map[string][]*workJob{}}
+	ws.pool = newPool(ws)
+	return ws
 }
 
 // run expires old jobs and follows the node's tip until stop is closed:
@@ -458,15 +472,9 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 		ws.noteErr("getblocktemplate", err)
 		return nil, errors.New(workNodeDownText)
 	}
-	// From the treasury height the treasury's 1% of the subsidy comes off
-	// first (consensus/treasury.go); the referral share is of what remains.
-	value := t.value
-	treasury, payTreasury := consensus.TreasuryOutput(ws.params, t.height)
-	if payTreasury {
-		if treasury.Amount > value {
-			return nil, errors.New(workNodeDownText)
-		}
-		value -= treasury.Amount
+	value, treasury, payTreasury, err := ws.minerValue(t)
+	if err != nil {
+		return nil, err
 	}
 	outs := []consensus.TxOut{{Amount: value, Type: payout.Type, Payload: payout.Payload}}
 	pct := 0
@@ -480,12 +488,48 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 	if payTreasury {
 		outs = append(outs, treasury)
 	}
+	job, err := ws.jobFor(t, address, outs, workCoinbaseTag, nil)
+	if err != nil {
+		return nil, err
+	}
+	if pct > 0 {
+		job.Referrer, job.ReferralPct = referrer, pct
+	}
+	return job, nil
+}
+
+// minerValue is what a template's coinbase pays besides the treasury: from
+// the treasury height the treasury's 1% of the subsidy comes off first
+// (consensus/treasury.go).
+func (ws *workServer) minerValue(t *workTemplate) (value consensus.Amount, treasury consensus.TxOut, payTreasury bool, err error) {
+	value = t.value
+	treasury, payTreasury = consensus.TreasuryOutput(ws.params, t.height)
+	if payTreasury {
+		if treasury.Amount > value {
+			return 0, treasury, false, errors.New(workNodeDownText)
+		}
+		value -= treasury.Amount
+	}
+	return value, treasury, payTreasury, nil
+}
+
+// poolShare is what a pool job carries besides the coinbase: the share
+// target and its weight (pool.go).
+type poolShare struct {
+	target *big.Int
+	diff   uint64
+}
+
+// jobFor builds and registers a job on template t whose coinbase has outs
+// and tag, credited to address. With share it is a pool job: the served
+// target is the share target and the block target is served beside it.
+func (ws *workServer) jobFor(t *workTemplate, address string, outs []consensus.TxOut, tag string, share *poolShare) (*workJobJSON, error) {
 	cb := &consensus.Tx{
 		Version:    consensus.TxVersion,
 		LockHeight: t.height,
 		Inputs:     []consensus.TxIn{{PrevOut: consensus.NullOutPoint}},
 		Outputs:    outs,
-		Witnesses:  [][]byte{[]byte(workCoinbaseTag)},
+		Witnesses:  [][]byte{[]byte(tag)},
 	}
 	now := time.Now()
 	tm := uint64(now.Unix())
@@ -510,6 +554,11 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 		coinbase: cb.Serialize(),
 		created:  now,
 	}
+	target := t.targetHex
+	if share != nil {
+		j.pool, j.shareTarget, j.shareDiff = true, share.target, share.diff
+		target = fmt.Sprintf("%064x", share.target)
+	}
 	hdr := j.header.Serialize()
 
 	ws.mu.Lock()
@@ -526,7 +575,7 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 		Job: workclient.Job{
 			ID:           j.id,
 			HeaderPrefix: hex.EncodeToString(hdr[:workclient.HeaderPrefixLen]),
-			Target:       t.targetHex,
+			Target:       target,
 			Height:       t.height,
 			Network:      ws.params.Name,
 			Algorithm:    "argon2id",
@@ -535,8 +584,8 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 		MerkleBranch:  t.txHex,
 		WitnessBranch: t.wHex,
 	}
-	if pct > 0 {
-		job.Referrer, job.ReferralPct = referrer, pct
+	if share != nil {
+		job.BlockTarget = t.targetHex
 	}
 	return job, nil
 }
@@ -573,7 +622,11 @@ func (ws *workServer) submit(s workclient.Submit) (workclient.Result, bool) {
 			return workclient.Result{Reason: "duplicate submission"}, false
 		}
 	}
-	if len(j.nonces) >= workMaxSubmits {
+	maxSubmits := workMaxSubmits
+	if j.pool {
+		maxSubmits = workMaxShares
+	}
+	if len(j.nonces) >= maxSubmits {
 		ws.mu.Unlock()
 		return workclient.Result{Stale: true, Reason: "too many submissions for this job; fetch new work"}, false
 	}
@@ -597,9 +650,24 @@ func (ws *workServer) submit(s workclient.Submit) (workclient.Result, bool) {
 	}
 	hdr := j.header
 	hdr.Nonce = s.Nonce
-	above := consensus.HashToBig(powHash(hdr.Serialize())).Cmp(j.tmpl.target) > 0
+	pow := consensus.HashToBig(powHash(hdr.Serialize()))
 	<-ws.sem
-	if above {
+	above := pow.Cmp(j.tmpl.target) > 0
+	share := false
+	if j.pool {
+		// A pool submission is a share when it clears the share target; it
+		// is credited whatever becomes of the block, and the block is
+		// handed in only when it also clears the block target.
+		if pow.Cmp(j.shareTarget) > 0 {
+			ws.pool.rejectedShare()
+			return workclient.Result{Reason: "hash above share target"}, false
+		}
+		share = true
+		ws.pool.credit(j.address, j.shareDiff)
+		if above {
+			return workclient.Result{Share: true}, false
+		}
+	} else if above {
 		return workclient.Result{Reason: "hash above target"}, false
 	}
 
@@ -613,7 +681,7 @@ func (ws *workServer) submit(s workclient.Submit) (workclient.Result, bool) {
 	if err != nil {
 		ws.noteErr("submitblock", err)
 		ws.logf("work: block %s at height %d could not be submitted: %v", hash, j.tmpl.height, err)
-		return workclient.Result{Reason: workNodeDownText}, false
+		return workclient.Result{Share: share, Reason: workNodeDownText}, false
 	}
 	var verdict *string
 	json.Unmarshal(raw, &verdict)
@@ -622,23 +690,28 @@ func (ws *workServer) submit(s workclient.Submit) (workclient.Result, bool) {
 		switch {
 		case v == verdictSideChain:
 			ws.logf("work: block %s at height %d by %s is valid but on a side branch (the chain moved on)", hash, j.tmpl.height, s.Address)
-			return workclient.Result{Stale: true, Hash: hash.String(), Reason: "stale: the chain moved on before the block arrived; fetch new work"}, false
+			return workclient.Result{Share: share, Stale: true, Hash: hash.String(), Reason: "stale: the chain moved on before the block arrived; fetch new work"}, false
 		case v == "duplicate":
-			return workclient.Result{Stale: true, Hash: hash.String(), Reason: "duplicate: this block was already submitted"}, false
+			return workclient.Result{Share: share, Stale: true, Hash: hash.String(), Reason: "duplicate: this block was already submitted"}, false
 		case strings.HasPrefix(v, "inconclusive") || strings.Contains(v, "stale") || strings.Contains(v, "prev"):
 			ws.logf("work: block %s at height %d is stale: %s", hash, j.tmpl.height, v)
-			return workclient.Result{Stale: true, Reason: "stale: " + v + "; fetch new work"}, false
+			return workclient.Result{Share: share, Stale: true, Reason: "stale: " + v + "; fetch new work"}, false
 		default:
 			ws.logf("work: block %s at height %d rejected: %s", hash, j.tmpl.height, v)
-			return workclient.Result{Reason: v}, false
+			return workclient.Result{Share: share, Reason: v}, false
 		}
 	}
 	ws.mu.Lock()
 	ws.found++
 	ws.mu.Unlock()
 	ws.tipIs(hash) // every other job is now stale
-	ws.logf("work: block %s at height %d found by %s", hash, j.tmpl.height, s.Address)
-	return workclient.Result{Accepted: true, Hash: hash.String()}, false
+	if j.pool {
+		ws.pool.blockFound(j, hash, s.Address)
+		ws.logf("work: pool block %s at height %d found by %s", hash, j.tmpl.height, s.Address)
+	} else {
+		ws.logf("work: block %s at height %d found by %s", hash, j.tmpl.height, s.Address)
+	}
+	return workclient.Result{Accepted: true, Share: share, Hash: hash.String()}, false
 }
 
 // acquire takes a hashing slot, waiting up to workBusyWait. At most a few

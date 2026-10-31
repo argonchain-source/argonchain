@@ -15,10 +15,16 @@
 //
 // A job is a complete block template whose coinbase pays the requesting
 // address. The miner searches nonces until the Argon2id hash of the header
-// is at or below the block target, then submits the nonce; the server
-// assembles the block and hands it to the network. There are no shares and
-// no intermediary: whoever solves the block gets the reward (less, from the
-// treasury height, the treasury's 1% of the subsidy; consensus/treasury.go).
+// is at or below the job's target, then submits the nonce; the server
+// assembles the block and hands it to the network. Solo, there are no shares
+// and no intermediary: whoever solves the block gets the reward (less, from
+// the treasury height, the treasury's 1% of the subsidy; consensus/treasury.go).
+//
+// The same protocol serves a pool (the explorer's /pool prefix): the
+// coinbase then pays the pool, the job's target is the miner's share target
+// and block_target is the real one. A submission at or below the share
+// target is credited as a share (Result.Share) and the miner keeps working
+// on the job; one that also clears the block target is a block.
 package workclient
 
 import (
@@ -51,6 +57,7 @@ type Job struct {
 	Algorithm    string `json:"algorithm"`
 	Referrer     string `json:"referrer,omitempty"`     // address receiving the referral share, if any
 	ReferralPct  int    `json:"referral_pct,omitempty"` // percent of the block reward paid to the referrer
+	BlockTarget  string `json:"block_target,omitempty"` // pool jobs: the block target; Target is then the share target
 }
 
 // Submit is a miner's solution for a job.
@@ -62,7 +69,8 @@ type Submit struct {
 
 // Result is the server's verdict.
 type Result struct {
-	Accepted bool   `json:"accepted"`
+	Accepted bool   `json:"accepted"`        // a block, accepted by the network
+	Share    bool   `json:"share,omitempty"` // pool: credited as a share (whatever became of the block)
 	Stale    bool   `json:"stale"`
 	Hash     string `json:"hash,omitempty"`
 	Reason   string `json:"reason,omitempty"`
@@ -86,6 +94,7 @@ type Client struct {
 	running  atomic.Bool
 	hashes   atomic.Uint64
 	blocks   atomic.Uint64
+	shares   atomic.Uint64
 	rejected atomic.Uint64
 	lastErr  atomic.Value
 	height   atomic.Uint32
@@ -124,6 +133,7 @@ func (c *Client) Referrer() string {
 func (c *Client) Running() bool     { return c.running.Load() }
 func (c *Client) Hashes() uint64    { return c.hashes.Load() }
 func (c *Client) Blocks() uint64    { return c.blocks.Load() }
+func (c *Client) Shares() uint64    { return c.shares.Load() }
 func (c *Client) Rejected() uint64  { return c.rejected.Load() }
 func (c *Client) Height() uint32    { return c.height.Load() }
 func (c *Client) LastError() string { return c.lastErr.Load().(string) }
@@ -325,6 +335,9 @@ func (c *Client) mineJob(ctx context.Context, job *Job) {
 					}
 					continue
 				}
+				if res.Share {
+					c.shares.Add(1)
+				}
 				switch {
 				case res.Accepted:
 					c.blocks.Add(1)
@@ -332,6 +345,8 @@ func (c *Client) mineJob(ctx context.Context, job *Job) {
 					cancel()
 				case res.Stale:
 					cancel()
+				case res.Share:
+					// A share: the job stays good, keep hashing it.
 				default:
 					c.rejected.Add(1)
 					c.lastErr.Store("block rejected: " + res.Reason)

@@ -181,7 +181,10 @@ function treasuryDue(hrp, h) { var t = TREASURY[hrp]; return t && h >= t.height 
 // checkJob returns '' when the job pays exp.payload (and, with a referral,
 // exp.refPayload at most exp.refPct percent, and from the treasury height
 // exactly the treasury's share to the treasury), or the reason it does not.
-// exp: {hrp, payload, refPayload|null, refPct}.
+// exp: {hrp, payload, refPayload|null, refPct, pool}. For a pool job (exp.pool)
+// the payload is the pool's address the page showed, no referral output is
+// allowed, and the job's target is the share target: block_target must be
+// the header's and the share target no harder than it.
 function checkJob(job, exp) {
   try {
     if (!job || typeof job !== 'object') return 'the job is not readable';
@@ -197,8 +200,9 @@ function checkJob(job, exp) {
     }
     if (outs.length > 2) return 'the coinbase has more outputs than you, a referrer and the treasury';
     if (out0.type !== 0 || out0.payload.length !== 32 || !same(out0.payload, exp.payload))
-      return 'the block reward goes to ' + (out0.type === 0 && out0.payload.length === 32 ? encodeAddress(exp.hrp, 0, out0.payload) : 'an output that is not an address') + ', not to your address';
+      return 'the block reward goes to ' + (out0.type === 0 && out0.payload.length === 32 ? encodeAddress(exp.hrp, 0, out0.payload) : 'an output that is not an address') + (exp.pool ? ', not to the pool address shown' : ', not to your address');
     if (out0.amount < 0n) return 'the block reward is negative';
+    if (exp.pool && outs.length !== 1) return 'part of the block reward goes to another output than the pool and the treasury';
     if (outs.length === 2) {
       var out1 = outs[1], total = out0.amount + out1.amount;
       if (!exp.refPayload) return 'part of the block reward goes to ' + (out1.type === 0 && out1.payload.length === 32 ? encodeAddress(exp.hrp, 0, out1.payload) : 'another output') + ', and you chose no referrer';
@@ -209,7 +213,11 @@ function checkJob(job, exp) {
     if (!same(fold(txid, job.merkle_branch), hdr.subarray(36, 68))) return 'the block header does not commit to this coinbase (transaction root)';
     if (!same(fold(wtxid, job.witness_branch), hdr.subarray(68, 100))) return 'the block header does not commit to this coinbase (witness root)';
     var bits = new DataView(hdr.buffer, hdr.byteOffset + 108, 4).getUint32(0, true);
-    if (!/^[0-9a-f]{64}$/.test(String(job.target)) || BigInt('0x' + job.target) !== compactTarget(bits)) return 'the job\'s target does not match its header';
+    if (!/^[0-9a-f]{64}$/.test(String(job.target))) return 'the job\'s target is malformed';
+    if (exp.pool) {
+      if (!/^[0-9a-f]{64}$/.test(String(job.block_target)) || BigInt('0x' + job.block_target) !== compactTarget(bits)) return 'the job\'s block target does not match its header';
+      if (BigInt('0x' + job.target) < BigInt('0x' + job.block_target)) return 'the share target is harder than the block target';
+    } else if (BigInt('0x' + job.target) !== compactTarget(bits)) return 'the job\'s target does not match its header';
     return '';
   } catch (e) {
     return 'the job is malformed (' + (e && e.message || e) + ')';
@@ -221,6 +229,7 @@ function jobFields(job) {
   var out = { job_id: String(job.job_id), header_prefix: String(job.header_prefix), target: String(job.target), height: Number(job.height), network: String(job.network || ''), algorithm: String(job.algorithm || '') };
   if (job.referrer) out.referrer = String(job.referrer);
   if (job.referral_pct) out.referral_pct = Number(job.referral_pct);
+  if (job.block_target) out.block_target = String(job.block_target);
   return out;
 }
 
@@ -265,12 +274,13 @@ function guardedFetch(input, init) {
 }
 
 // setExpect prepares the check for a miner paying address (with an optional
-// referrer and the share the page showed for it). It returns '' or why the
+// referrer and the share the page showed for it), or, with pool, for pool
+// jobs paying the pool address the page showed. It returns '' or why the
 // addresses are unusable.
-function setExpect(address, ref, refPct) {
+function setExpect(address, ref, refPct, pool) {
   try {
-    var a = decodeAddress(address), e = { hrp: a.hrp, payload: a.payload, refPayload: null, refPct: 0 };
-    if (ref) {
+    var a = decodeAddress(address), e = { hrp: a.hrp, payload: a.payload, refPayload: null, refPct: 0, pool: !!pool };
+    if (ref && !pool) {
       var r = decodeAddress(ref);
       if (r.hrp !== a.hrp) return 'the referrer is on another network';
       e.refPayload = r.payload;
@@ -303,8 +313,11 @@ if (typeof importScripts === 'function' && realFetch) {
     try {
       switch (m.type) {
         case 'start':
-          // No job is mined before the check knows whom it must pay.
-          result = setExpect(m.address, m.ref || '', m.refPct) || M.start(m.server, m.address, m.ref || '');
+          // No job is mined before the check knows whom it must pay: the
+          // miner's own address, or in pool mode the pool's. The miner's
+          // address still goes to the server, which credits the shares to it.
+          if (m.pool) result = setExpect(m.poolAddress, '', 0, true) || M.start(m.server, m.address, '');
+          else result = setExpect(m.address, m.ref || '', m.refPct) || M.start(m.server, m.address, m.ref || '');
           break;
         case 'stop': M.stop(); result = null; break;
         case 'stats':

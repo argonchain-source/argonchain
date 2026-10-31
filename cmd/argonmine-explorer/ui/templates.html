@@ -24,7 +24,7 @@
 <header class="topbar">
   <a class="wordmark" href="/">{{.Mark}}<span>{{.Brand}} explorer</span></a>
   <span class="badge">{{.Network}}</span>
-  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a></nav>
+  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a><a class="btn btn-ghost btn-sm" href="/pool">Pool</a></nav>
   <form class="searchbar" action="/search" method="get" role="search"><i data-icon="search"></i><input name="q" placeholder="Search a height, block hash, transaction or address id" aria-label="Search" autocomplete="off"></form>
   <span class="spacer"></span>
   <span class="badge" title="Indexed height / node height">indexed <b class="num" style="margin-left:4px">{{num .Height}}</b><span class="muted" style="margin:0 4px">/</span><b class="num">{{num .Tip}}</b></span>
@@ -168,9 +168,10 @@
 
 {{define "address"}}{{template "head" .}}
 <div class="addr-head">
-  <div class="page-header" style="margin:0"><div><h1>{{if .Data.Swap}}Swap address{{else if .Data.Treasury}}Treasury{{else}}Address{{end}}</h1><p class="mono" style="overflow-wrap:anywhere">{{.Data.Address}}</p></div></div>
+  <div class="page-header" style="margin:0"><div><h1>{{if .Data.Swap}}Swap address{{else if .Data.Treasury}}Treasury{{else if .Data.Pool}}Mining pool{{else}}Address{{end}}</h1><p class="mono" style="overflow-wrap:anywhere">{{.Data.Address}}</p></div></div>
   <div class="qr"><img alt="QR code" src="/qr.svg?d={{.Data.Address}}"></div>
 </div>
+{{if .Data.Pool}}<div class="banner info"><i data-icon="info"></i><div>The {{.Brand}} mining pool. Blocks found by pool miners pay this address; it pays each miner their part once a block matures. Who is owed what is on the <a href="/pool">pool page</a> and in the <a href="/api/pool/ledger">ledger</a>.</div></div>{{end}}
 {{if .Data.Treasury}}<div class="banner info"><i data-icon="info"></i><div>The {{.Brand}} treasury. From block 300 every block pays it 1% of the block subsidy, and the swap and bridge fees are paid to it. Its key is held offline by the project.</div></div>{{end}}
 {{with .Data.Swap}}<div class="banner info"><i data-icon="info"></i><div>uARG sent here is paid out by the bridge as {{.Symbol}} on {{.Chain}} to <span class="mono" style="overflow-wrap:anywhere">{{.To}}</span>. Nothing sent to this address can move again.</div></div>{{end}}
 <div class="grid cols-4">
@@ -326,3 +327,94 @@
 </tbody></table></div></div>
 {{template "foot" .}}{{end}}
 
+
+{{define "pool"}}{{template "head" .}}
+<style>
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .step { display: flex; gap: var(--sp-3); } .step b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+</style>
+<div class="page-header"><div><h1>Mining pool</h1><p>Miners in the pool share every block it finds, in proportion to the work each one did.</p></div></div>
+{{if not .Data.Stats.Enabled}}
+<div class="card"><div class="empty"><i data-icon="pickaxe" class="lg"></i><h3>The pool is not running</h3><p>This explorer serves solo work only. Every block a miner finds pays that miner's own address.</p></div></div>
+{{else}}
+{{if .Data.Stats.Error}}<div class="banner warn" role="alert"><i data-icon="alert"></i><div>Payouts are delayed: {{.Data.Stats.Error}}. Shares are still being counted.</div></div>{{end}}
+<div class="grid cols-4">
+  <div class="card stat"><span class="stat-label">Pool hashrate</span><span class="stat-value sm" id="hr">{{hashrate .Data.Stats.Hashrate}}</span><span class="stat-hint" id="minersHint">{{num .Data.Stats.Miners}} miners active in the last 10 minutes</span></div>
+  <div class="card stat"><span class="stat-label">Blocks found</span><span class="stat-value sm num" id="blocks">{{num .Data.Stats.BlocksFound}}</span><span class="stat-hint" id="roundHint">{{num .Data.Stats.Pending}} maturing · {{num .Data.Stats.RoundShares}} hashes credited this round</span></div>
+  <div class="card stat"><span class="stat-label">Paid to miners</span><span class="stat-value sm"><span class="num" id="paid">{{coin .Data.Stats.TotalPaid}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint" id="owedHint">{{coin .Data.Stats.Owed}} {{.Coin}} owed and being paid</span></div>
+  <div class="card stat"><span class="stat-label">Pool fee</span><span class="stat-value sm num">{{.Data.Stats.FeePercent}}%</span><span class="stat-hint">{{coin .Data.Stats.Fees}} {{.Coin}} kept so far · minimum payout {{coin .Data.Stats.MinPayout}} {{.Coin}}</span></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Your miner</h2></div>
+  <div class="card-body stack">
+    <div class="field"><label class="label" for="addr">Your address</label><input class="input mono" id="addr" placeholder="paste the address you mine with" spellcheck="false" autocomplete="off"></div>
+    <div class="grid cols-4" id="mine" style="display:none">
+      <div class="stat" style="padding:0"><span class="stat-label">Hashrate</span><span class="stat-value sm" id="mHr">–</span><span class="stat-hint" id="mLast"></span></div>
+      <div class="stat" style="padding:0"><span class="stat-label">Share of this round</span><span class="stat-value sm num" id="mShare">–</span><span class="stat-hint" id="mShares"></span></div>
+      <div class="stat" style="padding:0"><span class="stat-label">Owed to you</span><span class="stat-value sm"><span class="num" id="mBal">–</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint" id="mPending"></span></div>
+      <div class="stat" style="padding:0"><span class="stat-label">Paid to you</span><span class="stat-value sm"><span class="num" id="mPaid">–</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">on the chain, to your address</span></div>
+    </div>
+    <p class="hint" id="mineHint">Enter the address you mine with to see your work, what you are owed and what has been paid.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>How it works</h2></div>
+  <div class="card-body stack">
+    <div class="steps">
+      <div class="step"><b>1</b><div>Choose <i>Pool</i> on the Mine page of the app. Your miner gets the same blocks as a solo miner, except that the reward goes to the pool address below.</div></div>
+      <div class="step"><b>2</b><div>Your miner reports a share about every {{.Data.Stats.ShareInterval}} seconds: proof of the hashes it did, checked one by one here. The shares between two pool blocks make a round.</div></div>
+      <div class="step"><b>3</b><div>When a pool block has {{num .Data.Maturity}} confirmations, its reward less the {{.Data.Stats.FeePercent}}% fee is split over the round's shares. Balances of {{coin .Data.Stats.MinPayout}} {{.Coin}} or more are paid out automatically within minutes.</div></div>
+    </div>
+    <p class="hint">Blocks that end up off the main chain pay nothing; their shares count towards the next block. The pool holds only what is on its way to miners. The pool address is <a class="mono" href="/address/{{.Data.Stats.Address}}">{{.Data.Stats.Address}}</a>, and the complete ledger of shares, balances and payouts is at <a href="/api/pool/ledger">/api/pool/ledger</a>.</p>
+  </div>
+</div>
+
+<div class="two">
+  <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Recent pool blocks</h2></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th class="num">Height</th><th>Block</th><th class="num">Reward</th><th class="num">Hashes</th><th>Status</th></tr></thead><tbody id="rounds"></tbody></table></div></div>
+  <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Recent payouts</h2></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Time</th><th>Transaction</th><th class="num">Miners</th><th class="num">Total</th></tr></thead><tbody id="payouts"></tbody></table></div></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var $ = function (id) { return document.getElementById(id); }, f = UI.fmt, esc = UI.escapeHTML;
+  var badge = { pending: 'badge-warn', matured: 'badge-ok', orphaned: 'badge-danger' }, words = { pending: 'maturing', matured: 'paid', orphaned: 'orphaned' };
+  function hex(v) { v = String(v || ''); return /^[0-9a-f]{64}$/.test(v) ? v : ''; }
+  function render(s) {
+    $('hr').textContent = f.hashrate(s.hashrate || 0); $('minersHint').textContent = f.int(s.miners || 0) + ' miners active in the last 10 minutes';
+    $('blocks').textContent = f.int(s.blocks_found || 0); $('roundHint').textContent = f.int(s.pending || 0) + ' maturing · ' + f.int(s.round_shares || 0) + ' hashes credited this round';
+    $('paid').textContent = f.coin(s.total_paid || 0); $('owedHint').textContent = f.coin(s.owed || 0) + ' {{.Coin}} owed and being paid';
+    $('rounds').innerHTML = (s.rounds || []).slice().reverse().map(function (r) {
+      var h = hex(r.block_hash);
+      return '<tr><td class="num"><a href="/block/' + Number(r.height) + '">' + f.int(r.height) + '</a></td><td class="mono">' + (h ? '<a href="/block/' + h + '" title="' + h + '">' + f.short(h, 12, 6) + '</a>' : '') + '</td><td class="num">' + f.coin(r.reward || 0) + '</td><td class="num">' + f.int(r.total_shares || 0) + '</td><td><span class="badge ' + (badge[r.status] || '') + '">' + esc(words[r.status] || r.status) + '</span></td></tr>';
+    }).join('') || '<tr><td colspan="5"><div class="empty"><h3>No blocks yet</h3><p>The first block found by the pool will appear here.</p></div></td></tr>';
+    $('payouts').innerHTML = (s.payouts || []).slice().reverse().map(function (p) {
+      var t = hex(p.txid);
+      return '<tr><td>' + esc(f.when(p.time)) + '</td><td class="mono">' + (t ? '<a href="/tx/' + t + '" title="' + t + '">' + f.short(t, 12, 6) + '</a>' : '') + '</td><td class="num">' + Object.keys(p.amounts || {}).length + '</td><td class="num">' + f.coin(p.total || 0) + '</td></tr>';
+    }).join('') || '<tr><td colspan="4"><div class="empty"><h3>No payouts yet</h3><p>Payouts start once the first pool blocks mature.</p></div></td></tr>';
+  }
+  render({{.Data.StatsJSON}});
+  try { $('addr').value = localStorage.getItem('pool.addr') || ''; } catch (e) {}
+  async function refresh() {
+    try { render(await (await fetch('/api/pool/stats')).json()); } catch (e) {}
+    var a = $('addr').value.trim().toLowerCase();
+    if (!/^[a-z]+1[02-9ac-hj-np-z]{59}$/.test(a)) { $('mine').style.display = 'none'; $('mineHint').style.display = ''; return; }
+    try {
+      localStorage.setItem('pool.addr', a);
+      var m = await (await fetch('/api/pool/miner/' + encodeURIComponent(a))).json();
+      $('mine').style.display = ''; $('mineHint').style.display = 'none';
+      $('mHr').textContent = f.hashrate(m.hashrate || 0); $('mLast').textContent = m.last_share ? 'last share ' + f.ago(m.last_share) + ' · ' + f.int(m.share_diff) + ' hashes per share' : 'no shares from this address yet';
+      var pct = m.round_total ? (100 * m.round_shares / m.round_total) : 0;
+      $('mShare').textContent = m.round_total ? pct.toFixed(pct < 1 ? 2 : 1) + '%' : '–'; $('mShares').textContent = f.int(m.round_shares || 0) + ' of ' + f.int(m.round_total || 0) + ' hashes';
+      $('mBal').textContent = f.coin(m.balance || 0); $('mPending').textContent = m.pending ? '+ ' + f.coin(m.pending) + ' {{.Coin}} in blocks still maturing' : 'paid out from {{coin .Data.Stats.MinPayout}} {{.Coin}}';
+      $('mPaid').textContent = f.coin(m.paid || 0);
+    } catch (e) {}
+  }
+  $('addr').oninput = refresh; refresh(); setInterval(refresh, 10000);
+});
+</script>
+{{end}}
+{{template "foot" .}}{{end}}

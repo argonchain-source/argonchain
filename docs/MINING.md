@@ -30,11 +30,19 @@ than they do on coins such as Bitcoin.
 2. Create a wallet, or log in with your 24 words.
 3. Press **Start mining** on the Mine page.
 
-Your browser asks the explorer for a block to work on (a template that
-pays your address), makes attempts in the background, and sends back any
-solution it finds. The explorer passes the block to the network. It never
-holds your coins. Before mining a template, the app checks that the
-template really pays your address.
+Your browser asks the explorer for a block to work on, makes attempts in
+the background, and sends back what it finds. The explorer passes blocks
+to the network. The Mine page offers two ways to be paid:
+
+- **Pool** (the default). The block pays the pool, and the pool pays every
+  miner in proportion to the work they did, a little at a time. See [Pool
+  mining](#pool-mining).
+- **Solo.** The block pays your address directly, the whole reward at
+  once. The explorer never holds your coins. Before mining a template,
+  the app checks that it really pays your address.
+
+Solo suits a server or a desktop with many cores; the pool suits a phone
+or a laptop, which would otherwise wait months for a block.
 
 Keep these points in mind:
 
@@ -113,7 +121,61 @@ slowly. What that means in the first days:
 As more people mine, the difficulty rises and blocks settle at about one
 every 10 minutes.
 
+## Pool mining
+
+In the pool, miners combine their work and share every block the pool
+finds. A phone that is one ten-thousandth of the network earns one
+ten-thousandth of each pool block, every time, instead of one whole block
+every few months.
+
+How it works:
+
+1. Your miner asks the pool for work: the same block template a solo miner
+   gets, except that its reward pays the pool's address. The app checks
+   that before mining, exactly as it checks a solo template, against the
+   pool address the explorer published.
+2. Along with the block target, the job carries a much easier **share
+   target**, tuned per miner so that it is met about every 15 seconds. A
+   hash that meets it is a **share**: proof of the attempts it took, which
+   the pool checks one by one. The shares between two pool blocks are a
+   **round**.
+3. A hash that also meets the block target is a block. It pays the pool,
+   and the round closes.
+4. When that block has 100 confirmations, its reward less the pool fee is
+   split over the round's shares, by weight, and credited to each miner's
+   balance. A balance of 0.1 ARG or more is paid out automatically, many
+   miners in one transaction, usually within a minute of maturing.
+
+What you should know:
+
+- **The fee is 1%** of each block the pool finds. The 1% of the subsidy to
+  the treasury applies first, as in every block.
+- **The pool holds your coins briefly.** Between a block maturing and the
+  payout, your part sits in the pool wallet. The pool never holds more
+  than what is on its way to miners: everything matured is paid at the
+  next check, every 30 seconds.
+- **Everything is published.** The [pool page](https://explorer.argonmine.com/pool)
+  shows the hashrate, every block, every payout and your own balance.
+  The complete ledger of shares, balances and payouts is at
+  `/api/pool/ledger`, and every payout is a transaction on the chain from
+  the pool address `arg1q6f8efzllg7fmyuva7k2qhju8t6kaeuk737ypuanhz8faakq32tysz67vuc`.
+- **Orphans cost nobody.** A pool block that ends up off the main chain
+  pays nothing, and its round's shares are carried into the next round.
+- **Referral shares apply to solo mining only.** A pool block has no
+  output for a referrer.
+- **The pool is run by the project**, on the explorer. Solo mining does not
+  depend on it in any way, and anyone can run a pool: the code is in the
+  [source repository](https://github.com/argonchain-source/argonchain).
+
+Switch between Pool and Solo on the Mine page or in Settings at any time;
+mining restarts in the other mode. Node miners (`argonmined -mine`) always
+mine solo.
+
 ## How long until I find a block?
+
+This section is about solo mining. In the pool there is no wait for a
+block of your own: you are paid for every pool block, in proportion to
+your work. The Mine page shows **Estimated per day** instead.
 
 Your chance of finding the next block is your share of the network's
 hashrate. When the difficulty has settled, the average wait is:
@@ -289,8 +351,9 @@ a floor of `0x1F7FFFFF`, 512 attempts.)
 
 The browser app mines through the explorer, which acts as a **work
 server**. It builds block templates from its node and passes solved blocks
-back to it. It holds no coins and has no wallet. The protocol is two HTTP
-calls, and the browser miner is its reference client.
+back to it. For solo work it holds no coins and has no wallet. The protocol
+is two HTTP calls, and the browser miner is its reference client. The pool
+speaks the same protocol under the `/pool` prefix (see [Pool work](#pool-work)).
 
 ### Get work
 
@@ -348,6 +411,33 @@ The server checks the proof once, hands the block to its node and answers.
 `stale` means another block has already been found at that height: fetch
 new work. A refused block comes with a `reason`.
 
+### Pool work
+
+```
+GET  /pool/api/work?address=<your address>
+POST /pool/api/work/submit   {"job_id": "…", "nonce": 123, "address": "<your address>"}
+```
+
+A pool job is the same object as a solo job, with two differences: its
+`coinbase` pays the pool's address (from block 300 followed by the
+treasury's output, nothing else), and `target` is your **share target**
+while `block_target` carries the real one. Mine against `target` and
+submit every hash that meets it. The answer gains one field:
+
+```json
+{"accepted": false, "share": true, "stale": false}
+```
+
+`share` means the hash was credited as a share, worth the job's share
+difficulty (2^256 divided by `target`). Keep working on the same job after
+a share. `accepted` is set as well when the hash also met `block_target`
+and the node took the block; `stale` means the job is finished, fetch new
+work. The share target is retuned per address towards one share every
+15 seconds, between 500 attempts and the block difficulty, and a job
+takes at most 24 submissions. Pool status is at `/api/pool/stats`, one
+miner's at `/api/pool/miner/<address>`, and the full ledger at
+`/api/pool/ledger`.
+
 ### Timing and limits
 
 | Item | Value |
@@ -356,7 +446,7 @@ new work. A refused block comes with a `reason`.
 | Job lifetime | A job is forgotten 2 minutes after it was handed out. |
 | Refresh | The reference client fetches new work every 20 seconds, and at once after a solution. |
 | Jobs per address | The server keeps at most 8 open jobs per payout address; the oldest go first. |
-| Submissions per job | At most 3 solutions are checked per job. |
+| Submissions per job | At most 3 solutions are checked per solo job, 24 per pool job. |
 | Browser origins | Browsers may submit only from the web app origins the operator allows (`-allow-origin`). Programs that send no `Origin` header are not affected. |
 
 ### Writing your own miner

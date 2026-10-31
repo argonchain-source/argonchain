@@ -145,11 +145,14 @@ var (
 	// a submission is not, and submissions are rare (a found block).
 	limitWork   = [2]float64{20, 200}
 	limitSubmit = [2]float64{2, 20}
-	limitTx     = [2]float64{1, 10}
+	// Pool shares arrive about every 15 seconds per miner, so 20 a second
+	// serves 300 miners behind one address; each costs one Argon2id hash.
+	limitShare = [2]float64{20, 200}
+	limitTx    = [2]float64{1, 10}
 )
 
 type limiters struct {
-	pages, heavy, work, submit, tx *rateLimiter
+	pages, heavy, work, submit, share, tx *rateLimiter
 }
 
 func newLimiters() *limiters {
@@ -158,6 +161,7 @@ func newLimiters() *limiters {
 		heavy:  newRateLimiter(limitHeavy[0], limitHeavy[1]),
 		work:   newRateLimiter(limitWork[0], limitWork[1]),
 		submit: newRateLimiter(limitSubmit[0], limitSubmit[1]),
+		share:  newRateLimiter(limitShare[0], limitShare[1]),
 		tx:     newRateLimiter(limitTx[0], limitTx[1]),
 	}
 }
@@ -168,6 +172,7 @@ func (ls *limiters) sweepEvery(d time.Duration) {
 		ls.heavy.sweep()
 		ls.work.sweep()
 		ls.submit.sweep()
+		ls.share.sweep()
 		ls.tx.sweep()
 	}
 }

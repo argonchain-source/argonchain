@@ -154,6 +154,33 @@ pay a withdrawal twice. What they did find, and where it stands:
 | Various | Lows: price floor, referral share, auto-lock, proxy 1xx and trailers, ledger on transport errors, page hardening, server timeouts | Low | Fixed |
 | Bridge | A guardian request can be replayed to the other follower | Low | Open: griefing only (a failed round that is retried) |
 
+### 2026-10-30: the mining pool
+
+The pool (`cmd/argonmine-explorer/pool.go`) was added after launch. What
+a reviewer should try to break, and what already holds:
+
+- A share is one Argon2id evaluation on the server, like a solo
+  submission: the same per-CPU slots, a per-client rate limit of 20 a
+  second and at most 24 submissions per job bound the work a miner can
+  cause. Duplicate nonces are refused.
+- Pool jobs are checked by the browser exactly as solo jobs are, against
+  the pool address the page fetched; a solo job offered as pool work, a
+  pool job offered as solo work, a tampered block target or a share target
+  harder than the block are all refused (tests in
+  `browser_jobcheck_test.go`).
+- The reward split uses integer arithmetic over the round's weights; the
+  sum never exceeds the reward less the fee, and the remainder stays with
+  the pool as fee. Orphaned blocks pay nothing and their shares are carried
+  into the next round, so a reorganisation cannot credit coins that do not
+  exist.
+- Balances are deducted and the ledger written before a payout is
+  broadcast; a crash in between can lose a record, never pay twice.
+- Custody: the pool wallet holds matured rewards for at most one tick
+  (30 seconds) before paying balances above the minimum. Its key lives on
+  the explorer host as an environment variable, like the swap service's.
+- The ledger is public (`/api/pool/ledger`) and every payout is on the
+  chain from the pool address, so anyone can audit it.
+
 ## Known gaps (not bugs, but not done)
 
 - No network-adjusted time; the node trusts the local clock for the 2-hour

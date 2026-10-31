@@ -125,6 +125,7 @@ explorer loses its node, falls behind, or sees no block for an hour.
 | Release archives 1.0.0 for six platforms, with `SHA256SUMS` ([Run a node, Download](docs/NODE.md#download)) | Done (2026-10-28) |
 | Code-signed programs and a signed checksum file | Planned |
 | Source code published at [github.com/argonchain-source/argonchain](https://github.com/argonchain-source/argonchain) | Done (2026-10-30) |
+| A mining pool for browser miners, run on the explorer: shares, per-round payouts, a public ledger, 1% fee; solo mining unchanged ([Mining, Pool mining](docs/MINING.md#pool-mining)) | Done (2026-10-30) |
 
 ### A7: Legal
 

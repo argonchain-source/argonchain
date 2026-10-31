@@ -18,10 +18,12 @@ of purpose-built hardware. SHA-256 mining is dominated by ASIC farms, and a
 phone earns nothing there.
 
 **How much will I earn?**
-Your share of blocks is your hashrate divided by the network's. The Mine
-page shows the expected time to a block from live figures. Blocks are
-random: the expected time is an average, not a schedule. From block 300,
-each block pays its miner 49.5 ARG plus its fees at today's subsidy.
+Your part of the network's blocks is your hashrate divided by the
+network's. In the pool, the Mine page shows an estimate per day from live
+figures; solo, it shows the expected time to a block of your own. Blocks
+are random: the expected time is an average, not a schedule. From block
+300, each block pays its miner 49.5 ARG plus its fees at today's subsidy,
+less the pool's 1% when it was found through the pool.
 
 **Why can't I spend a reward right away?**
 Rewards unlock 100 blocks after they are mined, about 17 hours. A reorg
@@ -42,9 +44,19 @@ A solved block the network turned down, almost always because another
 miner's block at the same height arrived first. Only that attempt is lost.
 
 **Is there a pool?**
-No, by design. The browser app mines whole blocks on its own, with the
-explorer supplying templates and forwarding solutions. Nobody holds funds
-in between and there is no payout to wait for.
+Yes, since 2026-10-30, and it is the default in the browser app. Miners in
+the pool share every block it finds in proportion to their work, so a
+phone earns a little every day instead of waiting months for a whole
+block. The fee is 1%. Solo mining, where the whole block pays your address
+and nobody holds funds in between, is one tap away on the Mine page and is
+what nodes do. See [Pool mining](docs/MINING.md#pool-mining) and the
+[pool page](https://explorer.argonmine.com/pool).
+
+**Does the pool hold my coins?**
+Only briefly. When a pool block matures, your part is credited to your
+balance and paid out at the next check, within a minute, once it reaches
+0.1 ARG. Every balance and payout is published in the pool ledger, and
+every payout is a transaction on the chain.
 
 ## Wallet and keys
 

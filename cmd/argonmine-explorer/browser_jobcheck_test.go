@@ -30,8 +30,8 @@ const out = { cases: [], hashes: [] };
 // on start, then check the job.
 out.cases = input.cases.map((c) => {
   const a = C.decodeAddress(c.address);
-  const exp = { hrp: a.hrp, payload: a.payload, refPayload: c.ref ? C.decodeAddress(c.ref).payload : null, refPct: c.refPct || 0 };
-  return { name: c.name, why: C.checkJob(c.job, exp), addr: C.encodeAddress(a.hrp, 0, a.payload), setup: C.setExpect(c.address, c.ref || '', c.refPct || 0) };
+  const exp = { hrp: a.hrp, payload: a.payload, refPayload: c.ref ? C.decodeAddress(c.ref).payload : null, refPct: c.refPct || 0, pool: !!c.pool };
+  return { name: c.name, why: C.checkJob(c.job, exp), addr: C.encodeAddress(a.hrp, 0, a.payload), setup: C.setExpect(c.address, c.ref || '', c.refPct || 0, !!c.pool) };
 });
 for (const d of input.hashes) out.hashes.push({ sha: hex(C.sha256(Buffer.from(d, 'hex'))), tagged: hex(C.taggedHash('Argonmine/txid', Buffer.from(d, 'hex'))) });
 process.stdout.write(JSON.stringify(out));
@@ -58,6 +58,16 @@ func TestBrowserJobCheck(t *testing.T) {
 	}
 	referred, _ := ws.Job(me, ref)
 	theirs, _ := ws.Job(other, "")
+	// Pool jobs pay the pool address the page showed; the target is the
+	// share target and block_target the header's.
+	poolAddr := randomAddr(t, consensus.RegTest)
+	if err := ws.pool.enable(poolConfig{Address: poolAddr, FeeBps: 100, MinPayout: 1}); err != nil {
+		t.Fatal(err)
+	}
+	poolJob, err := ws.pool.Job(me)
+	if err != nil {
+		t.Fatal(err)
+	}
 	theirsRef, _ := ws.Job(other, me) // pays me only the referral share
 
 	type jcase struct {
@@ -66,6 +76,7 @@ func TestBrowserJobCheck(t *testing.T) {
 		Addr   string       `json:"address"`
 		Ref    string       `json:"ref,omitempty"`
 		RefPct int          `json:"refPct,omitempty"`
+		Pool   bool         `json:"pool,omitempty"`
 		Want   string       `json:"-"` // "" = accepted, else a substring of the reason
 	}
 	clone := func(j *workJobJSON, f func(*workJobJSON)) *workJobJSON {
@@ -106,6 +117,13 @@ func TestBrowserJobCheck(t *testing.T) {
 		{Name: "no proof (old server)", Job: clone(mine, func(c *workJobJSON) { c.Coinbase = "" }), Addr: me, Want: "no proof"},
 		{Name: "trailing bytes", Job: clone(mine, func(c *workJobJSON) { c.Coinbase += "00" }), Addr: me, Want: "malformed"},
 		{Name: "garbage coinbase", Job: clone(mine, func(c *workJobJSON) { c.Coinbase = "zz" }), Addr: me, Want: "malformed"},
+		{Name: "pool: genuine", Job: poolJob, Addr: poolAddr, Pool: true},
+		{Name: "pool: solo job offered as pool work", Job: mine, Addr: poolAddr, Pool: true, Want: "goes to " + me},
+		{Name: "pool: pool job offered as solo work", Job: poolJob, Addr: me, Want: "goes to " + poolAddr},
+		{Name: "pool: block target not the header's", Job: clone(poolJob, func(c *workJobJSON) { c.BlockTarget = strings.Repeat("f", 64) }), Addr: poolAddr, Pool: true, Want: "block target"},
+		{Name: "pool: share target harder than the block", Job: clone(poolJob, func(c *workJobJSON) { c.Target = strings.Repeat("0", 63) + "1" }), Addr: poolAddr, Pool: true, Want: "harder than the block target"},
+		{Name: "pool: no block target", Job: clone(poolJob, func(c *workJobJSON) { c.BlockTarget = "" }), Addr: poolAddr, Pool: true, Want: "block target"},
+		{Name: "pool: a referral output slipped in", Job: clone(referred, func(c *workJobJSON) { c.BlockTarget = c.Target }), Addr: me, Pool: true, Want: "another output"},
 	}
 	var hashes []string
 	for _, n := range []int{0, 1, 3, 55, 56, 63, 64, 65, 119, 120, 200} {

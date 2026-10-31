@@ -39,7 +39,7 @@ only expose HTTP cannot be P2P seeds.
 | `domain.com` | the website | The front page. The app is the product for users; node operators download the release archives ([Run a node, Download](../docs/NODE.md#download)). |
 | `docs.domain.com` | the same web server (requests for this host get the docs) | The rendered documentation at `/<page>`, and the release archives at `/downloads/`; `/docs/<page>` on the other hosts redirects here. |
 | `app.domain.com` | the same web server (requests for this host get the app) | The browser app: creates a wallet in the browser, mines whole blocks with the WebAssembly miner using templates from the explorer, shows balance and history from the explorer, links to docs, explorer and bridge. |
-| `explorer.domain.com` | `argonmine-explorer -listen 0.0.0.0:8380` | Behind a TLS reverse proxy; one instance per network. Also the work server for browser miners (`/api/work`): it builds block templates from its node and submits solved blocks, holding no funds. |
+| `explorer.domain.com` | `argonmine-explorer -listen 0.0.0.0:8380` | Behind a TLS reverse proxy; one instance per network. Also the work server for browser miners (`/api/work`): it builds block templates from its node and submits solved blocks, holding no funds. With `-pool-wallet` it also runs the mining pool (`/pool/api/work`, status at `/pool`), paying miners from that wallet; the wallet is created from `POOL_MNEMONIC` and unlocked with `POOL_WALLET_PASSWORD`. |
 | `bridge.domain.com` | the bridge page and its public API | The goal is guardians on separate hosts and providers, under separate operators; today the project runs all three ([Bridge, Risks](../docs/BRIDGE.md#risks)). Followers expose `/guardian/*` only to the leader (firewall or mTLS). |
 | `seed.domain.com` | DNS A/AAAA records | List every seed node's IP. |
 
@@ -52,7 +52,7 @@ that used the same names is retired.
 | `argonmine.com` | The landing page. |
 | `app.argonmine.com` | The browser app, with the swap service behind `/swap/api/`. |
 | `docs.argonmine.com` | This documentation, and the release archives at `/downloads/`. |
-| `explorer.argonmine.com` | The mainnet explorer and work server. `/api/health` is the uptime check. |
+| `explorer.argonmine.com` | The mainnet explorer, work server and mining pool (`/pool`). `/api/health` is the uptime check. |
 | `bridge.argonmine.com` | The mainnet bridge page and its public API (Ethereum, Base, Arbitrum One, BNB Chain). |
 | `altaria.proxy.rlwy.net:12347` | The mainnet seed node. It is the built-in default seed in `argonmined`. |
 

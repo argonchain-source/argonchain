@@ -13,11 +13,13 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"argonmine/bridge"
@@ -90,6 +92,9 @@ func main() {
 	bridgeURL := flag.String("bridge-url", "", "bridge URL whose /api/status names the genuine uARG asset id (read at start and every 10 minutes)")
 	uargAsset := flag.String("uarg-asset", "", "the genuine uARG asset id (64 hex); overrides -bridge-url")
 	swapURL := flag.String("swap-url", "", "swap service whose /api/info names the wARG issuer (read at start and every 10 minutes)")
+	poolWallet := flag.String("pool-wallet", "", "run the mining pool, paying out from this wallet file; created from POOL_MNEMONIC when missing, unlocked with POOL_WALLET_PASSWORD (empty: no pool)")
+	poolFee := flag.Float64("pool-fee", 1, "pool fee in percent of each block the pool finds")
+	poolMin := flag.String("pool-min-payout", "0.1", "smallest pool balance that is paid out, in ARG")
 	flag.Parse()
 
 	var params *consensus.Params
@@ -145,6 +150,11 @@ func main() {
 		go followSwapAsset(*swapURL, log.Printf)
 	}
 	s := newServer(params, client, ix, newWorkServer(client, params, *referralPct, log.Printf), tmpl, *ipHeader, *allowOrigin)
+	if *poolWallet != "" {
+		if err := startPool(s.work, params, client, *poolWallet, *poolFee, *poolMin, filepath.Join(netDir, "pool-ledger.json")); err != nil {
+			log.Fatalf("pool: %v", err)
+		}
+	}
 	geo := newGeoDB()
 	go geo.load(log.Printf)
 	s.miners = newMinerBook(filepath.Join(netDir, "miners.json"), geo)
@@ -162,7 +172,60 @@ func main() {
 		MaxHeaderBytes:    32 << 10,
 	}
 	log.Printf("explorer for %s on http://%s (node %s; client address from %s; work submissions from %s)", params.Name, *listen, *rpcURL, orDefault(*ipHeader, "the TCP peer"), s.origins)
+	// On the platform's stop signal the pool ledger is written before the
+	// process ends (it is saved within seconds anyway; this closes the gap).
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sig
+		s.work.pool.save()
+		s.miners.save(log.Printf)
+		log.Print("explorer: stopped")
+		os.Exit(0)
+	}()
 	log.Fatal(srv.ListenAndServe())
+}
+
+// startPool opens (or creates from POOL_MNEMONIC) the pool wallet and
+// enables the pool on ws. Secrets come from the environment only; nothing
+// of them is logged.
+func startPool(ws *workServer, params *consensus.Params, client *wallet.Client, path string, feePct float64, minPayout, ledger string) error {
+	pw := os.Getenv("POOL_WALLET_PASSWORD")
+	if pw == "" {
+		return fmt.Errorf("POOL_WALLET_PASSWORD is not set")
+	}
+	minPay, err := wallet.ParseAmount(minPayout)
+	if err != nil {
+		return fmt.Errorf("-pool-min-payout: %w", err)
+	}
+	var w *wallet.Wallet
+	if _, err := os.Stat(path); err == nil {
+		w, err = wallet.Open(path, params, pw)
+		if err != nil {
+			return fmt.Errorf("wallet %s: %w", path, err)
+		}
+	} else {
+		m := strings.TrimSpace(os.Getenv("POOL_MNEMONIC"))
+		if m == "" {
+			return fmt.Errorf("wallet %s does not exist and POOL_MNEMONIC is not set", path)
+		}
+		w, err = wallet.Restore(path, params, m, "", pw)
+		if err != nil {
+			return fmt.Errorf("restore wallet %s: %w", path, err)
+		}
+		log.Printf("pool: wallet created at %s", path)
+	}
+	w.SetClient(client)
+	addr, err := w.MiningAddress()
+	if err != nil {
+		return err
+	}
+	if err := ws.pool.enable(poolConfig{Address: addr, FeeBps: int(feePct*100 + 0.5), MinPayout: minPay, StatePath: ledger, Wallet: w}); err != nil {
+		return err
+	}
+	go ws.pool.run(nil)
+	log.Printf("pool: on, rewards to %s, fee %.2f%%, minimum payout %s ARG", addr, feePct, wallet.FormatAmount(minPay))
+	return nil
 }
 
 func orDefault(v, d string) string {
@@ -212,6 +275,13 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/tx", s.apiTx) // rate-limited inside, with CORS on every answer
 	mux.HandleFunc("/api/work", s.limit(l.work, true, s.apiWork))
 	mux.HandleFunc("/api/work/submit", s.limit(l.submit, true, s.apiWorkSubmit))
+	// The pool speaks the same protocol under /pool (pool.go).
+	mux.HandleFunc("/pool/api/work", s.limit(l.work, true, s.apiPoolWork))
+	mux.HandleFunc("/pool/api/work/submit", s.limit(l.share, true, s.apiWorkSubmit))
+	page("/pool", s.poolPage)
+	page("/api/pool/stats", s.apiPoolStats)
+	page("/api/pool/miner/", s.apiPoolMiner)
+	heavy("/api/pool/ledger", s.apiPoolLedger)
 	page("/qr.svg", func(w http.ResponseWriter, r *http.Request) { ui.ServeQR(w, r.URL.Query().Get("d")) })
 	return mux
 }
@@ -733,6 +803,7 @@ type addressData struct {
 	Older    uint32 // cursor for the next page (0 = none)
 	Swap     *swapInfo
 	Treasury bool // the network's treasury (consensus/treasury.go)
+	Pool     bool // the mining pool's payout address (pool.go)
 }
 
 // isTreasury reports whether addr is the network's treasury.
@@ -776,7 +847,7 @@ func (s *server) address(w http.ResponseWriter, r *http.Request) {
 	h, _, _ := s.ix.status()
 	const per = 100
 	t := s.ix.totals(addr)
-	d := addressData{Address: addr, Totals: t, Balance: satSub(t.Received, t.Sent), Stats: addressStats(t), Holdings: s.ix.holdings(t), Tip: h, Maturing: s.ix.maturing(addr, h), Swap: swapOf(s.params.HRP, addr), Treasury: isTreasury(s.params, addr)}
+	d := addressData{Address: addr, Totals: t, Balance: satSub(t.Received, t.Sent), Stats: addressStats(t), Holdings: s.ix.holdings(t), Tip: h, Maturing: s.ix.maturing(addr, h), Swap: swapOf(s.params.HRP, addr), Treasury: isTreasury(s.params, addr), Pool: s.isPoolAddress(addr)}
 	if v, err := strconv.ParseUint(r.URL.Query().Get("before"), 10, 32); err == nil && v > 0 {
 		d.Before = uint32(v)
 		d.History = s.ix.addressHistoryBefore(addr, uint32(v), per)
