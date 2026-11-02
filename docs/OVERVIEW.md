@@ -4,7 +4,7 @@ Argonmine is a new digital currency with its own blockchain. Its coin is
 called ARG. New ARG is created by mining, and you can mine it in a web
 browser on an ordinary laptop or phone. Nobody received coins in advance:
 there is no premine. Early blocks, written in the rules, open to
-everyone, block 2,960 to 4,959 ([Early blocks](docs/EARLY-BLOCKS.md)). From
+everyone, block 2,925 to 4,924 ([Early blocks](docs/EARLY-BLOCKS.md)). From
 block 300, 1% of each block reward goes to the project treasury; the
 miner keeps the rest and all fees.
 
@@ -41,7 +41,7 @@ from the same wallet.
 
 | Coin | What it is | Where it comes from |
 |---|---|---|
-| **ARG** | The native coin. Its supply is capped at 21 million from mining, plus at most 1,000,000 from the early blocks. | Created by mining, and in blocks 2,960 to 4,959 by the [early blocks](docs/EARLY-BLOCKS.md). Always from a block's coinbase. |
+| **ARG** | The native coin. Its supply is capped at 21 million from mining, plus at most 1,000,000 from the early blocks. | Created by mining, and in blocks 2,925 to 4,924 by the [early blocks](docs/EARLY-BLOCKS.md). Always from a block's coinbase. |
 | **wARG** | Wrapped ARG. One wARG is backed by one ARG. | Issued by the swap service when you swap ARG for it, and destroyed when you swap it back. See [Swaps](docs/SWAP.md). |
 | **uARG** | A dollar token, backed by USDC and USDT in the bridge vaults. It is redeemable one for one for USDC or USDT through the bridge, less the 1% withdrawal fee, subject to the risks in [Bridge, Risks](docs/BRIDGE.md#risks). | Issued by the bridge when you deposit USDC or USDT on another chain. See [Bridge](docs/BRIDGE.md). |
 
@@ -97,7 +97,7 @@ day or two. See [Specification §5](docs/SPEC.md).
 
 **Supply.** The reward starts at 50 ARG and halves every 210,000 blocks,
 like Bitcoin. After 64 halvings it reaches zero. The rewards never exceed
-21 million ARG. The early blocks, 2,960 to 4,959, add at most
+21 million ARG. The early blocks, 2,925 to 4,924, add at most
 1,000,000 ARG, 20 ARG for each uARG asked for; after them, ARG comes only
 from mining ([Early blocks](docs/EARLY-BLOCKS.md)).
 

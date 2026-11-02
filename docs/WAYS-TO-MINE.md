@@ -36,7 +36,7 @@ What all three have in common:
   Finding a block is random: two blocks in a day and then nothing for a
   week is normal.
 
-Whichever way you mine, the early blocks (2,960 to 4,959) need
+Whichever way you mine, the early blocks (2,925 to 4,924) need
 nothing from you. Pool and browser miners get their jobs from the
 explorer, which builds the coinbase; an early block may carry
 outputs to the buyers of its mint requests beside yours. Only a node
@@ -109,7 +109,7 @@ day.
 1. **Download release 1.2.0** for your system and check its checksum,
    exactly as [Run a node, Download](docs/NODE.md#download) describes,
    or [build it from source](docs/NODE.md#build-from-source).
-   Releases before 1.2.0 stop following the chain at block 2,960, when
+   Releases before 1.2.0 stop following the chain at block 2,925, when
    the [early blocks](docs/EARLY-BLOCKS.md) open; releases before 1.1.0 could not
    mine from block 300.
 2. **Install it** with the script in the archive

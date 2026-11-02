@@ -92,7 +92,7 @@ system are listed in [Fees](docs/FEES.md).
 
 ### Early blocks and your blocks
 
-From block 2,960 to block 4,959 the chain also mints ARG for anyone who
+From block 2,925 to block 4,924 the chain also mints ARG for anyone who
 asks, 20 ARG for 1 uARG, at most 500 ARG a block ([Early
 blocks](docs/EARLY-BLOCKS.md)). A block that includes mint requests carries
 their buyers' coins in its coinbase, beside the miner's output and the
@@ -314,7 +314,7 @@ argonmined -mine arg1… -threads 4
 about 8 MiB of memory while it mines. Setup, monitoring and every flag are
 in [Run a node](docs/NODE.md#mining-with-a-node).
 
-A node that mines must run release 1.2.0 before block 2,960, and every
+A node that mines must run release 1.2.0 before block 2,925, and every
 node that follows the chain must too: in the early blocks a block's
 coinbase may pay more than the subsidy and the fees, and an older node
 rejects it (see [Run a node, Upgrades](docs/NODE.md#upgrades)). Before

@@ -6,9 +6,9 @@ an explorer. You do not need a node to use Argonmine. The app at
 [app.argonmine.com](https://app.argonmine.com) does everything a user
 needs, including mining.
 
-> **Upgrade to 1.2.0 before block 2,960.** Release 1.2.0 adds the
+> **Upgrade to 1.2.0 before block 2,925.** Release 1.2.0 adds the
 > [early blocks](docs/EARLY-BLOCKS.md), a change to the consensus rules that opens at
-> mainnet block 2,960. A node that still runs 1.1.0 or 1.0.0 stops
+> mainnet block 2,925. A node that still runs 1.1.0 or 1.0.0 stops
 > following the chain at the first block that mints: it rejects the
 > block, and every block after it, as paying too much. Download 1.2.0
 > below and follow [Upgrades](#upgrades). Pool and browser miners need
@@ -96,7 +96,7 @@ Other platforms are not built or tested.
 
 ## Download
 
-The current release is **1.2.0**. It adds the early blocks from block 2,960
+The current release is **1.2.0**. It adds the early blocks from block 2,925
 and is required on every node before that block (see
 [Upgrades](#upgrades)). It includes the treasury rule of 1.1.0.
 Download the archive for your system:
@@ -435,10 +435,10 @@ public services and a checklist for every seed.
 The built-in miner builds blocks from the node's own chain and mempool and
 pays the reward, plus fees, to the address you give it. From block 300 each
 block also pays 1% of its subsidy to the project treasury, as consensus
-requires; the fees stay with you. In the early blocks (2,960 to
-4,959) a block's coinbase also pays the buyers of the mint requests it
+requires; the fees stay with you. In the early blocks (2,925 to
+4,924) a block's coinbase also pays the buyers of the mint requests it
 includes ([Early blocks](docs/EARLY-BLOCKS.md)); the built-in miner does this
-by itself. Mining needs release 1.2.0 or later from block 2,960:
+by itself. Mining needs release 1.2.0 or later from block 2,925:
 
 ```
 argonmined -mine arg1… -threads 4 -tag "my miner"
@@ -538,13 +538,13 @@ Bridge guardians and the swap service keep their own state and keys. See
 
 ## Upgrades
 
-**Release 1.2.0 and block 2,960.** Release 1.2.0 adds the early blocks
+**Release 1.2.0 and block 2,925.** Release 1.2.0 adds the early blocks
 ([Early blocks](docs/EARLY-BLOCKS.md), [SPEC §3.3.2](docs/SPEC.md)): from
-mainnet block 2,960 to block 4,959 a block's coinbase may create up to
+mainnet block 2,925 to block 4,924 a block's coinbase may create up to
 500 ARG beyond the subsidy, for the mint requests the block includes. A
 node from before the rule rejects such a block as paying too much, so it
 stops following the chain at the first block that mints, whether it mines
-or not. Every node must run 1.2.0 before block 2,960. Upgrade with the
+or not. Every node must run 1.2.0 before block 2,925. Upgrade with the
 steps below; the database is unchanged.
 
 **Release 1.1.0 and block 300.** Release 1.1.0 adds the treasury rule:

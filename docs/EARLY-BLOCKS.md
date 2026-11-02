@@ -6,7 +6,7 @@ from mining.
 
 | Item | Mainnet |
 |---|---|
-| Open | block 2,960 to block 4,959, 2,000 blocks |
+| Open | block 2,925 to block 4,924, 2,000 blocks |
 | Rate | 20 ARG for 1 uARG, for everyone |
 | Most per request | 25 uARG, which is 500 ARG |
 | Most per block | 500 ARG, over all requests in the block |
@@ -29,14 +29,14 @@ mints at most 500 ARG; the uARG goes to the treasury.
   block, from the coinbase, like a mining reward.
 - One rate for everyone, written in the rules.
 - The uARG is paid on the chain, to an address anyone can watch.
-- It ends. Outside blocks 2,960 to 4,959 the memo is refused, so no uARG
+- It ends. Outside blocks 2,925 to 4,924 the memo is refused, so no uARG
   leaves your wallet for coins no block can make.
 
-## Node runners: upgrade before block 2,960
+## Node runners: upgrade before block 2,925
 
 Early blocks change the consensus rules. An older node rejects a block
 whose coinbase pays more than the subsidy and the fees, so it stops
-following the chain at block 2,960. Every node must run release 1.2.0
+following the chain at block 2,925. Every node must run release 1.2.0
 before then ([Run a node, Upgrades](docs/NODE.md#upgrades)). Pool and
 browser miners need nothing. The rule is [SPEC §3.3.2](docs/SPEC.md).
 
@@ -60,7 +60,7 @@ prints; the app refuses each before it is sent.
 
 | Case | Node's answer |
 |---|---|
-| Before block 2,960, after block 4,959, or on a network without early blocks | `mint request outside the mint window` |
+| Before block 2,925, after block 4,924, or on a network without early blocks | `mint request outside the mint window` |
 | No uARG to the treasury in the transaction | `mint request pays nothing to the mint key` |
 | More than 25 uARG (500 ARG) in one request | `mint request exceeds the per-block mint` |
 | The first input does not spend an ordinary key output | `mint request's first input is not a key` |

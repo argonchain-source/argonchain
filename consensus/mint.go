@@ -50,8 +50,8 @@ var (
 // 20 ARG per uARG (the bridge's dollar token, 1e8 units like ARG), paid to
 // the treasury key. At most 1,000,000 ARG over the window.
 var (
-	mainnetMintStart    uint32 = 2_960
-	mainnetMintEnd      uint32 = 4_959
+	mainnetMintStart    uint32 = 2_925
+	mainnetMintEnd      uint32 = 4_924
 	mainnetMintPerBlock Amount = 500 * UnitsPerCoin
 	mainnetMintRate     Amount = 20
 	mainnetMintAsset           = mustHash("15772bdf3353c217b21394e9db1f5023986b51bd36fa2d41144cb1e898f8a595")

@@ -44,7 +44,7 @@ No non-trivial software can be proven free of bugs. What this project does inste
 | Nonce width | 64-bit | no extra-nonce in coinbase needed |
 | Genesis coinbase | NOT added to UTXO set | explicit, unlike Bitcoin's accident |
 | Premine | none | |
-| Early blocks | mainnet blocks 2,960 to 4,959: at most 500 ARG a block, 1,000,000 ARG in all | section 3.3.2 |
+| Early blocks | mainnet blocks 2,925 to 4,924: at most 500 ARG a block, 1,000,000 ARG in all | section 3.3.2 |
 | Address format | bech32m, HRP `arg` (mainnet) `targ` (testnet) `rarg` (regtest) | |
 
 ## 2. Primitives
@@ -135,7 +135,7 @@ Block rule (§7 step 5):
 
 A buyer's output is a coinbase output: it is spendable only at height ≥ `h + 100`, like the miner's. The `paid` units go to `MINT_KEY` as an ordinary transfer. No ARG is issued (3.5): the minted ARG comes out of the coinbase. By convention the coinbase order is the miner's outputs, then the buyers in order of first appearance, then the treasury; consensus does not require an order.
 
-A node from before this rule rejects a block whose coinbase exceeds subsidy plus fees, so the rule is a hard fork: every node must run release 1.2.0 before `MINT_START` (mainnet 2,960). Mainnet's early blocks are fixed in the rules (§11): 2,000 blocks at 500 ARG, so at most 1,000,000 ARG. Testnet and regtest have none unless the node and the explorer are started with `-mint start:end:perBlockARG:rateARG:asset:key`.
+A node from before this rule rejects a block whose coinbase exceeds subsidy plus fees, so the rule is a hard fork: every node must run release 1.2.0 before `MINT_START` (mainnet 2,925). Mainnet's early blocks are fixed in the rules (§11): 2,000 blocks at 500 ARG, so at most 1,000,000 ARG. Testnet and regtest have none unless the node and the explorer are started with `-mint start:end:perBlockARG:rateARG:asset:key`.
 
 ### 3.4 Block
 ```
@@ -321,8 +321,8 @@ Total emission from the subsidy is strictly below MAX_MONEY (equal to Bitcoin's 
 | POW_LIMIT | compact 0x1E400000 (2^18 hashes) | compact 0x1F7FFFFF (512 hashes) | compact 0x207FFFFF, constant |
 | TREASURY_HEIGHT | 300 | 0 (none) | 0 (none) |
 | TREASURY_KEY | `7ad1a30d482a3fdb23efd2de4da69de2e9dc50d204d8cd82495183e6b3ffdf6c` (address `arg1q0tg6xr2g9glakgl06t0ymf5aut5ac5xjqnvvmqjf2xp7dvllmakqna8cd2`) | none | none |
-| MINT_START | 2,960 | none (`-mint`) | none (`-mint`) |
-| MINT_END | 4,959 | none (`-mint`) | none (`-mint`) |
+| MINT_START | 2,925 | none (`-mint`) | none (`-mint`) |
+| MINT_END | 4,924 | none (`-mint`) | none (`-mint`) |
 | MINT_PER_BLOCK | 500 ARG | `-mint` | `-mint` |
 | MINT_RATE | 20 ARG units per unit paid (1 uARG = 20 ARG) | `-mint` | `-mint` |
 | MINT_ASSET | uARG, `15772bdf3353c217b21394e9db1f5023986b51bd36fa2d41144cb1e898f8a595` | `-mint` | `-mint` |

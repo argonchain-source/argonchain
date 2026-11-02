@@ -132,7 +132,7 @@ everyone; outside mining and the early blocks no ARG is created.
 **What are early blocks?**
 For 2,000 blocks the chain mints ARG for anyone who asks: 20 ARG for
 1 uARG, up to 500 ARG a block, 1,000,000 in all. The rate is written in
-the rules, the same for everyone, and it ends at block 4,959. After
+the rules, the same for everyone, and it ends at block 4,924. After
 that, ARG comes only from mining. Nothing is set aside and nothing is
 minted unless someone asks for it, block by block, the way mining works.
 The uARG paid goes to the treasury. Open **Early blocks** in the app, or send
@@ -226,7 +226,7 @@ So the honest advice is: do not run a bare node for income. Bare nodes
 still matter for the network, as seed nodes and as independent verifiers,
 and are run by people and projects with a reason to keep the chain
 healthy, exactly as on Bitcoin. The treasury may fund public seed nodes
-later. Every node must run release 1.2.0 before block 2,960, when the
+later. Every node must run release 1.2.0 before block 2,925, when the
 early blocks open; an older node stops following the chain there.
 
 **Is the code open source?**

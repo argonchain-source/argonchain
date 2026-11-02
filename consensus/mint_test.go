@@ -25,7 +25,7 @@ func mintRequest(r *MintRule, paid Amount, memo string) *Tx {
 }
 
 func TestMintRule(t *testing.T) {
-	if MainNet.Mint == nil || MainNet.Mint.Start != 2_960 || MainNet.Mint.End != 4_959 || MainNet.Mint.PerBlock != 500*UnitsPerCoin || MainNet.Mint.Rate != 20 {
+	if MainNet.Mint == nil || MainNet.Mint.Start != 2_925 || MainNet.Mint.End != 4_924 || MainNet.Mint.PerBlock != 500*UnitsPerCoin || MainNet.Mint.Rate != 20 {
 		t.Fatalf("mainnet mint window: %+v", MainNet.Mint)
 	}
 	if string(MainNet.Mint.Key) != string(MainNet.TreasuryKey) {
