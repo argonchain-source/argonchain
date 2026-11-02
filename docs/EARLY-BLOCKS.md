@@ -21,7 +21,9 @@ the address that should receive the ARG, or use the app at
 [app.argonmine.com/early](https://app.argonmine.com/early). The next
 block that takes the request pays 20 ARG per uARG from its coinbase,
 spendable 100 blocks later. A request is at most 25 uARG and a block
-mints at most 500 ARG; the uARG goes to the treasury.
+mints at most 500 ARG; the uARG goes to the treasury. A request of 1 uARG
+or more needs no ARG for the network fee, so a wallet that has only just
+bridged dollars in can take part.
 
 ## Why it is built this way
 

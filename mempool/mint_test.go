@@ -92,6 +92,31 @@ func TestMintRequests(t *testing.T) {
 	if len(txs) != 1 || mints.Total != 100*coin || len(mints.Payouts) != 1 || string(mints.Payouts[0].Key) != string(alice.xonly) {
 		t.Fatalf("select: %d txs, mints %+v", len(txs), mints)
 	}
+	// Fee-free (policy): 1 uARG or more with no ARG at all is relayed; less
+	// than 1 uARG without a fee is not.
+	freeReq := func(s purse, paid consensus.Amount) *consensus.Tx {
+		ac, _ := h.ch.LookupCoin(s.asset)
+		tx := &consensus.Tx{Version: consensus.TxVersionAssets, Inputs: []consensus.TxIn{{PrevOut: s.asset}},
+			Outputs: []consensus.TxOut{
+				{Amount: paid, Type: consensus.OutputTypeP2PK, Payload: mintKey.xonly, Asset: asset},
+				{Amount: ac.Out.Amount - paid, Type: consensus.OutputTypeP2PK, Payload: alice.xonly, Asset: asset},
+				{Type: consensus.OutputTypeNullData, Payload: []byte(consensus.MintMemo)},
+			}, Witnesses: make([][]byte, 1)}
+		sign(alice, tx, []consensus.TxOut{ac.Out}, 0)
+		return tx
+	}
+	if err := h.pool.Accept(freeReq(b, coin/2)); !errors.Is(err, ErrInsufficientFee) {
+		t.Fatalf("free request under 1 uARG: %v", err)
+	}
+	free := freeReq(b, coin)
+	if err := h.pool.Accept(free); err != nil {
+		t.Fatalf("free request of 1 uARG: %v", err)
+	}
+	if e, ok := h.pool.txs[free.TxID()]; !ok || e.Fee != 0 || e.Mint != 20*coin {
+		t.Fatalf("free request entry: %+v %v", e, ok)
+	}
+	h.pool.remove(free.TxID())
+
 	// A second request would take the block over 150: it waits.
 	r2 := request(b, 5*coin)
 	if err := h.pool.Accept(r2); err != nil {

@@ -3292,8 +3292,11 @@
     btn.classList.add('is-loading'); note('mintNote', '');
     loadCoins().then(function () {
       var pr = mtProblem(i); if (pr) throw new Error(pr[0] + '.');
-      return W('preview', { coins: CO.list, tip: CO.tip, asset: UASSET, to: i.address, amount: String(u), max: false, uarg: UASSET, memo: MINT_MEMO }).then(function (pre) {
-        return { u: big(pre.amount), to: i.address, rate: i.rate, maturity: i.maturity, pre: pre, topUp: null };
+      // A request of 1 uARG or more needs no ARG for the network fee: nodes
+      // relay it without one, so a wallet that only bridged dollars in can mint.
+      var noFee = u >= E8;
+      return W('preview', { coins: CO.list, tip: CO.tip, asset: UASSET, to: i.address, amount: String(u), max: false, uarg: UASSET, memo: MINT_MEMO, noFee: noFee }).then(function (pre) {
+        return { u: big(pre.amount), to: i.address, rate: i.rate, maturity: i.maturity, pre: pre, topUp: null, noFee: noFee };
       }, function (e) {
         if (e.code !== 'fee') throw e;
         // No ARG for the network fee: a little uARG is swapped for it first, the way Send does.
@@ -3308,7 +3311,7 @@
   }
   function showMintReview() {
     var P = mint.plan, get = P.u * P.rate;
-    var fee = P.pre ? mtArg(big(P.pre.fee)) : fmtU(P.topUp.amount, 0) + ' uARG, swapped to ' + COIN;
+    var fee = P.noFee ? 'None' : P.pre ? mtArg(big(P.pre.fee)) : fmtU(P.topUp.amount, 0) + ' uARG, swapped to ' + COIN;
     $('mtRvBody').innerHTML = amtRow('You pay', fmtU(P.u), 'uARG', '$' + fmt2(P.u, 8), true) +
       '<dl class="swap-kv"><dt>You mint</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Rate</dt><dd>' + esc(String(P.rate) + ' ' + COIN + ' for 1 uARG') + '</dd>' + kvTo('Paid to', P.to) +
       '<dt>Memo</dt><dd class="mono">' + esc(MINT_MEMO) + '</dd><dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Minted</dt><dd>By the next block that includes it, about 10 min</dd>' +
@@ -3319,7 +3322,7 @@
   function mintExec(P) {
     var first = P.topUp ? doTopUp(P.topUp).then(function () { P.topUp = null; P.pre = null; }) : Promise.resolve();
     return first.then(function () {
-      return payNow({ asset: UASSET, to: P.to, amount: String(P.u), max: false, memo: MINT_MEMO }, P.pre);
+      return payNow({ asset: UASSET, to: P.to, amount: String(P.u), max: false, memo: MINT_MEMO, noFee: !!P.noFee }, P.pre);
     }).then(function (pay) {
       var paid = big(pay.amount), get = paid * P.rate;
       addPend({ txid: pay.txid, kind: 'mint', sym: 'uARG', amount: String(paid), minted: String(get), to: P.to, spent: pay.spent, incoming: pay.change });

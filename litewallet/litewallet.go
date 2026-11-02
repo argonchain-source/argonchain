@@ -196,6 +196,10 @@ type PayRequest struct {
 	Max     bool             // pay everything of Asset that can be spent (for ARG, less the fee)
 	FeeRate consensus.Amount // units per byte; DefaultFeeRate when below 1
 	UARG    string           // the bridge's uARG id: the one asset a swap address may be paid
+	// NoFee builds an asset payment with no ARG input and no fee: an early
+	// blocks request of at least 1 uARG, which nodes relay without a fee
+	// (mempool.FreeMint). Asset payments only.
+	NoFee bool
 	// Memo, if any, rides in a NULLDATA output (at most 80 bytes): the
 	// bridge's withdrawal memo, which matches a payment to a swap address
 	// to its withdrawal.
@@ -237,6 +241,12 @@ func (a *Account) Pay(coins []Coin, tip uint32, r PayRequest) (*Payment, error) 
 	rate := r.FeeRate
 	if rate < 1 {
 		rate = DefaultFeeRate
+	}
+	if r.NoFee {
+		if asset == "" {
+			return nil, errors.New("only an asset payment can go without a fee")
+		}
+		rate = 0
 	}
 	dest := consensus.TxOut{Amount: r.Amount, Type: dst.Type, Payload: dst.Payload, Asset: id}
 	var extra []consensus.TxOut
@@ -406,6 +416,15 @@ func (a *Account) payAsset(assetCoins, argCoins []Coin, dest consensus.TxOut, ex
 		ch := a.self(in - dest.Amount)
 		ch.Asset = dest.Asset
 		fixed = append(fixed, ch)
+	}
+	if rate == 0 {
+		// No fee (PayRequest.NoFee): asset inputs only, no ARG.
+		d, err := a.draft(consensus.TxVersionAssets, sel)
+		if err != nil {
+			return nil, err
+		}
+		d.tx.Outputs = fixed
+		return a.finish(d, dest.Amount, 0)
 	}
 	var argSel []Coin
 	var argIn, argHave consensus.Amount

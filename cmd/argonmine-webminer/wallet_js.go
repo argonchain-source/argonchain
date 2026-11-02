@@ -51,6 +51,7 @@ type walletArgs struct {
 	Max      bool               `json:"max"`
 	UARG     string             `json:"uarg"`
 	Memo     string             `json:"memo"`
+	NoFee    bool               `json:"noFee"`
 	Info     *quote.Info        `json:"info"`
 	From     string             `json:"from"`
 	ToCoin   string             `json:"toCoin"`
@@ -174,7 +175,7 @@ func walletOp(op string, in *walletArgs) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		return acct.Pay(in.Coins, in.Tip, litewallet.PayRequest{Asset: in.Asset, To: in.To, Amount: amount, Max: in.Max, UARG: in.UARG, Memo: in.Memo})
+		return acct.Pay(in.Coins, in.Tip, litewallet.PayRequest{Asset: in.Asset, To: in.To, Amount: amount, Max: in.Max, UARG: in.UARG, Memo: in.Memo, NoFee: in.NoFee})
 	case "assets":
 		// The ids of uARG (the bridge's) and wARG (recomputed from the
 		// maker's issuer key), never taken from a server as given.

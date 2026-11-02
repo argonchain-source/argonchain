@@ -103,6 +103,21 @@ type Entry struct {
 	pending  int // scratch for kahn: parents not yet placed (pool lock held)
 }
 
+// FreeMintMinPaid is the least a mint request pays the mint key for the
+// pool to take it without an ARG fee: one unit of the mint asset (1 uARG
+// on mainnet). Someone who has just bridged dollars in holds uARG and no
+// ARG, and the block that includes the request mints for it anyway; the
+// payment itself, a real dollar at least, is what keeps such requests from
+// being spam. Policy, not consensus: a fee of zero was always valid.
+const FreeMintMinPaid = consensus.UnitsPerCoin
+
+// FreeMint reports whether tx, a mint request, pays the mint key enough to
+// be relayed without an ARG fee.
+func FreeMint(p *consensus.Params, tx *consensus.Tx) bool {
+	paid, err := consensus.MintPaid(p, tx)
+	return err == nil && paid >= FreeMintMinPaid
+}
+
 // FeeRate in units per byte as a float, for ordering only.
 func (e *Entry) FeeRate() float64 { return float64(e.Fee) / float64(e.Size) }
 
@@ -295,6 +310,9 @@ func (p *Pool) Accept(tx *consensus.Tx) error {
 	}
 	// From here on the verdict depends on the size, hence on the witness.
 	minFee := p.cfg.MinFeeRate*consensus.Amount(size) + AssetSurcharge(p.cfg, tx)
+	if mint > 0 && FreeMint(p.ch.Params(), tx) {
+		minFee = AssetSurcharge(p.cfg, tx)
+	}
 	if fee < minFee {
 		return p.rejectWitness(wtxid, fmt.Errorf("%w: fee %d < %d", ErrInsufficientFee, fee, minFee))
 	}
