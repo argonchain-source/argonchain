@@ -1,9 +1,11 @@
 # Argonmine
 
 A proof-of-work layer-1 blockchain in Go, built on Bitcoin's rules and
-lessons. Every coin is mined, and there is no premine. From block 300, 1%
-of each block reward goes to the project treasury; the miner keeps the rest
-and all fees. Mining uses memory-hard Argon2id, so mining in a browser on
+lessons. Every coin comes from a block's coinbase, and there is no premine.
+Early blocks, written in the rules, open to everyone, block 2,960 to
+4,959: 20 ARG for 1 uARG, at most 1,000,000 ARG in all
+([docs/EARLY-BLOCKS.md](docs/EARLY-BLOCKS.md)). From block 300, 1% of each block reward
+goes to the project treasury; the miner keeps the rest and all fees. Mining uses memory-hard Argon2id, so mining in a browser on
 a laptop or phone is real mining, not a simulation.
 
 The product is the browser app at **app.argonmine.com**: create a wallet

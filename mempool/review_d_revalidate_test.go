@@ -91,7 +91,7 @@ func TestReviewD_BlockConnectDoesNotRecheckPool(t *testing.T) {
 	if h.pool.Count() != 2 {
 		t.Fatalf("full Revalidate changed the pool: %d entries", h.pool.Count())
 	}
-	sel, fees := h.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ := h.pool.Select(consensus.MaxBlockSize)
 	if len(sel) != 2 {
 		t.Fatalf("selected %d", len(sel))
 	}
@@ -183,7 +183,7 @@ func TestReviewD_SelectMatchesFullOrdering(t *testing.T) {
 	}
 	same := func(budget int) {
 		t.Helper()
-		got, gf := p.Select(budget)
+		got, gf, _ := p.Select(budget)
 		want, wf := referenceSelect(p, budget)
 		if gf != wf || len(got) != len(want) {
 			t.Fatalf("budget %d: %d txs fee %d, want %d txs fee %d", budget, len(got), gf, len(want), wf)

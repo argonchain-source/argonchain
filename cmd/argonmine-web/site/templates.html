@@ -443,22 +443,72 @@
     .nm-how { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
   }
 
-  /* buy */
-  .buy { display: flex; flex-direction: column; gap: var(--sp-4); width: 100%; max-width: 480px; margin: 0 auto; }
-  .buy-card { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-5); border-radius: 20px; }
-  .buy-head { display: flex; flex-direction: column; gap: 6px; }
-  .buy-head h2 { font-size: var(--fs-6); font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; }
-  .buy-form { display: flex; flex-direction: column; gap: var(--sp-3); }
-  .buy-get { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); padding: 0 var(--sp-1); font-size: var(--fs-3); color: var(--ink-2); }
-  .buy-get b { min-width: 0; font-size: var(--fs-6); font-weight: 750; letter-spacing: -0.02em; color: var(--ink); text-align: right; overflow-wrap: anywhere; }
-  .buy-steps { padding: var(--sp-4); }
-  .buy-steps .swap-step { padding-bottom: var(--sp-4); }
-  .buy-steps .swap-step:last-child { padding-bottom: 0; }
-  .buy-steps .swap-step .s button { font-size: inherit; }
-  .buy-paused { display: flex; flex-direction: column; gap: 4px; padding: var(--sp-4); border-radius: 14px; background: var(--sunken); }
-  .buy-paused b { font-size: var(--fs-5); font-weight: 700; }
-  .buy-paused span { font-size: var(--fs-3); color: var(--ink-2); }
-  @media (max-width: 600px) { .buy-card { padding: var(--sp-4); } }
+  /* early blocks */
+  .mint { display: flex; flex-direction: column; gap: var(--sp-5); width: 100%; max-width: 640px; margin: 0 auto; }
+  .mint-hero { position: relative; display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-6); border-radius: 20px; overflow: hidden; isolation: isolate; }
+  .mint-hero::before { content: ""; position: absolute; z-index: -1; right: -140px; top: -160px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(closest-side, var(--accent-soft), transparent); pointer-events: none; }
+  .mint-head { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+  .mint-rate { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; min-width: 0; margin-top: 2px; }
+  .mint-rate b { font-size: clamp(38px, 11vw, 52px); font-weight: 750; letter-spacing: -0.035em; line-height: 1; overflow-wrap: anywhere; }
+  .mint-rate span { font-size: var(--fs-5); font-weight: 500; color: var(--ink-2); }
+  .mint-status { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; min-width: 0; margin: 0; font-size: var(--fs-4); font-weight: 400; color: var(--ink-2); line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .mint-status b { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; color: var(--ink); overflow-wrap: anywhere; }
+  .mint-status b::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .mint-hero.is-open .mint-status b::before { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
+  .mint-status span { min-width: 0; overflow-wrap: anywhere; }
+  .mint-status span:not(:empty)::before { content: "·"; margin-right: var(--sp-2); color: var(--ink-3); }
+  .mint-hero.bare .mint-status { font-size: var(--fs-6); font-weight: 650; }
+  .mint-hero.bare .mint-status b::before { display: none; }
+  .mint-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mint-stats > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0 var(--sp-4); border-left: 1px solid var(--hair); }
+  .mint-stats > div:first-child { padding-left: 0; border-left: 0; }
+  .mint-stats > div:last-child { padding-right: 0; }
+  .mint-stats span { font-size: var(--fs-2); font-weight: 600; color: var(--ink-3); }
+  .mint-stats b { font-size: clamp(17px, 5vw, 22px); font-weight: 750; letter-spacing: -0.02em; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .mint-stats b small { margin-left: 4px; font-size: var(--fs-2); font-weight: 650; letter-spacing: 0; color: var(--ink-3); }
+  .mint-stats em { font-style: normal; font-size: var(--fs-2); color: var(--ink-3); line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .mint-stats em:empty { display: none; }
+  .mint-prog { margin-top: calc(-1 * var(--sp-3)); }
+  .mint-form { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .mint-field { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; padding: var(--sp-4); border-radius: 16px; background: var(--sunken); border: 1px solid transparent; transition: border-color .15s var(--ease); }
+  .mint-field:focus-within { border-color: var(--border); }
+  .swap-amt.mint-amt { font-size: clamp(32px, 9vw, 40px); font-weight: 750; letter-spacing: -0.03em; line-height: 1.15; }
+  .swap-amt.mint-amt:placeholder-shown { font-weight: 500; }
+  .mint-chip { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 62%; height: 44px; padding: 0 var(--sp-3) 0 var(--sp-2); border-radius: 12px; border: 1px solid var(--hair); background: var(--surface); color: var(--ink); }
+  .mint-get { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: var(--sp-4); border-radius: 16px; border: 1px solid var(--hair); background: var(--surface); }
+  .mint-get span { font-size: var(--fs-3); color: var(--ink-2); }
+  .mint-get b { font-size: clamp(32px, 9vw, 40px); font-weight: 750; letter-spacing: -0.03em; line-height: 1.15; color: var(--accent-text); overflow-wrap: anywhere; }
+  .mint-get b.dim { color: var(--ink-3); font-weight: 500; }
+  .mint-wait { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: var(--sp-4); border-radius: 16px; background: var(--sunken); }
+  .mint-wait span { font-size: var(--fs-3); color: var(--ink-2); }
+  .mint-wait b { font-size: clamp(32px, 9vw, 40px); font-weight: 750; letter-spacing: -0.03em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .mint-wait small { font-size: var(--fs-3); color: var(--ink-3); }
+  .mint-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: 14px var(--sp-4); border-top: 1px solid var(--hair); }
+  .mint-row:first-child { border-top: 0; }
+  .mint-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 84px; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--hair); font-size: var(--fs-2); font-weight: 650; color: var(--ink-2); white-space: nowrap; }
+  .mint-pill.pending { border-color: var(--accent); color: var(--accent-text); }
+  .mint-pill.ok { border-color: transparent; background: var(--ok-bg); color: var(--ok); }
+  .mint-row-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .mint-row-t b { font-size: var(--fs-5); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .mint-row-s { font-size: var(--fs-2); color: var(--ink-3); line-height: 1.45; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .mint-row-v { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mint-row-v b { font-size: var(--fs-4); font-weight: 650; }
+  .mint-row-v span { font-size: var(--fs-2); color: var(--ink-3); }
+  .mint-empty { padding: var(--sp-3) var(--sp-4) var(--sp-4); font-size: var(--fs-3); color: var(--ink-3); }
+  .mint-how { display: flex; flex-direction: column; gap: 4px; padding: 0 var(--sp-1); font-size: var(--fs-2); color: var(--ink-3); line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .mint-how:empty { display: none; }
+  .mint-how p { margin: 0; }
+  @media (max-width: 600px) {
+    .mint-hero { padding: var(--sp-4); gap: var(--sp-4); }
+    .mint-status { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .mint-status span:not(:empty) { padding-left: 16px; }
+    .mint-status span:not(:empty)::before { display: none; }
+    .mint-hero.bare .mint-status span:not(:empty) { padding-left: 0; }
+    .mint-stats > div { padding: 0 var(--sp-2); }
+    .mint-stats b { font-size: var(--fs-5); }
+    .mint-pill { min-width: 0; padding: 0 8px; }
+    .mint-row { padding: 12px var(--sp-4); }
+  }
 
   /* Browser wallet: password rows, results, the address-only choice */
   .ob-link { align-self: center; padding: var(--sp-2) var(--sp-3); border: 0; background: none; color: var(--ink-2); font: inherit; font-size: var(--fs-3); cursor: pointer; border-radius: 8px; }
@@ -487,6 +537,7 @@
       <a href="/mine" data-page="mine" class="active"><i data-icon="pickaxe"></i>Mine</a>
       <a href="/wallet" data-page="wallet"><i data-icon="wallet"></i>Wallet</a>
       <a href="/names" data-page="names"><i data-icon="user"></i>Names</a>
+      <a href="/early" data-page="mint"><i data-icon="zap"></i>Early blocks</a>
       <a href="/dashboard" data-page="dashboard"><i data-icon="activity"></i>Dashboard</a>
       <a href="/settings" data-page="settings"><i data-icon="settings"></i>Settings</a>
     </nav>
@@ -723,26 +774,39 @@
         </div>
       </section>
 
-      <!-- BUY: USDC or USDT on another chain, bridged in as uARG and swapped to ARG -->
-      <section class="page" id="page-buy">
-        <div class="buy">
-          <div class="card buy-card">
-            <div class="buy-head"><span class="eyebrow">Buy {{.Coin}}</span><h2>Pay in dollars, receive {{.Coin}}</h2></div>
-            <div class="buy-form" id="buyForm">
-              <div class="swap-box">
-                <div class="swap-lbl"><label for="buyAmt">You pay</label></div>
-                <div class="swap-main"><span class="swap-cur" aria-hidden="true">$</span><input class="swap-amt" id="buyAmt" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false"><button class="swap-chip" id="buyChip" type="button" aria-label="Choose the token and network to pay with"></button></div>
-                <div class="swap-foot"><span id="buyFoot"></span><span class="swap-bal" id="buyBal"></span></div>
-              </div>
-              <div class="buy-get"><span>You receive about</span><b class="num" id="buyGet">–</b></div>
-              <div class="w-steps buy-steps"><ol class="swap-steps" id="buySteps"></ol></div>
-              <div class="w-conn" id="buyConn" hidden><span class="w-conn-ic" id="buyConnIc" aria-hidden="true"></span><span class="w-conn-t" id="buyConnT"></span><button class="swap-inl" id="buyDisc" type="button">Disconnect</button></div>
-              <div class="swap-note bad" id="buyErr" role="alert"></div>
-              <button class="btn btn-primary swap-go" id="buyGo" type="button" disabled>Loading</button>
-              <button class="swap-link" id="buyUseAddr" type="button" hidden>Use a deposit address</button>
-              <button class="swap-link" id="buyCancel" type="button" hidden>Cancel</button>
+      <!-- EARLY BLOCKS: ARG minted for uARG while the window is open -->
+      <section class="page" id="page-mint">
+        <div class="mint">
+          <div class="card mint-hero bare" id="mintHero">
+            <div class="mint-head">
+              <span class="eyebrow">Early blocks</span>
+              <div class="mint-rate" id="mintRate" hidden><b class="num" id="mintRateN"></b><span>for 1 uARG</span></div>
+              <h2 class="mint-status"><b id="mintTitle">Loading</b><span id="mintSub"></span></h2>
             </div>
-            <div class="buy-paused" id="buyPaused" hidden><b>Buying is paused</b><span id="buyPausedS"></span></div>
+            <div class="mint-stats" id="mintStats" hidden>
+              <div><span>Minted so far</span><b id="mintStM"></b><em id="mintStMs"></em></div>
+              <div><span>Blocks left</span><b id="mintStL"></b><em id="mintStLs"></em></div>
+              <div><span>Requests</span><b id="mintStR"></b><em id="mintStRs"></em></div>
+            </div>
+            <div class="mint-prog" id="mintProg" hidden><div class="bar"><i id="mintBar" style="width:0%"></i></div></div>
+            <div class="mint-wait" id="mintWait" hidden><span>Opens in</span><b id="mintWaitN"></b><small id="mintWaitS"></small></div>
+            <div class="mint-form" id="mintForm" hidden>
+              <div class="mint-field">
+                <div class="swap-lbl"><label for="mintAmt">You pay</label></div>
+                <div class="swap-main"><input class="swap-amt mint-amt" id="mintAmt" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false"><span class="mint-chip" id="mintChip" aria-hidden="true"></span></div>
+                <div class="swap-foot"><span id="mintUsd"></span><span class="swap-bal" id="mintBal"></span></div>
+              </div>
+              <div class="mint-get"><span>You mint</span><b class="num dim" id="mintGet">0 ARG</b></div>
+              <div class="swap-note" id="mintNote" aria-live="polite"></div>
+              <button class="btn btn-primary swap-go" id="mintGo" type="button" disabled>Enter an amount</button>
+              <button class="swap-link" id="mintGetU" type="button" hidden>Get uARG</button>
+            </div>
+            <div class="mint-how" id="mintHow"></div>
+          </div>
+          <div class="card list-card mint-mine" id="mintMine">
+            <div class="list-head"><h2>Your requests</h2><span class="chip" id="mintCount" hidden></span></div>
+            <div id="mintList"></div>
+            <div class="mint-empty" id="mintEmpty">Loading</div>
           </div>
         </div>
       </section>
@@ -869,6 +933,7 @@
      <div class="more-grab" aria-hidden="true"></div>
      <div class="more-h"><h2 id="moreTitle">More</h2><button class="btn btn-ghost btn-icon" id="moreClose" type="button" aria-label="Close"><i data-icon="x"></i></button></div>
      <nav class="more-list" aria-label="More">
+       <a href="/early" data-page="mint"><span class="mi"><i data-icon="zap"></i></span><span class="mt"><b>Early blocks</b><small>Mint {{.Coin}} for uARG while the window is open</small></span><i data-icon="chevronRight" class="mx"></i></a>
        <a href="/settings" data-page="settings"><span class="mi"><i data-icon="settings"></i></span><span class="mt"><b>Settings</b><small>Account, security, mining, appearance</small></span><i data-icon="chevronRight" class="mx"></i></a>
        {{if .Cfg.Bridge}}<a href="{{.Cfg.Bridge}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="swap"></i></span><span class="mt"><b>Bridge</b><small>USDC and USDT in and out</small></span><i data-icon="external" class="mx"></i></a>{{end}}
        <a href="{{.Cfg.Explorer}}" target="_blank" rel="noopener"><span class="mi"><i data-icon="search"></i></span><span class="mt"><b>Explorer</b><small>Blocks and transactions</small></span><i data-icon="external" class="mx"></i></a>
@@ -1083,6 +1148,28 @@
     <div class="w-foot"><button class="btn btn-primary swap-go" id="nmDone" type="button">Done</button></div>
   </div>
 </div>
+<div class="w-flow" id="flMint" role="dialog" aria-modal="true" aria-labelledby="flMintT">
+  <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flMintT">Review</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="w-view" data-view="review" data-title="Review">
+    <div class="w-body" id="mtRvBody"></div>
+    <div class="w-foot"><div class="w-pw" id="mtPwBox" hidden><label for="mtPw">Password</label><input class="input" id="mtPw" type="password" autocomplete="current-password"></div><div class="error" id="mtRvErr" role="alert"></div><button class="btn btn-primary swap-go" id="mtRvGo" type="button">Mint</button></div>
+  </div>
+  <div class="w-view" data-view="keys" data-title="Turn on sending">
+    <div class="w-body">
+      <p class="keys-note" id="mtKyNote"></p>
+      <div class="keys-form">
+        <textarea class="textarea mono" id="mtKyWords" placeholder="Your 24 words, separated by spaces" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" aria-label="Your recovery phrase"></textarea>
+        <div class="w-pw"><label for="mtKyPw1">New password for this wallet</label><input class="input" id="mtKyPw1" type="password" autocomplete="new-password"></div>
+        <div class="w-pw"><label for="mtKyPw2">Repeat password</label><input class="input" id="mtKyPw2" type="password" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <div class="w-foot"><div class="error" id="mtKyErr" role="alert"></div><button class="btn btn-primary swap-go" id="mtKyGo" type="button">Turn on and confirm</button></div>
+  </div>
+  <div class="w-view" data-view="done" data-title="Done">
+    <div class="w-body c" id="mtDoneBody"></div>
+    <div class="w-foot"><button class="btn btn-primary swap-go" id="mtDone" type="button">Done</button></div>
+  </div>
+</div>
 <div class="modal" id="forgetModal" role="dialog" aria-modal="true" aria-labelledby="forgetTitle">
   <div class="modal-card">
     <div class="modal-header"><h2 id="forgetTitle">Log out of this wallet?</h2><button class="btn btn-ghost btn-icon" id="forgetClose" aria-label="Close"><i data-icon="x"></i></button></div>
@@ -1098,7 +1185,7 @@
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var HRP = '{{.Cfg.HRP}}', EXPLORER = '{{.Cfg.Explorer}}', BRAND = '{{.Brand}}', COIN = '{{.Coin}}';
+  var HRP = '{{.Cfg.HRP}}', EXPLORER = '{{.Cfg.Explorer}}', EXPLORER_API = '{{.Cfg.ExplorerAPI}}', BRAND = '{{.Brand}}', COIN = '{{.Coin}}';
   var addr = '', created = false, ready = false, running = false, pendingAddr = '', phrase = '', rates = [], netRate = 0, myRate = 0;
   var autostart = false, keepAwake = false, wakeLock = null, startedAt = 0, hist = [], tip = 0, filter = 'all', ref = '', refPct = 5, refAgreed = 5, resume = false;
   var MATURITY = 100, BLOCK_SECS = 600, legacyAddr = '';
@@ -1150,7 +1237,7 @@
   }
 
   // ---- pages ----
-  var titles = { mine: 'Mine', wallet: 'Wallet', names: 'Names', dashboard: 'Dashboard', settings: 'Settings' };
+  var titles = { mine: 'Mine', wallet: 'Wallet', names: 'Names', mint: 'Early blocks', dashboard: 'Dashboard', settings: 'Settings' };
   var current = 'mine', shownPage = '';
   function show(p) {
     if (!titles[p]) p = 'mine';
@@ -1167,17 +1254,19 @@
     if (p !== 'settings') { $('verifyWords').value = ''; $('verifyBox').hidden = true; $('verifyOut').textContent = ''; hideReveal(); }
     if (has && (p === 'wallet' || p === 'dashboard')) refreshChain();
     if (p === 'settings') setTimeout(markSection, 0);
-    // Names and Buy load their own data when they come into view.
+    // Names and Early blocks load their own data when they come into view and poll while shown.
     var key = has ? p : '';
-    if (key !== shownPage) { shownPage = key; if (key === 'names') openNames(); else stopNamesPoll(); if (key === 'buy') openBuy(); }
+    if (key !== shownPage) { shownPage = key; if (key === 'names') openNames(); else stopNamesPoll(); if (key === 'mint') openMint(); else stopMintPoll(); }
   }
   // /history was the dashboard's address before it.
   function pageFromPath() {
     var p = location.pathname.replace(/^\/+|\/+$/g, '');
     if (p === 'history') { p = 'dashboard'; try { history.replaceState(null, '', '/dashboard' + location.search); } catch (e) {} }
+    // /early is the Early blocks screen (page key mint).
+    if (p === 'early' || p === 'mint') { p = 'mint'; try { history.replaceState(null, '', '/early' + location.search); } catch (e) {} }
     return titles[p] ? p : 'mine';
   }
-  function nav(p) { if (!titles[p]) p = 'mine'; try { history.pushState(null, '', '/' + p + location.search); } catch (e) {} show(p); window.scrollTo(0, 0); }
+  function nav(p) { if (!titles[p]) p = 'mine'; try { history.pushState(null, '', '/' + (p === 'mint' ? 'early' : p) + location.search); } catch (e) {} show(p); window.scrollTo(0, 0); }
   window.addEventListener('popstate', function () { show(pageFromPath()); });
   document.querySelectorAll('[data-page], [data-nav]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); nav(a.dataset.page || a.dataset.nav); }); });
 
@@ -1239,7 +1328,7 @@
   // The pool's address, fee and state come from the explorer; the miner is
   // told the address so its job check can insist that pool jobs pay it.
   function fetchPool() {
-    return fetch(EXPLORER + '/api/pool/stats').then(function (r) { return r.json(); }).then(function (p) {
+    return fetch(EXPLORER_API + '/api/pool/stats').then(function (r) { return r.json(); }).then(function (p) {
       poolInfo = { enabled: !!p.enabled && re.test(String(p.address || '')), address: String(p.address || '').toLowerCase(), fee_percent: n0(p.fee_percent), min_payout: n0(p.min_payout), hashrate: n0(p.hashrate), expected: n0(p.expected_seconds), round_percent: n0(p.round_percent) };
       renderMode();
       if (running && mode === 'pool' && liveMode !== 'pool' && poolInfo.enabled) { stopMining(); startMining(); }
@@ -1248,7 +1337,7 @@
   }
   function fetchPoolMiner() {
     if (!addr || mode !== 'pool') return Promise.resolve(null);
-    return fetch(EXPLORER + '/api/pool/miner/' + encodeURIComponent(addr)).then(function (r) { return r.json(); }).then(function (m) { poolMine = m; renderPoolRows(); return m; }).catch(function () { return null; });
+    return fetch(EXPLORER_API + '/api/pool/miner/' + encodeURIComponent(addr)).then(function (r) { return r.json(); }).then(function (m) { poolMine = m; renderPoolRows(); return m; }).catch(function () { return null; });
   }
   function renderPoolRows() {
     var m = poolMine || {}, pr = poolInfo ? poolInfo.hashrate : 0;
@@ -1430,13 +1519,13 @@
   // and the Send and Swap screens. Any other asset that calls itself UARG (or
   // ARG or wARG) is shown as unverified with its id; while the bridge has not
   // answered, nothing gets a dollar value.
-  var UASSET = '', HOUSE = { ARG: 1, UARG: 1, WARG: 1 }, lastAssets = [];
+  var UASSET = '{{.Cfg.UARGAsset}}', HOUSE = { ARG: 1, UARG: 1, WARG: 1 }, lastAssets = [];
   function setBridgeStatus(st) {
     if (!st || typeof st !== 'object') return;
     bridgeStatus = st;
     var id = hex64(st.asset);
     if (id && id !== UASSET) { UASSET = id; if (assetsKnown) { renderAssets(lastAssets); renderHistory(); } }
-    if (addr && typeof buy === 'object' && buy && !buy.run) buyRestore();
+    if (typeof mint === 'object' && mint) renderMintIf();
   }
   function getJSON(u, ms) {
     var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, ms) : 0;
@@ -1606,7 +1695,7 @@
   // full-screen page on phones. A flow is a stack of views; the back arrow
   // pops one, and closes the flow at the first. On phones the review opens as
   // a bottom sheet over the form. Esc closes; Tab stays inside the flow.
-  var FLOWS = { send: 'flSend', swap: 'flSwap', receive: 'flRecv', name: 'flName' }, FL = null;
+  var FLOWS = { send: 'flSend', swap: 'flSwap', receive: 'flRecv', name: 'flName', mint: 'flMint' }, FL = null;
   function isPhone() { return window.matchMedia && window.matchMedia('(max-width: 639px)').matches; }
   function openFlow(name, view) {
     if (FL) closeFlow(true);
@@ -1621,7 +1710,6 @@
     f.el.classList.remove('show', 'sheet-on'); $('flowScrim').classList.remove('show'); document.body.style.overflow = '';
     f.el.querySelectorAll('.w-view').forEach(function (v) { v.classList.remove('on', 'sheet'); });
     stopSwapTimers(); clearInterval(sw.qTimer);
-    if (buy && buy.run && buy.run.st.conv === 'review') { buy.run.st.conv = 'ready'; renderBuyIf(); }
     if (!quiet && f.back && f.back.focus) f.back.focus();
   }
   // showView(v): push v; showView(v, true): v alone; showView(v, base): base, then v.
@@ -1806,7 +1894,7 @@
   function loadCoins() {
     if (!addr) return Promise.resolve(CO);
     if (coinLoad) return coinLoad;
-    coinLoad = getJSON(EXPLORER + '/api/utxos/' + encodeURIComponent(addr), 12000).then(function (u) {
+    coinLoad = getJSON(EXPLORER_API + '/api/utxos/' + encodeURIComponent(addr), 12000).then(function (u) {
       var pend = localPend(), now = Date.now(), inPool = {}, conf = {};
       (u.mempool || []).forEach(function (t) { inPool[String(t)] = 1; });
       (u.coins || []).forEach(function (c) { conf[String(c.txid)] = 1; });
@@ -1911,7 +1999,7 @@
       return W('pay', Object.assign({ coins: CO.list, tip: CO.tip, uarg: UASSET }, req));
     }).then(function (pay) {
       if (pre && (String(pay.amount) !== String(pre.amount) || String(pay.fee) !== String(pre.fee))) { var e = new Error('Your balance changed. Check the amounts again.'); e.code = 'changed'; e.pay = pay; throw e; }
-      return postJSON(EXPLORER + '/api/tx', { hex: pay.hex }).then(function (r) {
+      return postJSON(EXPLORER_API + '/api/tx', { hex: pay.hex }).then(function (r) {
         if (!r || r.txid !== pay.txid) throw new Error('The network returned a different transaction id.');
         return pay;
       });
@@ -2400,7 +2488,6 @@
   };
   function showNativeDone(P, sg) {
     clearInterval(sw.qTimer); $('swQuoteT').textContent = ''; sw.plan = null; swapReset();
-    if (buy.run && buy.run.st.conv === 'review' && P.from === 'UARG' && P.to === 'ARG') buyConverted(sg);
     $('swDoneBody').innerHTML = '<div class="w-res"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Swapped</h3><p>' + esc(fmtU(big(sg.amount_out)) + ' ' + dispName(P.to)) + ' is in your wallet. It confirms in the next block.</p>' +
       '<dl class="swap-kv"><dt>You paid</dt><dd>' + esc(fmtU(big(sg.amount_in)) + ' ' + dispName(P.from)) + '</dd>' + txRow(sg.txid) + '</dl></div>';
     showView('done', true);
@@ -2421,9 +2508,9 @@
       if (seq !== wal.seq) return; wal.bal = x[0]; wal.alw = x[1]; inRender();
     }).catch(function () { if (seq !== wal.seq) return; wal.err = 'Balance unavailable'; inRender(); });
   }
-  // Whichever screen is deposting redraws: Swap in, or Buy.
-  function inRender() { if (FL && FL.name === 'swap' && sw.dir === 'in') computeSwap(); if (current === 'buy') renderBuy(); }
-  EVM.on(function () { wal.key = ''; if (FL && FL.name === 'swap' && sw.dir === 'in') loadWal(); if (current === 'buy') loadWal(buyRoute()); inRender(); });
+  // Swap in redraws when the connected wallet changes.
+  function inRender() { if (FL && FL.name === 'swap' && sw.dir === 'in') computeSwap(); }
+  EVM.on(function () { wal.key = ''; if (FL && FL.name === 'swap' && sw.dir === 'in') loadWal(); inRender(); });
   // What the button does now, in order: connect, switch, enter an amount, approve and deposit.
   function inState() {
     var r = swRoute(), raw = $('swPay').value.trim(), dec = r.t.decimals, v = toDec(raw, Math.min(dec, 8)), vt = v === null ? null : v * pow10(Math.max(0, dec - 8)), min = big(r.t.min_deposit), sym = r.t.symbol;
@@ -2482,7 +2569,7 @@
   $('swDepConn').onclick = function () { backView(); connectWallet(); };
   // A deposit's plan and progress. render() draws it where it is shown;
   // live() says whether it is still the deposit being followed (the Swap
-  // screen's, or the Buy screen's); watching() whether to keep polling.
+  // screen's); watching() whether to keep polling.
   function depositPlan(r, v) {
     var dp = { r: r, v: v, approve: !(wal.alw !== null && wal.alw >= v), st: {}, sub: {}, hash: '', block: null, status: '', err: '', amount: null, issue: '', render: function () {}, live: function () { return true; }, watching: function () { return true; }, after: null };
     dp.st = { approve: dp.approve ? 'now' : 'skip', deposit: dp.approve ? 'wait' : 'now', conf: 'wait', done: 'wait' };
@@ -2743,7 +2830,7 @@
   function nmInfoGet(force) {
     if (!force && nmInfo) return Promise.resolve(nmInfo);
     if (nmInfoLoad) return nmInfoLoad;
-    nmInfoLoad = getJSON(EXPLORER + '/api/names/info', 10000).then(function (j) {
+    nmInfoLoad = getJSON(EXPLORER_API + '/api/names/info', 10000).then(function (j) {
       j = j || {};
       var prices = {}; Object.keys(j.prices || {}).forEach(function (k) { prices[String(k)] = big(j.prices[k]); });
       var t = String(j.treasury || '').toLowerCase();
@@ -2763,7 +2850,7 @@
   function resolveName(l) {
     var c = rsCache[l]; if (c && Date.now() - c.at < 30000) return Promise.resolve(c.address);
     var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, 8000) : 0;
-    return fetch(EXPLORER + '/api/resolve/' + encodeURIComponent(l), ctl ? { signal: ctl.signal } : undefined).then(function (r) {
+    return fetch(EXPLORER_API + '/api/resolve/' + encodeURIComponent(l), ctl ? { signal: ctl.signal } : undefined).then(function (r) {
       clearTimeout(t);
       if (r.status === 404) return null;
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -2801,7 +2888,7 @@
     nmTimer = setTimeout(function () { nmLookup(l, seq); }, now ? 0 : 250);
   }
   function nmLookup(l, seq) {
-    Promise.all([nmInfoGet(), getJSON(EXPLORER + '/api/name/' + encodeURIComponent(l), 10000)]).then(function (x) {
+    Promise.all([nmInfoGet(), getJSON(EXPLORER_API + '/api/name/' + encodeURIComponent(l), 10000)]).then(function (x) {
       if (seq !== nmSeq) return; nmLast = nmSanit(x[1], l); renderNmRes(nmLast);
     }, function (e) { if (seq !== nmSeq) return; renderNmRes({ status: 'error', reason: netErr(e, 'The explorer'), label: l }); });
   }
@@ -2968,7 +3055,7 @@
     if (!force && nmMine) return Promise.resolve(nmMine);
     if (nmMineLoad) return nmMineLoad;
     var a = addr;
-    nmMineLoad = getJSON(EXPLORER + '/api/names?owner=' + encodeURIComponent(a), 10000).then(function (j) {
+    nmMineLoad = getJSON(EXPLORER_API + '/api/names?owner=' + encodeURIComponent(a), 10000).then(function (j) {
       if (a !== addr) return nmMine;
       j = j || {};
       var names = (Array.isArray(j.names) ? j.names : []).map(function (x) {
@@ -3022,7 +3109,7 @@
     labels.forEach(function (l) {
       var p = nmPend[l];
       if (Date.now() - p.time > 6 * 3600e3) { delete nmPend[l]; renderNmMine(); return; }
-      getJSON(EXPLORER + '/api/name/' + encodeURIComponent(l), 10000).then(function (j) {
+      getJSON(EXPLORER_API + '/api/name/' + encodeURIComponent(l), 10000).then(function (j) {
         if (nmPend[l] !== p) return;
         var r = nmSanit(j, l), hist = Array.isArray(j && j.history) ? j.history : [], seen = hist.some(function (h) { return h && hex64(h.txid) === p.txid; });
         var done = seen || (p.op === 'register' && r.status === 'registered' && r.owner === addr) || (p.op === 'transfer' && !!r.owner && r.owner === p.to) || (p.op === 'primary' && r.primary && r.owner === addr) || (p.op === 'renew' && r.expires_height > p.expiresBefore);
@@ -3042,215 +3129,269 @@
   }
   function nmReset() {
     nmMine = null; nmDispName = ''; nmPend = {}; nmLast = null; nmQ = ''; nmYears = 1; rsCache = {};
-    $('nmQ').value = ''; renderNmRes(null); applyDispName(); stopNamesPoll(); buyReset(true);
+    $('nmQ').value = ''; renderNmRes(null); applyDispName(); stopNamesPoll(); mintReset();
   }
 
-  // ---- Buy ARG: USDC or USDT from another chain, in as uARG, swapped to ARG ----
-  // The deposit is the Swap screen's (the connected wallet approves and
-  // deposits to the vault, or the deposit address takes a transfer); the
-  // uARG it credits is swapped to ARG through the swap service's uARG to ARG
-  // pair as soon as the coins are spendable, by itself while the wallet is
-  // unlocked, after the password otherwise. A buy in progress survives a
-  // reload (buy.run in this browser) and keeps going on any screen.
-  var buy = { key: '', run: null, timer: 0, go: null };
-  try { buy.key = localStorage.getItem('buy.route') || ''; } catch (e) {}
-  var buyHost = { route: function () { return buyRoute(); }, err: function (m) { note('buyErr', m || '', 'bad'); }, pick: function (title, items, cb) { openFlow('swap', 'pick'); openPicker(title, items, cb); } };
-  function buyRoute() {
-    var rs = routes(), r = rs.filter(function (x) { return x.key === buy.key; })[0];
-    if (!r) { r = rs.filter(function (x) { return !x.c.unavailable; })[0] || rs[0] || null; if (r) buy.key = r.key; }
-    return r;
+  // ---- Early blocks: ARG minted for uARG while the window is open (consensus/mint.go) ----
+  // A request is an ordinary payment of uARG to the window's address that
+  // carries the memo EARLY1. The coinbase of the block that includes it pays
+  // the sender rate × paid in ARG, spendable after the maturity like a
+  // miner's reward. The explorer's /api/early is the window's state and
+  // /api/early/<address> this wallet's requests; one sent from this browser
+  // is remembered (mint.requests.<address>) until the explorer lists it.
+  var MINT_MEMO = 'EARLY1';
+  var mint = { info: null, err: '', load: null, mine: null, mineLoad: null, poll: 0, plan: null };
+  function mtKey() { return 'mint.requests.' + addr; }
+  function mtPend() { if (!addr) return []; var a = []; try { a = JSON.parse(localStorage.getItem(mtKey()) || '[]'); } catch (e) {} return Array.isArray(a) ? a.map(hex64).filter(Boolean) : []; }
+  function mtPendSave(a) { if (addr) save(mtKey(), a.length ? JSON.stringify(a) : null); }
+  function mtPendAdd(txid) { var a = mtPend().filter(function (x) { return x !== txid; }); a.push(txid); mtPendSave(a); }
+  function mtReq(x) { x = x || {}; var t = hex64(x.txid); return t ? { height: Math.max(0, Math.floor(n0(x.height))), txid: t, paid: big(x.paid), minted: big(x.minted) } : null; }
+  // The window as the explorer reports it, every field checked. ok is false
+  // when the rule cannot be shown (no rate, no address): nothing is offered.
+  function mtSanit(j) {
+    j = j || {};
+    if (!j.window) return { window: false, status: 'none', ok: false, recent: [] };
+    var rate = big(j.rate), per = big(j.perBlock), maxPaid = big(j.maxPaid), a = String(j.address || '').toLowerCase();
+    if (maxPaid <= ZERO && rate > ZERO) maxPaid = per / rate;
+    var st = String(j.status || ''), height = n0(j.height), start = n0(j.start), end = n0(j.end);
+    if (['upcoming', 'open', 'closed'].indexOf(st) < 0) st = height < start ? 'upcoming' : height <= end ? 'open' : 'closed';
+    return { window: true, status: st, start: start, end: end, height: height, perBlock: per, rate: rate, maxPaid: maxPaid, asset: hex64(j.asset), address: re.test(a) ? a : '',
+      minted: big(j.minted), requests: n0(j.requests), cap: big(j.cap) > ZERO ? big(j.cap) : per * BigInt(Math.max(0, end - start + 1)), pending: big(j.pending), maturity: n0(j.maturity) || MATURITY,
+      recent: (Array.isArray(j.recent) ? j.recent : []).map(mtReq).filter(Boolean), ok: rate > ZERO && per > ZERO && maxPaid > ZERO && re.test(a) };
   }
-  function buyPair() { return maker && !maker.closed ? pairOf(maker, 'UARG', 'ARG') : null; }
-  function buyAmount(r) { var raw = $('buyAmt').value.trim(), dec = r.t.decimals, v = toDec(raw, Math.min(dec, 8)); return { raw: raw, v: v, vt: v === null ? null : v * pow10(Math.max(0, dec - 8)) }; }
-  // What vt token units buy: less the bridge's deposit fee, as uARG, at the maker's rate.
-  function buyEst(r, vt) {
-    var p = buyPair(); if (!r || !p || vt === null || !vt) return null;
-    var rt = toDec(String(p.rate || ''), 8); if (rt === null) return null;
-    return tokToArg(vt - feeOf(vt, r.c.deposit_fee_bps), r.t.decimals) * rt / E8;
+  function mtHeight() { return Math.max(tip || 0, mint.info ? mint.info.height : 0); }
+  function mtArg(u) { return fmtU(u, 0) + ' ' + COIN; }
+  // "about 3 hours": blocks at ten minutes each.
+  function mtAbout(blocks) {
+    var s = Math.max(0, blocks) * BLOCK_SECS;
+    if (s < 3600) return 'about ' + Math.max(1, Math.round(s / 60)) + ' minutes';
+    if (s < 48 * 3600) { var h = Math.max(1, Math.round(s / 3600)); return 'about ' + h + (h === 1 ? ' hour' : ' hours'); }
+    var d = Math.round(s / 86400); return 'about ' + d + (d === 1 ? ' day' : ' days');
   }
-  function openBuy() {
-    if (!addr) return;
-    buyRestore(); renderBuy();
-    loadStatus().then(function () { buyRestore(); renderBuyIf(); });
-    loadCoins().then(renderBuyIf);
-    if (SWAP) whenReady(function () { makerInfo(true).then(renderBuyIf, renderBuyIf); });
+  function mtLoad() {
+    if (mint.load) return mint.load;
+    mint.load = getJSON(EXPLORER_API + '/api/early', 10000).then(function (j) { mint.info = mtSanit(j); mint.err = ''; }, function (e) { mint.err = netErr(e, 'The explorer'); })
+      .then(function () { mint.load = null; renderMintIf(); });
+    return mint.load;
   }
-  function renderBuyIf() { if (current === 'buy') renderBuy(); }
-  function renderBuy() {
-    var r = buyRoute(), p = buyPair(), R = buy.run, loading = (BRIDGE && !bridgeStatus && !bridgeDownNow) || (SWAP && !maker && !makerErr);
-    var paused = !SWAP || !BRIDGE || !!HOLD_ARG || (!!maker && !p);
-    $('buyForm').hidden = paused; $('buyPaused').hidden = !paused;
-    if (paused) { $('buyPausedS').textContent = !SWAP || !BRIDGE ? 'Not offered here.' : HOLD_ARG ? HOLD_ARG : maker.closed ? maker.closed : 'The swap service is not selling ' + COIN + ' right now. Try again later.'; return; }
-    var busy = !!(R && !R.done && !R.err);
-    setHTML($('buyChip'), r ? chipHTML(r.t.symbol, r.c.name, !busy) : '<span class="swap-tok"><b>' + (loading ? 'Loading' : 'Select token') + '</b></span>' + UI.icon('chevronDown'));
-    $('buyChip').classList.toggle('empty', !r); $('buyChip').disabled = busy; $('buyAmt').disabled = busy;
-    if (R && R.v !== null && R.r) { var shown = fmtTok(R.v, R.r.t.decimals, Math.min(R.r.t.decimals, 8), 0, true); if ($('buyAmt').value !== shown) $('buyAmt').value = shown; }
-    var a = r ? buyAmount(r) : { raw: '', v: null, vt: null }, dec = r ? r.t.decimals : 6, bps = r ? r.c.deposit_fee_bps : 0;
-    var est = R && R.v !== null ? buyEst(R.r, R.v) : buyEst(r, a.vt), onChain = r && EVM.connected && EVM.chainId === r.c.chain_id;
-    setHTML($('buyBal'), onChain && wal.bal !== null ? '<span>Balance ' + esc(fmt2(wal.bal, dec)) + '</span>' + (busy ? '' : '<button class="swap-max" type="button" data-max' + (wal.bal > ZERO ? '' : ' disabled') + '>Max</button>') : onChain && wal.err ? '<span>' + esc(wal.err) + '</span>' : '');
-    $('buyFoot').textContent = r ? (bps ? 'Fee ' + pct(bps) + ' · ' : '') + depEta(r.c) + (big(r.t.min_deposit) > ZERO ? ' · from ' + fmt2(big(r.t.min_deposit), dec) + ' ' + r.t.symbol : '') : '';
-    $('buyGet').textContent = R && R.conv ? fmtTok(R.conv.out, 8, 2, 0) + ' ' + COIN : est !== null ? fmtTok(est, 8, 2, 0) + ' ' + COIN : '–';
-    renderBuySteps(R, r);
-    var on = EVM.connected && !!r; $('buyConn').hidden = !on;
-    if (on) { setHTML($('buyConnIc'), connHTML()); $('buyConnT').textContent = connText(r); }
-    var st = buyState(r, a); setGo($('buyGo'), st.label, !st.off); buy.go = st.go || null;
-    $('buyUseAddr').hidden = busy || !!(R && R.done) || !CONNECT_EVM || !EVM.has() || !r || !r.c.vault;
-    $('buyCancel').hidden = !busy || !((R.mode === 'address' && !(R.addr && R.addr.stage)) || (R.mode === 'wallet' && R.dp && !R.dp.hash));
+  function mtLoadMine() {
+    if (!addr) return Promise.resolve();
+    if (mint.mineLoad) return mint.mineLoad;
+    var a = addr;
+    mint.mineLoad = getJSON(EXPLORER_API + '/api/early/' + encodeURIComponent(a), 10000).then(function (j) {
+      if (a !== addr) return;
+      j = j || {};
+      var list = (Array.isArray(j.requests) ? j.requests : Array.isArray(j) ? j : []).map(mtReq).filter(Boolean);
+      mint.mine = { list: list, err: '' };
+      // A request the explorer lists is no longer only remembered here.
+      var seen = {}; list.forEach(function (x) { seen[x.txid] = 1; });
+      var pend = mtPend(), left = pend.filter(function (t) { return !seen[t]; });
+      if (left.length !== pend.length) mtPendSave(left);
+    }, function (e) { if (a === addr && !mint.mine) mint.mine = { list: [], err: netErr(e, 'The explorer') }; })
+      .then(function () { mint.mineLoad = null; renderMintIf(); });
+    return mint.mineLoad;
   }
-  // What the button does now, in order: connect, switch, enter an amount, approve and buy.
-  function buyState(r, a) {
-    var R = buy.run;
-    if (R && (R.done || R.err)) return { label: R.err ? 'Start over' : 'Buy more', go: function () { buyReset(); } };
-    if (R) return R.st.conv === 'ready' ? { label: 'Convert to ' + COIN, go: buyConvert } : { label: R.st.conv === 'review' ? 'Confirm the swap' : R.st.conv === 'now' ? 'Converting' : R.mode === 'address' ? 'Waiting for your deposit' : 'In progress', off: true };
-    if (wal.busy) return { label: wal.busy, off: true };
-    if (BRIDGE && !bridgeStatus && !bridgeDownNow) return { label: 'Loading', off: true };
-    if (!r) return { label: bridgeDownNow ? 'Bridge unreachable' : 'Nothing to pay with right now', off: true };
-    if (!maker) return { label: makerErr ? 'Swap service unavailable' : 'Loading', off: true };
-    if (r.c.unavailable) return { label: r.c.name + ' is unavailable', off: true };
-    var dec = r.t.decimals, min = big(r.t.min_deposit), sym = r.t.symbol;
-    if (a.raw && a.v === null) return { label: 'Enter a valid amount', off: true };
-    if (a.raw && a.vt !== null && a.vt < min) return { label: 'Minimum ' + fmt2(min, dec) + ' ' + sym, off: true };
-    if (!CO.ok) return { label: 'Loading balance', off: true };
-    if (!CONNECT_EVM || !EVM.has() || !r.c.vault) return { label: 'Continue', go: buyShowAddress };
-    if (!EVM.connected) return { label: 'Connect wallet', go: function () { connectWallet(buyHost); } };
-    if (EVM.chainId !== r.c.chain_id) return { label: 'Switch to ' + r.c.name, go: function () { switchChain(buyHost); } };
-    loadWal(r);
-    if (wal.bal === null) return { label: wal.err || 'Loading balance', off: true };
-    if (!a.vt) return { label: 'Enter an amount', off: true };
-    if (a.vt > wal.bal) return { label: 'Insufficient ' + sym, off: true };
-    return { label: wal.alw !== null && wal.alw >= a.vt ? 'Buy' : 'Approve and buy', go: buyStart };
+  function renderMintIf() { if (current === 'mint') renderMint(); }
+  // Why the request cannot be sent as typed: [button label, note].
+  function mtProblem(i) {
+    var raw = $('mintAmt').value.trim(), u = toUnits(raw);
+    if (!UASSET) return ['uARG is loading'];
+    if (i.asset && i.asset !== UASSET) return ['Not available', 'It takes an asset this wallet does not hold.'];
+    if (raw && u === null) return ['Enter an amount', 'Enter a number with up to 8 decimals.'];
+    if (!u) return ['Enter an amount'];
+    if (u > i.maxPaid) return ['At most ' + fmtU(i.maxPaid, 0) + ' uARG', 'One request mints at most ' + mtArg(i.perBlock) + ', which is ' + fmtU(i.maxPaid, 0) + ' uARG.'];
+    if (!CO.ok) return ['Loading balance'];
+    if (u > coinBal('UARG')) return ['Insufficient uARG'];
+    return null;
   }
-  function renderBuySteps(R, r) {
-    var sym = r ? r.t.symbol : 'USDC', chain = r ? r.c.name : 'another chain', html;
-    if (!R) {
-      $('buySteps').innerHTML = step('wait', 'Pay', esc(sym + ' on ' + chain + (CONNECT_EVM && EVM.has() && r && r.c.vault ? ' from your wallet' : ' to your deposit address'))) +
-        step('wait', 'Bridged', esc('Credited here as uARG, ' + (r ? depEta(r.c) : 'about 20 min'))) + step('wait', 'Converted to ' + COIN, 'Swapped at the current rate');
-      return;
+  function renderMint() {
+    var i = mint.info, h = mtHeight(), hero = $('mintHero'), known = !!(i && i.window && i.ok);
+    setHTML($('mintChip'), chipHTML('uARG', netName(), false, true));
+    $('mintForm').hidden = true; $('mintWait').hidden = true; $('mintProg').hidden = true; $('mintStats').hidden = true;
+    $('mintRate').hidden = !known; hero.classList.toggle('bare', !known); hero.classList.toggle('is-open', known && i.status === 'open');
+    if (!i) {
+      $('mintTitle').textContent = mint.err ? 'Not reachable' : 'Loading';
+      $('mintSub').innerHTML = mint.err ? esc(mint.err) + ' <button class="swap-inl" type="button" data-mint="retry">Try again</button>' : '';
+      renderMintHow(); renderMintMine(); return;
     }
-    var c = R.r.c, t = R.r.t, dec = t.decimals, scan = c.explorer;
-    if (R.mode === 'wallet') {
-      var dp = R.dp, tx = dp.hash && scan && /^0x[0-9a-fA-F]{64}$/.test(dp.hash) ? ' · ' + txLink(scan + '/tx/' + dp.hash, 'View') : '';
-      var payK = dp.st.deposit === 'done' ? 'done' : dp.st.approve === 'bad' || dp.st.deposit === 'bad' ? 'bad' : 'now';
-      var payS = payK === 'bad' ? esc(dp.err) : payK === 'done' ? esc(fmt2(dp.v, dec) + ' ' + t.symbol + ' on ' + c.name) + tx : dp.st.approve === 'now' ? esc('Approve ' + t.symbol + (dp.sub.approve ? ' · ' + dp.sub.approve : '')) : esc(dp.sub.deposit || 'Deposit ' + t.symbol);
-      html = step(payK, 'Pay', payS);
-      var need = n0(c.confirmations), conf = dp.rec ? depProgress(dp.rec) : { text: (dp.confs || 0) + ' of ' + need + ' confirmations', pct: need ? Math.min(dp.confs || 0, need) / need * 100 : 0, stage: 'confirming' };
-      var brK = dp.st.done === 'done' ? 'done' : dp.st.conf === 'bad' ? 'bad' : dp.st.conf === 'now' || dp.st.done === 'now' ? 'now' : 'wait';
-      var got = dp.amount !== null ? dp.amount : tokToArg(dp.v - feeOf(dp.v, c.deposit_fee_bps), dec);
-      var brS = brK === 'bad' ? esc(dp.err) : brK === 'done' ? esc(fmtU(got) + ' uARG in your wallet') : dp.st.done === 'now' ? esc('Issued · waiting for the next ' + netName() + ' block') :
-        brK === 'now' ? (conf.stage === 'confirming' ? esc(cap(conf.text)) + (conf.pct < 100 ? '<span class="swap-bar"><i style="width:' + Math.round(conf.pct) + '%"></i></span>' : '') : esc('Final on ' + c.name + ' · the guardians are signing')) : '';
-      html += step(brK, 'Bridged', brS);
+    if (!known) {
+      $('mintTitle').textContent = 'Not available on this network';
+      $('mintSub').textContent = i.window ? 'The explorer did not describe the rule.' : 'This network has no early blocks.';
+      renderMintHow(); renderMintMine(); return;
+    }
+    $('mintRateN').textContent = String(i.rate) + ' ' + COIN;
+    var left = i.status === 'closed' ? 0 : i.status === 'upcoming' ? Math.max(0, i.end - i.start + 1) : Math.max(0, i.end - h);
+    if (i.status === 'upcoming') {
+      var until = Math.max(0, i.start - h);
+      $('mintTitle').textContent = 'Opens at block ' + UI.fmt.int(i.start);
+      $('mintSub').textContent = 'block ' + UI.fmt.int(h) + ' now';
+      $('mintWait').hidden = false; $('mintWaitN').textContent = plural(until, 'block', 'blocks'); $('mintWaitS').textContent = mtAbout(until);
+    } else if (i.status === 'open') {
+      $('mintTitle').textContent = 'Open';
+      $('mintSub').textContent = 'closes at block ' + UI.fmt.int(i.end) + ' · ' + plural(left, 'block', 'blocks') + ' left';
+      $('mintForm').hidden = false; renderMintForm(i);
     } else {
-      var a = R.addr || { stage: 0, info: {} }, inf = a.info || {};
-      html = step(a.stage >= 1 ? 'done' : 'now', 'Pay', a.stage >= 1 ? esc(inf.recv || '') : esc('Send ' + t.symbol + ' on ' + c.name + ' to your deposit address') + ' · <button class="swap-inl" type="button" data-buy="addr">Show address</button>');
-      html += step(inf.bad ? 'bad' : a.stage >= 4 ? 'done' : a.stage >= 2 ? 'now' : 'wait', 'Bridged', inf.bad ? esc(inf.bad) : a.stage >= 4 ? (inf.done || '') : a.stage === 3 ? esc('Issuing uARG · the guardians are signing') : a.stage === 2 ? (inf.conf || '') : '');
+      $('mintTitle').textContent = 'Closed at block ' + UI.fmt.int(i.end);
+      $('mintSub').textContent = '';
     }
-    var cv = R.st.conv, cvK = cv === 'done' ? 'done' : cv === 'wait' ? 'wait' : 'now';
-    var cvS = cv === 'done' ? esc(fmtU(R.conv.out) + ' ' + COIN + ' · confirms in the next block') + (hex64(R.conv.txid) ? ' · ' + txLink(EXPLORER + '/tx/' + hex64(R.conv.txid), 'View') : '') :
-      cv === 'ready' ? esc(fmtU(R.uGot) + ' uARG ready to convert') : cv === 'now' ? 'Converting' : cv === 'review' ? 'Confirm the swap' : '';
-    html += step(cvK, 'Converted to ' + COIN, cvS);
-    $('buySteps').innerHTML = html;
+    // The three stats, the bar under them.
+    $('mintStats').hidden = false; $('mintProg').hidden = false;
+    setHTML($('mintStM'), esc(fmtU(i.minted, 0)) + '<small>' + esc(COIN) + '</small>'); $('mintStMs').textContent = 'of ' + fmtU(i.cap, 0);
+    $('mintStL').textContent = UI.fmt.int(left); $('mintStLs').textContent = i.status === 'closed' ? 'closed' : mtAbout(left);
+    $('mintStR').textContent = UI.fmt.int(i.requests); $('mintStRs').textContent = i.pending > ZERO ? mtArg(i.pending) + ' waiting' : i.status === 'closed' ? 'in all' : '';
+    var pct = i.cap > ZERO ? Number(i.minted * BigInt(1000) / i.cap) / 10 : 0;
+    $('mintBar').style.width = Math.max(0, Math.min(100, pct)) + '%';
+    renderMintHow(); renderMintMine();
   }
-  function buyStart() {
-    var r = buyRoute(), a = r ? buyAmount(r) : null; if (!r || !a || !a.vt || !CO.ok) return;
-    buyHost.err('');
-    var dp = depositPlan(r, a.vt), R = { r: r, v: a.vt, mode: 'wallet', dp: dp, since: Math.floor(Date.now() / 1000), uBefore: confirmedOf(UASSET), st: { conv: 'wait' }, addr: null, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
-    dp.render = renderBuyIf; dp.live = dp.watching = function () { return buy.run === R; };
-    buy.run = R; buyTimers(); renderBuy();
-    runDeposit(dp, function () { wal.key = ''; buySave(); });
+  function renderMintForm(i) {
+    var bal = coinBal('UARG'), u = toUnits($('mintAmt').value), get = u && u > ZERO ? u * i.rate : ZERO, max = bal < i.maxPaid ? bal : i.maxPaid;
+    setHTML($('mintBal'), '<span>Balance ' + esc(fmtU(bal, 0)) + ' uARG</span><button class="swap-max" type="button" data-max' + (CO.ok && max > ZERO ? '' : ' disabled') + '>Max</button>');
+    $('mintUsd').textContent = get > ZERO ? '$' + fmt2(u, 8) : 'Up to ' + fmtU(i.maxPaid, 0) + ' uARG';
+    $('mintGet').textContent = mtArg(get); $('mintGet').classList.toggle('dim', get <= ZERO);
+    var pr = mtProblem(i);
+    note('mintNote', pr && pr[1] ? pr[1] : '', pr && pr[1] ? 'bad' : '');
+    setGo($('mintGo'), pr ? pr[0] : 'Mint ' + mtArg(get), !pr);
+    $('mintGetU').hidden = !(CO.ok && bal <= ZERO && (BRIDGE || SWAP));
   }
-  // Without a connected wallet: this address's deposit address on the
-  // chosen chain, shown the way Swap in shows it.
-  function buyShowAddress() {
-    var r = buyRoute(); if (!r || !CO.ok) return;
-    if (!buy.run) {
-      var a = buyAmount(r);
-      buy.run = { r: r, v: a.vt, mode: 'address', dp: null, since: Math.floor(Date.now() / 1000), uBefore: confirmedOf(UASSET), st: { conv: 'wait' }, addr: { stage: 0, info: {} }, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
-      buySave(); buyTimers(); renderBuy();
-    }
-    sw.dir = 'in'; sw.key = buy.run.r.key; openFlow('swap', 'dep'); showDeposit();
+  // Two lines of small print under the form, the numbers from the explorer.
+  function renderMintHow() {
+    var i = mint.info;
+    if (!i || !i.window || !i.ok) { $('mintHow').innerHTML = ''; return; }
+    $('mintHow').innerHTML = '<p>' + esc(String(i.rate) + ' ' + COIN + ' for 1 uARG, up to ' + mtArg(i.perBlock) + ' a block, ' + fmtU(i.cap, 0) + ' in all, until block ' + UI.fmt.int(i.end) + '. Then ' + COIN + ' comes only from mining.') + '</p>' +
+      '<p>' + esc('Paid from the coinbase of the block that takes your request, spendable ' + UI.fmt.int(i.maturity) + ' blocks later. The uARG goes to the treasury.') + '</p>';
   }
-  function buyTimers() { clearInterval(buy.timer); buy.timer = setInterval(buyTick, 10000); }
-  // Every ten seconds while a buy is open: the deposit address's status
-  // (that path), and the wallet's uARG. Once the bridge has credited the
-  // deposit and the coins are spendable, the conversion.
-  function buyTick() {
-    var R = buy.run; if (!R || R.done || R.err) { clearInterval(buy.timer); buy.timer = 0; return; }
-    if (R.mode === 'address' && BRIDGE) {
-      loadStatus(Date.now() - stAt > 15000);
-      getJSON(BRIDGE + '/api/deposit-address/status' + depQuery(R.r.c), 15000).then(function (s) {
-        if (buy.run !== R || !s || String(s.chain_id) !== String(R.r.c.chain_id) || String(s.to || '').toLowerCase() !== addr) return;
-        R.addr = depAddrView(s, R.r.c, R.since - 600); if (R.addr.dep && n0(R.addr.dep.amount)) R.uExp = big(R.addr.dep.amount); renderBuyIf();
-      }).catch(function () {});
-    }
-    if (R.st.conv !== 'wait') return;
+  // Your requests: the explorer's list for this address, with the ones sent
+  // from this browser that it has not listed yet.
+  function renderMintMine() {
+    var i = mint.info, m = mint.mine, h = mtHeight(), mat = i && i.maturity ? i.maturity : MATURITY;
+    var list = m ? m.list.slice().sort(function (a, b) { return b.height - a.height; }) : [], seen = {}, lp = {};
+    list.forEach(function (x) { seen[x.txid] = 1; });
+    localPend().forEach(function (x) { if (x.kind === 'mint') lp[x.txid] = x; });
+    var pend = mtPend().filter(function (t) { return !seen[t]; });
+    // One row: the status pill, the ARG minted and its line, the uARG paid and the txid.
+    var row = function (txid, minted, pill, s, paid) {
+      return '<div class="mint-row" data-txid="' + esc(txid) + '"><span class="mint-pill ' + pill[0] + '">' + pill[1] + '</span><div class="mint-row-t"><b class="num">' + esc(minted === null ? 'Request' : mtArg(minted)) + '</b><div class="mint-row-s">' + esc(s) + '</div></div>' +
+        '<div class="mint-row-v"><b>' + esc(paid === null ? '–' : fmtU(paid, 0) + ' uARG') + '</b><span>' + txLink(EXPLORER + '/tx/' + txid, UI.fmt.short(txid, 6, 4)) + '</span></div></div>';
+    };
+    var PENDING = ['pending', 'Pending'], MINTED = ['', 'Minted'], OK = ['ok', 'Spendable'];
+    var html = pend.map(function (t) { var x = lp[t]; return row(t, x ? big(x.minted) : null, PENDING, 'Waiting for a block', x ? big(x.amount) : null); }).join('');
+    html += list.map(function (x) {
+      if (!x.height) return row(x.txid, x.minted, PENDING, 'Waiting for a block', x.paid);
+      var at = x.height + mat, ok = h >= at;
+      return row(x.txid, x.minted, ok ? OK : MINTED, 'Block ' + UI.fmt.int(x.height) + (ok ? '' : ' · spendable at block ' + UI.fmt.int(at) + ', ' + mtAbout(at - h)), x.paid);
+    }).join('');
+    $('mintList').innerHTML = html;
+    var n = pend.length + list.length;
+    $('mintCount').hidden = !n; $('mintCount').textContent = plural(n, 'request', 'requests');
+    $('mintEmpty').hidden = !!n;
+    $('mintEmpty').innerHTML = !m ? 'Loading' : m.err ? UI.icon('alert') + ' ' + esc(m.err) + ' <button class="swap-inl" type="button" data-act="reload">Try again</button>' : 'No requests yet.';
+  }
+  function mintBegin() {
+    var i = mint.info; if (!i || i.status !== 'open' || !i.ok || mtProblem(i)) return;
+    var u = toUnits($('mintAmt').value), btn = $('mintGo');
+    btn.classList.add('is-loading'); note('mintNote', '');
     loadCoins().then(function () {
-      if (buy.run !== R || !CO.ok || R.st.conv !== 'wait') return;
-      var gain = confirmedOf(UASSET) - R.uBefore, p = buyPair();
-      var credited = R.mode === 'wallet' ? R.dp.st.done === 'done' || (R.dp.amount !== null && gain >= R.dp.amount) : (R.addr && R.addr.stage >= 4) || (R.uExp > ZERO && gain >= R.uExp);
-      if (credited && gain > ZERO && p && gain >= big(p.min)) { R.uGot = gain; buyReady(R); }
+      var pr = mtProblem(i); if (pr) throw new Error(pr[0] + '.');
+      return W('preview', { coins: CO.list, tip: CO.tip, asset: UASSET, to: i.address, amount: String(u), max: false, uarg: UASSET, memo: MINT_MEMO }).then(function (pre) {
+        return { u: big(pre.amount), to: i.address, rate: i.rate, maturity: i.maturity, pre: pre, topUp: null };
+      }, function (e) {
+        if (e.code !== 'fee') throw e;
+        // No ARG for the network fee: a little uARG is swapped for it first, the way Send does.
+        return planTopUp('UARG').then(function (tu) {
+          if (u + tu.amount > coinBal('UARG')) throw new Error('Leave ' + fmtU(tu.amount, 0) + ' uARG to cover the network fee.');
+          return { u: u, to: i.address, rate: i.rate, maturity: i.maturity, pre: null, topUp: tu };
+        });
+      });
+    }).then(function (P) { mint.plan = P; showMintReview(); return lockState('mt'); })
+      .catch(function (e) { note('mintNote', friendly(e), 'bad'); })
+      .then(function () { btn.classList.remove('is-loading'); });
+  }
+  function showMintReview() {
+    var P = mint.plan, get = P.u * P.rate;
+    var fee = P.pre ? mtArg(big(P.pre.fee)) : fmtU(P.topUp.amount, 0) + ' uARG, swapped to ' + COIN;
+    $('mtRvBody').innerHTML = amtRow('You pay', fmtU(P.u), 'uARG', '$' + fmt2(P.u, 8), true) +
+      '<dl class="swap-kv"><dt>You mint</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Rate</dt><dd>' + esc(String(P.rate) + ' ' + COIN + ' for 1 uARG') + '</dd>' + kvTo('Paid to', P.to) +
+      '<dt>Memo</dt><dd class="mono">' + esc(MINT_MEMO) + '</dd><dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Minted</dt><dd>By the next block that includes it, about 10 min</dd>' +
+      '<dt>Spendable</dt><dd>' + esc(plural(P.maturity, 'block', 'blocks') + ' later, ' + mtAbout(P.maturity)) + '</dd></dl>';
+    err('mtRvErr', ''); $('mtRvGo').textContent = 'Mint ' + mtArg(get);
+    if (!FL || FL.name !== 'mint') openFlow('mint', 'review'); else if (FL.stack[FL.stack.length - 1] !== 'review') showView('review');
+  }
+  function mintExec(P) {
+    var first = P.topUp ? doTopUp(P.topUp).then(function () { P.topUp = null; P.pre = null; }) : Promise.resolve();
+    return first.then(function () {
+      return payNow({ asset: UASSET, to: P.to, amount: String(P.u), max: false, memo: MINT_MEMO }, P.pre);
+    }).then(function (pay) {
+      var paid = big(pay.amount), get = paid * P.rate;
+      addPend({ txid: pay.txid, kind: 'mint', sym: 'uARG', amount: String(paid), minted: String(get), to: P.to, spent: pay.spent, incoming: pay.change });
+      mtPendAdd(pay.txid);
+      $('mintAmt').value = ''; mint.plan = null;
+      $('mtDoneBody').innerHTML = '<div class="w-res" id="mintDoneCard" data-txid="' + esc(pay.txid) + '"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Request sent</h3><p>' + esc('The next block that includes it mints ' + mtArg(get) + ' for you, spendable ' + plural(P.maturity, 'block', 'blocks') + ' later, ' + mtAbout(P.maturity) + '.') + '</p>' +
+        '<dl class="swap-kv"><dt>Paid</dt><dd>' + esc(fmtU(paid) + ' uARG') + '</dd><dt>Mints</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Network fee</dt><dd>' + esc(mtArg(big(pay.fee))) + '</dd>' + txRow(pay.txid) + '</dl></div>';
+      showView('done', true); refreshChain(); renderMintIf(); mintPollStart();
     });
   }
-  function buyReady(R) {
-    R.st.conv = 'ready'; renderBuyIf();
-    W('status').then(function (x) { if (buy.run === R && x.unlocked && R.st.conv === 'ready') buyConvert(); }, function () {});
+  function mintFailed(P, e, errId) {
+    if (e && e.code === 'changed') { P.pre = e.pay; P.u = big(e.pay.amount); showMintReview(); err('mtRvErr', friendly(e)); return; }
+    if (errId === 'mtKyErr' && hasKeys()) { showView('review', true); errId = 'mtRvErr'; }
+    if (errId === 'mtRvErr') reviewErr('mt', e); else err(errId, netErr(e, 'The network'));
   }
-  function buyConvert() {
-    var R = buy.run; if (!R || R.st.conv !== 'ready') return;
-    var p = buyPair(); if (!p) { buyHost.err('The swap service is not selling ' + COIN + ' right now. Your uARG is in your wallet.'); return; }
-    var u = R.uGot; if (big(p.max) > ZERO && u > big(p.max)) u = big(p.max);
-    R.st.conv = 'now'; buyHost.err(''); renderBuyIf();
-    W('status').then(function (x) {
-      if (x.unlocked) return nativeQuote('UARG', 'ARG', u).then(execNative).then(function (sg) { buyConverted(sg); });
-      // Locked: the Swap screen's review asks for the password and signs.
-      R.st.conv = 'review'; renderBuyIf();
-      sw.dir = 'native'; sw.from = 'UARG'; sw.to = 'ARG'; sw.max = false; $('swPay').value = plainU(u);
-      openFlow('swap'); renderSwap();
-      return reviewNative();
-    }).catch(function (e) {
-      if (buy.run !== R) return;
-      R.st.conv = 'ready'; buyHost.err(netErr(e, 'The swap service')); renderBuyIf();
-      if (FL && FL.name === 'swap') note('swInErr', netErr(e, 'The swap service'), 'bad');
-    });
-  }
-  function buyConverted(sg) {
-    var R = buy.run; if (!R) return;
-    R.st.conv = 'done'; R.done = true; R.conv = { txid: String(sg.txid || ''), out: big(sg.amount_out), inn: big(sg.amount_in) };
-    buySave(); renderBuyIf(); refreshChain();
-    if (current !== 'buy') UI.toast(fmtU(R.conv.out) + ' ' + COIN + ' bought. It confirms in the next block.', 'ok', 6000);
-  }
-  function buyReset(quiet) { clearInterval(buy.timer); buy.timer = 0; buy.run = null; save('buy.run', null); if (!quiet) { buyHost.err(''); $('buyAmt').value = ''; renderBuy(); } }
-  // A buy in progress is kept in this browser so a reload picks it up.
-  function buySave() {
-    var R = buy.run;
-    save('buy.run', R && !R.done && !R.err ? JSON.stringify({ addr: addr, key: R.r.key, v: R.v === null ? '' : String(R.v), mode: R.mode, since: R.since, uBefore: String(R.uBefore), hash: R.dp ? R.dp.hash : '' }) : null);
-  }
-  function buyRestore() {
-    if (buy.run || !addr) return;
-    var x = null; try { x = JSON.parse(localStorage.getItem('buy.run') || 'null'); } catch (e) {}
-    if (!x || typeof x !== 'object') return;
-    if (x.addr !== addr || !(Date.now() / 1000 - n0(x.since) < 86400)) { save('buy.run', null); return; }
-    var r = routes().filter(function (q) { return q.key === x.key; })[0]; if (!r) return; // the chains are not known yet
-    var R = { r: r, v: /^\d+$/.test(String(x.v)) ? BigInt(x.v) : null, mode: x.mode === 'wallet' ? 'wallet' : 'address', dp: null, since: n0(x.since), uBefore: big(x.uBefore), st: { conv: 'wait' }, addr: { stage: 0, info: {} }, err: '', uGot: ZERO, uExp: ZERO, conv: null, done: false };
-    if (R.mode === 'wallet') {
-      if (R.v === null || !/^0x[0-9a-fA-F]{64}$/.test(String(x.hash || ''))) { save('buy.run', null); return; } // never sent
-      var dp = depositPlan(r, R.v); dp.approve = false; dp.st = { approve: 'skip', deposit: 'done', conf: 'now', done: 'wait' }; dp.hash = String(x.hash);
-      dp.render = renderBuyIf; dp.live = dp.watching = function () { return buy.run === R; }; R.dp = dp;
-      buy.run = R; watchDeposit(dp);
-    } else buy.run = R;
-    buyTimers();
-  }
-  $('buyAmt').addEventListener('input', renderBuy);
-  $('buyAmt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!$('buyGo').disabled) $('buyGo').click(); } });
-  $('buyGo').onclick = function () { if (buy.go && !this.disabled) buy.go(); };
-  $('buyBal').addEventListener('click', function (e) { if (!e.target.closest('[data-max]')) return; var r = buyRoute(); if (r && wal.bal !== null) { $('buyAmt').value = fmtTok(wal.bal, r.t.decimals, Math.min(r.t.decimals, 8), 0, true); renderBuy(); $('buyAmt').focus(); } });
-  $('buyChip').onclick = function () {
-    if (buy.run && !buy.run.done && !buy.run.err) return;
-    buyHost.pick('Pay with', routeItems(buy.key), function (k) { if (k.indexOf('r:') !== 0) return; buy.key = k.slice(2); save('buy.route', buy.key); wal.key = ''; buyHost.err(''); renderBuy(); });
+  $('mtRvGo').onclick = function () {
+    var P = mint.plan, btn = this; if (!P) return;
+    if (!hasKeys()) { showKeys('mt'); return; }
+    btn.classList.add('is-loading'); err('mtRvErr', '');
+    unlockWith('mt').then(function () { return mintExec(P); })
+      .catch(function (e) { mintFailed(P, e, 'mtRvErr'); })
+      .then(function () { btn.classList.remove('is-loading'); });
   };
-  $('buySteps').addEventListener('click', function (e) { if (e.target.closest('[data-buy="addr"]')) buyShowAddress(); });
-  $('buyUseAddr').onclick = function () { buyShowAddress(); };
-  $('buyCancel').onclick = function () { buyReset(); };
-  $('buyDisc').onclick = function () { EVM.disconnect(); wal.key = ''; buyHost.err(''); renderBuy(); };
+  $('mtKyGo').onclick = function () {
+    var P = mint.plan, btn = this; if (!P) return;
+    btn.classList.add('is-loading'); err('mtKyErr', '');
+    sealFrom('mt').then(function () { return mintExec(P); })
+      .catch(function (e) { mintFailed(P, e, 'mtKyErr'); })
+      .then(function () { btn.classList.remove('is-loading'); });
+  };
+  $('mtPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('mtRvGo').click(); } });
+  $('mtDone').onclick = function () { closeFlow(); };
+  // Get uARG: the Swap screen's deposit (USDC or USDT from another chain,
+  // credited here as uARG), or a swap of ARG for uARG where there is no bridge.
+  function mintGetU() {
+    loadStatus().then(function () {
+      var rs = routes().filter(function (x) { return !x.c.unavailable; });
+      var go = function (r) { sw.dir = 'in'; sw.key = r.key; save('swap.route', r.key); openFlow('swap', 'dep'); showDeposit(); };
+      if (!rs.length) {
+        if (!SWAP) { UI.toast(!BRIDGE ? 'No bridge is configured here.' : bridgeDownNow ? 'The bridge is not reachable right now.' : 'The bridge lists nothing right now.', 'warn'); return; }
+        sw.dir = 'native'; sw.from = 'ARG'; sw.to = 'UARG'; openFlow('swap'); openSwap(); return;
+      }
+      if (rs.length === 1) { go(rs[0]); return; }
+      openFlow('swap', 'pick');
+      openPicker('Deposit from', routeItems(sw.key), function (k) { var r = rs.filter(function (x) { return 'r:' + x.key === k; })[0]; if (r) go(r); });
+    });
+  }
+  $('mintAmt').addEventListener('input', renderMintIf);
+  $('mintAmt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!$('mintGo').disabled) $('mintGo').click(); } });
+  $('mintBal').addEventListener('click', function (e) {
+    if (!e.target.closest('[data-max]') || !mint.info) return;
+    var bal = coinBal('UARG'), m = bal < mint.info.maxPaid ? bal : mint.info.maxPaid;
+    $('mintAmt').value = plainU(m); renderMintIf(); $('mintAmt').focus();
+  });
+  $('mintSub').addEventListener('click', function (e) { if (e.target.closest('[data-mint="retry"]')) { mint.err = ''; renderMintIf(); mtLoad(); } });
+  $('mintEmpty').addEventListener('click', function (e) { if (e.target.closest('[data-act="reload"]')) { mint.mine = null; renderMintMine(); mtLoadMine(); } });
+  $('mintGo').onclick = mintBegin;
+  $('mintGetU').onclick = mintGetU;
+  // Every ten seconds while the screen is shown: the window, this
+  // wallet's requests and, while it is open, the balance.
+  function mintPollStart() { clearInterval(mint.poll); mint.poll = 0; if (current === 'mint' && addr) mint.poll = setInterval(mintPollTick, 10000); }
+  function stopMintPoll() { clearInterval(mint.poll); mint.poll = 0; }
+  function mintPollTick() {
+    if (current !== 'mint' || !addr) { stopMintPoll(); return; }
+    mtLoad(); mtLoadMine();
+    if (mint.info && mint.info.status === 'open') loadCoins().then(renderMintIf);
+  }
+  function openMint() {
+    if (!addr) return;
+    renderMint(); mtLoad(); mtLoadMine(); loadStatus(); loadCoins().then(renderMintIf); mintPollStart();
+  }
+  function mintReset() { mint.mine = null; mint.plan = null; $('mintAmt').value = ''; stopMintPoll(); }
 
   // ---- dashboard: the account at a glance ----
   var mineSum = null;
@@ -3422,8 +3563,8 @@
       } else liveMode = 'pool';
     }
     poolStartTried = false;
-    if (liveMode === 'pool') mineArgs = { server: EXPLORER + '/pool', address: addr, pool: true, poolAddress: poolInfo.address, ref: '', refPct: 0 };
-    else mineArgs = { server: EXPLORER, address: addr, ref: ref, refPct: ref ? Math.min(refPct, refAgreed) : 0 };
+    if (liveMode === 'pool') mineArgs = { server: EXPLORER_API + '/pool', address: addr, pool: true, poolAddress: poolInfo.address, ref: '', refPct: 0 };
+    else mineArgs = { server: EXPLORER_API, address: addr, ref: ref, refPct: ref ? Math.min(refPct, refAgreed) : 0 };
     call('start', mineArgs).then(function (e) {
       if (e) { err('mineStatus', e); return; }
       running = true; startedAt = Date.now(); rates = []; save('mine.running', '1'); startExtras();
@@ -3674,7 +3815,7 @@
   var chainFailSince = 0, chainRetry = 0;
   async function refreshChain() {
     try {
-      var st = await (await fetch(EXPLORER + '/api/stats')).json();
+      var st = await (await fetch(EXPLORER_API + '/api/stats')).json();
       $('netBadge').textContent = st.network; $('bcNet').textContent = st.network; tip = st.indexedHeight; netw = String(st.network || '');
       $('hHeight').textContent = UI.fmt.int(st.indexedHeight);
       $('netHint').textContent = st.network + ' · block ' + UI.fmt.int(st.indexedHeight) + ' · ' + UI.fmt.hashrate(st.hashrate);
@@ -3690,7 +3831,7 @@
     if (!addr) return;
     try {
       var coinsP = loadCoins();
-      var a = await (await fetch(EXPLORER + '/api/address/' + encodeURIComponent(addr))).json();
+      var a = await (await fetch(EXPLORER_API + '/api/address/' + encodeURIComponent(addr))).json();
       tip = a.indexedHeight || tip;
       // The headline shows two decimals from one coin up, like any wallet; the asset row keeps every digit.
       argBal = a.spendable || 0;
@@ -3795,8 +3936,9 @@
       if (x.kind === 'swap') { title = 'Swap · ' + dispName(x.from) + ' to ' + dispName(x.to); v = '<div class="v"><div class="pos">+' + esc(fmtU(big(x.amountOut), 0) + ' ' + dispName(x.to)) + '</div><div class="neg">−' + esc(fmtU(big(x.amountIn), 0) + ' ' + dispName(x.from)) + '</div></div>'; }
       else if (x.kind === 'out') { title = 'Swap · uARG to ' + x.sym + ' on ' + x.chain; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
       else if (x.kind === 'name') { title = 'Name · ' + nmDisp(nmNorm(x.label)) + ' ' + nmOpPast(x.op); v = big(x.amount) > NM_MIN ? '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + COIN) + '</div>' : '<div class="v"></div>'; }
+      else if (x.kind === 'mint') { title = 'Mint · ' + mtArg(big(x.minted)); v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
       else { title = 'Sent ' + x.sym; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + x.sym) + '</div>'; }
-      return '<a class="rowi" href="' + explorerLink('tx', x.txid) + '" target="_blank" rel="noopener"><span class="ic out">' + UI.icon(x.kind === 'send' ? 'send' : x.kind === 'name' ? 'user' : 'swap') + '</span><div><div class="t">' + esc(title) + '</div><div class="s">Waiting for the next block</div></div>' + v + '</a>';
+      return '<a class="rowi" href="' + explorerLink('tx', x.txid) + '" target="_blank" rel="noopener"><span class="ic out">' + UI.icon(x.kind === 'send' ? 'send' : x.kind === 'name' ? 'user' : x.kind === 'mint' ? 'zap' : 'swap') + '</span><div><div class="t">' + esc(title) + '</div><div class="s">Waiting for the next block</div></div>' + v + '</a>';
     }).join('');
     $('pendItems').innerHTML = html ? '<div class="group-h">Waiting</div>' + html : ''; $('pendItems').hidden = !html;
     syncEmpty();
@@ -4177,7 +4319,7 @@
   var EXPLORER = '{{.Cfg.Explorer}}';
   function set(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
   function load() {
-    fetch(EXPLORER + '/api/stats').then(function (r) { return r.json(); }).then(function (s) {
+    fetch(EXPLORER_API + '/api/stats').then(function (r) { return r.json(); }).then(function (s) {
       if (!s || !(s.indexedHeight >= 0)) return;
       set('lpTip', 'Block ' + UI.fmt.int(s.indexedHeight));
       set('stH', UI.fmt.int(s.indexedHeight));
@@ -4273,7 +4415,7 @@
     host.addEventListener('pointerup', up); host.addEventListener('pointercancel', up);
     apply();
   }
-  function loadMiners() { fetch(EXPLORER + '/api/miners').then(function (r) { return r.json(); }).then(showMiners).catch(function () { }); }
+  function loadMiners() { fetch(EXPLORER_API + '/api/miners').then(function (r) { return r.json(); }).then(showMiners).catch(function () { }); }
   fetch('/static/worldgrid.json').then(function (r) { return r.json(); }).then(function (g) { grid = g; drawMap(); UI.mountIcons && UI.mountIcons(document.getElementById('lpMap')); loadMiners(); setInterval(loadMiners, 60000); }).catch(function () { });
 })();
 </script>

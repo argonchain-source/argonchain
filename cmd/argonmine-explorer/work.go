@@ -78,7 +78,9 @@ type workTemplate struct {
 	targetHex string
 	curTime   uint64
 	minTime   uint64
-	value     consensus.Amount // coinbase value: subsidy plus fees
+	value     consensus.Amount  // coinbase value: subsidy, fees and the mint
+	mint      []consensus.TxOut // the buyers the coinbase pays (consensus/mint.go)
+	mintTotal consensus.Amount
 	txBranch  []consensus.Hash
 	wBranch   []consensus.Hash
 	txHex     []string // txBranch as hex, served with every job
@@ -361,13 +363,20 @@ func newWorkTemplate(t *miner.TemplateJSON, now time.Time) (*workTemplate, error
 	if sub := consensus.Subsidy(t.Height); t.CoinbaseValue < sub {
 		return nil, fmt.Errorf("template: coinbase value %d is below the subsidy %d at height %d: update the node", t.CoinbaseValue, sub, t.Height)
 	}
+	mintOuts, mintTotal, err := t.MintOutputs()
+	if err != nil {
+		return nil, err
+	}
 	wt := &workTemplate{prev: prev, height: t.Height, version: t.Version, bits: bits, target: target, targetHex: fmt.Sprintf("%064x", target),
-		curTime: t.CurTime, minTime: t.MinTime, value: t.CoinbaseValue, ntx: 1 + len(t.Transactions), fetched: now}
+		curTime: t.CurTime, minTime: t.MinTime, value: t.CoinbaseValue, mint: mintOuts, mintTotal: mintTotal, ntx: 1 + len(t.Transactions), fetched: now}
 	txids := make([]consensus.Hash, 0, len(t.Transactions))
 	wtxids := make([]consensus.Hash, 0, len(t.Transactions))
 	var body bytes.Buffer
 	d := sha256.New()
 	fmt.Fprintf(d, "%s|%d|%d|%d|%d|", t.PreviousBlockHash, t.Height, t.Version, bits, t.CoinbaseValue)
+	for _, m := range t.Mint {
+		fmt.Fprintf(d, "%s=%d|", m.PubKey, m.Amount)
+	}
 	for i, tx := range t.Transactions {
 		b, err := hex.DecodeString(tx.Data)
 		if err != nil {
@@ -485,6 +494,7 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 			pct = ws.referralPct
 		}
 	}
+	outs = append(outs, t.mint...)
 	if payTreasury {
 		outs = append(outs, treasury)
 	}
@@ -498,11 +508,15 @@ func (ws *workServer) Job(address, referrer string) (*workJobJSON, error) {
 	return job, nil
 }
 
-// minerValue is what a template's coinbase pays besides the treasury: from
-// the treasury height the treasury's 1% of the subsidy comes off first
-// (consensus/treasury.go).
+// minerValue is what a template's coinbase pays besides the treasury and
+// the buyers: from the treasury height the treasury's 1% of the subsidy
+// comes off first (consensus/treasury.go), then the block's mint
+// (consensus/mint.go), which the job pays to the buyers in t.mint.
 func (ws *workServer) minerValue(t *workTemplate) (value consensus.Amount, treasury consensus.TxOut, payTreasury bool, err error) {
-	value = t.value
+	value = t.value - t.mintTotal
+	if value < 0 {
+		return 0, treasury, false, errors.New(workNodeDownText)
+	}
 	treasury, payTreasury = consensus.TreasuryOutput(ws.params, t.height)
 	if payTreasury {
 		if treasury.Amount > value {

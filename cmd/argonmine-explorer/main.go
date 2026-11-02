@@ -93,6 +93,8 @@ func main() {
 	allowOrigin := flag.String("allow-origin", "http://127.0.0.1:8370,http://localhost:8370,http://127.0.0.1:8372,http://localhost:8372", "comma-separated web app origins whose pages may submit work (POST /api/work/submit) from a browser; * allows any")
 	bridgeURL := flag.String("bridge-url", "", "bridge URL whose /api/status names the genuine uARG asset id (read at start and every 10 minutes)")
 	uargAsset := flag.String("uarg-asset", "", "the genuine uARG asset id (64 hex); overrides -bridge-url")
+	mintRule := flag.String("mint", "", "testnet/regtest only: the mint window as start:end:perBlockARG:rateARG:asset:key (consensus.ParseMintRule); mainnet's is fixed")
+	basicAuthCred := flag.String("basic-auth", "", "staging: ask every request for this user:password")
 	namesTreasury := flag.String("names-treasury", "", "on a network without a treasury (testnet, regtest): the address that collects name fees; names cannot be registered there without it")
 	swapURL := flag.String("swap-url", "", "swap service whose /api/info names the wARG issuer (read at start and every 10 minutes)")
 	poolWallet := flag.String("pool-wallet", "", "run the mining pool, paying out from this wallet file; created from POOL_MNEMONIC when missing, unlocked with POOL_WALLET_PASSWORD (empty: no pool)")
@@ -111,6 +113,15 @@ func main() {
 		params = consensus.RegTest
 	default:
 		log.Fatalf("unknown network %q", *network)
+	}
+	if *mintRule != "" {
+		r, err := consensus.ParseMintRule(*mintRule)
+		if err == nil {
+			err = consensus.SetMint(params, r)
+		}
+		if err != nil {
+			log.Fatalf("-mint: %v", err)
+		}
 	}
 	netDir := *dataDir
 	if params != consensus.MainNet {
@@ -178,7 +189,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              *listen,
-		Handler:           securityHeaders(s.routes()),
+		Handler:           basicAuth(*basicAuthCred, securityHeaders(s.routes())),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
@@ -304,6 +315,10 @@ func (s *server) routes() http.Handler {
 	page("/api/names/recent", s.apiNamesRecent)
 	page("/api/name/", s.apiName)
 	page("/api/resolve/", s.apiResolve)
+	// Early blocks: the mint window (mint.go).
+	page("/early", s.mintPage)
+	page("/api/early", s.apiMint)
+	page("/api/early/", s.apiMintAddress)
 	page("/api/pool/stats", s.apiPoolStats)
 	page("/api/pool/miner/", s.apiPoolMiner)
 	heavy("/api/pool/ledger", s.apiPoolLedger)
@@ -380,6 +395,7 @@ func newTemplates() (*template.Template, error) {
 		"dur":      fmtDuration,
 		"pct":      func(f float64) string { return strconv.FormatFloat(f, 'f', 2, 64) + "%" },
 		"display":  names.Display,
+		"coins":    fmtCoins,
 		"date":     func(t uint64) string { return time.Unix(int64(t), 0).UTC().Format("2 Jan 2006") },
 		// sym names an asset: its display symbol, or a shortened id when the
 		// index has not seen its issuance. Both arguments may be nil (map data).
@@ -406,6 +422,7 @@ type page struct {
 	Tip     uint32
 	Err     string
 	App     string // the wallet app's URL
+	Mint    bool   // the network has a mint window (mint.go): the nav shows it
 	Data    any
 }
 
@@ -415,7 +432,7 @@ func (s *server) render(w http.ResponseWriter, name, title string, data any) {
 	p := page{
 		Title: title, Head: template.HTML(ui.Head(template.HTMLEscapeString(title + " · " + ui.Brand + " explorer"))), Mark: template.HTML(ui.Mark),
 		Brand: ui.Brand, Coin: ui.Coin, UIJS: ui.AssetPath("ui.js"),
-		Network: s.params.Name, Height: h, Tip: tip, Err: publicErr, App: s.appURL, Data: data,
+		Network: s.params.Name, Height: h, Tip: tip, Err: publicErr, App: s.appURL, Mint: s.params.Mint != nil, Data: data,
 	}
 	if err := s.tmpl.ExecuteTemplate(w, name, p); err != nil {
 		log.Printf("render %s: %v", name, err)
@@ -495,7 +512,7 @@ func (s *server) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h, _, _ := s.ix.status()
-	d := homeData{Blocks: s.ix.latestBlocks(h, 10), Hashrate: s.ix.hashrate(120), Supply: supply(h), Subsidy: consensus.Subsidy(uint32(h + 1))}
+	d := homeData{Blocks: s.ix.latestBlocks(h, 10), Hashrate: s.ix.hashrate(120), Supply: s.ix.supply(h), Subsidy: consensus.Subsidy(uint32(h + 1))}
 	d.Txs = s.recentTxs(h, 10)
 	d.SupplyPct = float64(d.Supply) / float64(consensus.MaxMoney) * 100
 	if recent := s.ix.latestBlocks(h, 121); len(recent) > 1 {
@@ -569,8 +586,21 @@ func (s *server) block(w http.ResponseWriter, r *http.Request) {
 		s.notFound(w, "block "+id)
 		return
 	}
+	blk := s.decorateBlock(raw)
+	s.render(w, "block", "Block "+fmt.Sprint(blk["height"]), blk)
+}
+
+// decorateBlock turns the node's block JSON into the block page's data:
+// confirmations, fees, the miner and work from the index, the mint, the
+// target, and the neighbours.
+func (s *server) decorateBlock(raw []byte) map[string]any {
 	var blk map[string]any
 	json.Unmarshal(raw, &blk)
+	if blk == nil {
+		blk = map[string]any{}
+	}
+	var typed blockJSON
+	json.Unmarshal(raw, &typed)
 	if hf, ok := blk["height"].(float64); ok && blk["onmainchain"] == true {
 		blk["confirmations"] = float64(s.confirmations(hf))
 	}
@@ -580,6 +610,11 @@ func (s *server) block(w http.ResponseWriter, r *http.Request) {
 			tx, _ := t.(map[string]any)
 			if tx == nil {
 				continue
+			}
+			if i < len(typed.Tx) {
+				if _, _, _, ok := mintRequestOf(s.params, &typed.Tx[i]); ok {
+					tx["mint"] = true
+				}
 			}
 			var in, out float64
 			if ins, ok := tx["inputs"].([]any); ok {
@@ -609,6 +644,10 @@ func (s *server) block(w http.ResponseWriter, r *http.Request) {
 			blk["miner"] = sum.Miner
 			blk["reward"] = sum.Reward
 			blk["work"] = sum.Work
+			if sum.Minted > 0 {
+				blk["minted"] = sum.Minted
+				blk["mintRequests"] = len(s.ix.mintsAt(uint32(hf)))
+			}
 		}
 		if hf > 0 {
 			blk["prevheight"] = uint32(hf) - 1
@@ -622,7 +661,7 @@ func (s *server) block(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	s.render(w, "block", "Block "+fmt.Sprint(blk["height"]), blk)
+	return blk
 }
 
 func (s *server) tx(w http.ResponseWriter, r *http.Request) {
@@ -708,6 +747,12 @@ func (s *server) decorateTx(raw []byte) map[string]any {
 	if v := s.nameOpOf(tx, &typed); v != nil {
 		tx["nameOp"] = v
 	}
+	// A mint request (consensus/mint.go), and the coinbase outputs that pay
+	// a block's buyers.
+	if v := s.mintReqOf(tx, &typed); v != nil {
+		tx["mintReq"] = v
+	}
+	s.labelMintOutputs(tx)
 	return tx
 }
 
@@ -838,6 +883,12 @@ type addressData struct {
 	Pool     bool        // the mining pool's payout address (pool.go)
 	Name     string      // the name shown for the address (names.go), "" when it has none
 	Names    []ownedName // every name it holds, oldest first
+
+	Mints      []mintRecord // its newest mint requests (mint.go)
+	MintCount  int
+	MintPaid   consensus.Amount // what it paid in the mint asset, over all of them
+	MintMinted consensus.Amount // the ARG minted for it
+	MintAsset  string           // the mint asset's name
 }
 
 // isTreasury reports whether addr is the network's treasury.
@@ -883,6 +934,11 @@ func (s *server) address(w http.ResponseWriter, r *http.Request) {
 	t := s.ix.totals(addr)
 	d := addressData{Address: addr, Totals: t, Balance: satSub(t.Received, t.Sent), Stats: addressStats(t), Holdings: s.ix.holdings(t), Tip: h, Maturing: s.ix.maturing(addr, h), Swap: swapOf(s.params.HRP, addr), Treasury: isTreasury(s.params, addr), Pool: s.isPoolAddress(addr),
 		Name: s.ix.displayName(addr), Names: s.ownedNames(addr)}
+	if s.params.Mint != nil {
+		var count int64
+		d.Mints, d.MintPaid, d.MintMinted, count = s.ix.mintsOf(addr, mintRecentDefault)
+		d.MintCount, d.MintAsset = int(count), s.mintAssetName()
+	}
 	if v, err := strconv.ParseUint(r.URL.Query().Get("before"), 10, 32); err == nil && v > 0 {
 		d.Before = uint32(v)
 		d.History = s.ix.addressHistoryBefore(addr, uint32(v), per)
@@ -933,7 +989,7 @@ func (s *server) apiStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(map[string]any{
 		"network": s.params.Name, "indexedHeight": h, "nodeHeight": tip, "hashrate": s.ix.hashrate(120),
-		"supply": supply(h), "supplyCoin": wallet.FormatAmount(supply(h)), "error": publicErr,
+		"supply": s.ix.supply(h), "supplyCoin": wallet.FormatAmount(s.ix.supply(h)), "error": publicErr,
 		"blocksSubmitted": found, "workError": workErr,
 	})
 }
@@ -1023,7 +1079,7 @@ func (s *server) chartsBody(n int, h int64) []byte {
 			continue
 		}
 		b := blocks[i]
-		p := point{Height: b.Height, Time: b.Time, Supply: int64(supply(int64(b.Height)))}
+		p := point{Height: b.Height, Time: b.Time, Supply: int64(satAdd(subsidySupply(int64(b.Height)), b.MintedTotal))}
 		if bits, err := parseBits(b.Bits); err == nil {
 			if t, err := consensus.CompactToTarget(bits); err == nil {
 				f := new(big.Float).SetInt(s.params.PowLimit)
@@ -1173,6 +1229,8 @@ func numFmt(v any) string {
 		n = int64(x)
 	case int64:
 		n = x
+	case consensus.Amount:
+		n = int64(x)
 	case uint32:
 		n = int64(x)
 	case uint64:

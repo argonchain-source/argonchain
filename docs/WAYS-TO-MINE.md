@@ -36,6 +36,12 @@ What all three have in common:
   Finding a block is random: two blocks in a day and then nothing for a
   week is normal.
 
+Whichever way you mine, the early blocks (2,960 to 4,959) need
+nothing from you. Pool and browser miners get their jobs from the
+explorer, which builds the coinbase; an early block may carry
+outputs to the buyers of its mint requests beside yours. Only a node
+needs the new release. See [Early blocks](docs/EARLY-BLOCKS.md).
+
 ## On a phone or tablet
 
 The app runs in the phone's browser. Nothing is installed from an app
@@ -100,10 +106,12 @@ of the chain, builds its own blocks, and keeps mining if the explorer is
 ever down. It is the right choice for a computer that mines most of the
 day.
 
-1. **Download release 1.1.0** for your system and check its checksum,
+1. **Download release 1.2.0** for your system and check its checksum,
    exactly as [Run a node, Download](docs/NODE.md#download) describes,
    or [build it from source](docs/NODE.md#build-from-source).
-   Releases before 1.1.0 cannot mine from block 300.
+   Releases before 1.2.0 stop following the chain at block 2,960, when
+   the [early blocks](docs/EARLY-BLOCKS.md) open; releases before 1.1.0 could not
+   mine from block 300.
 2. **Install it** with the script in the archive
    ([Install](docs/NODE.md#install)): `sh install.sh` on Linux and macOS,
    `install-windows.ps1` on Windows.
@@ -159,21 +167,21 @@ Before you rent one:
 
    ```
    sudo apt update && sudo apt install -y unzip curl
-   curl -LO https://docs.argonmine.com/downloads/argonmine-1.1.0-linux-amd64.zip
+   curl -LO https://docs.argonmine.com/downloads/argonmine-1.2.0-linux-amd64.zip
    curl -LO https://docs.argonmine.com/downloads/SHA256SUMS
    sha256sum -c SHA256SUMS --ignore-missing
    ```
 
    The last command must print `OK`. If you would rather compile it
    yourself, see [Build from source](docs/NODE.md#build-from-source). On an ARM server use
-   `argonmine-1.1.0-linux-arm64.zip` instead.
+   `argonmine-1.2.0-linux-arm64.zip` instead.
 
 2. **Install the node** under its own user, with its data in
    `/var/lib/argonmine`:
 
    ```
-   unzip argonmine-1.1.0-linux-amd64.zip
-   cd argonmine-1.1.0-linux-amd64
+   unzip argonmine-1.2.0-linux-amd64.zip
+   cd argonmine-1.2.0-linux-amd64
    sudo useradd -r -m -d /var/lib/argonmine argonmine
    sudo install -m 755 argonmined /usr/local/bin/argonmined
    ```

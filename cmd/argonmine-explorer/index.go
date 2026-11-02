@@ -34,6 +34,7 @@ import (
 //	o || addr || 0 || txid || index(BE32) -> coinEntry (unspent outputs, for wallets that spend without a node)
 //	u || height(BE32)      -> blockUndo (to rewind a block on reorg)
 //	n, N, e, R, x, C       -> names (names_index.go)
+//	m, b, M                -> mint requests (mint_index.go)
 //
 // Lifetime totals use saturating arithmetic: asset amounts go up to 2^62 per
 // output, so plain sums of them could overflow int64. A total that reached
@@ -48,9 +49,12 @@ type BlockSummary struct {
 	Size    int              `json:"size"`
 	Miner   string           `json:"miner"`
 	Reward  consensus.Amount `json:"reward"`
-	Fees    consensus.Amount `json:"fees"`
+	Fees    consensus.Amount `json:"fees"`   // reward less the subsidy and the mint
+	Minted  consensus.Amount `json:"minted"` // ARG the coinbase created for mint requests (consensus/mint.go)
 	Bits    string           `json:"bits"`
 	Work    string           `json:"work"` // hex, 2^256/(target+1)
+
+	MintedTotal consensus.Amount `json:"mintedTotal,omitempty"` // ARG the mint window had created by this block
 }
 
 // AssetMove is what one transaction did to one address's holding of one
@@ -74,12 +78,13 @@ type AddrEntry struct {
 	Sent     consensus.Amount `json:"sent"`
 	Coinbase bool             `json:"coinbase,omitempty"` // a mining reward, spendable after CoinbaseMaturity
 	Referral bool             `json:"referral,omitempty"` // the referral output of a work-server coinbase (see referralOutput); also Coinbase
+	Mint     bool             `json:"mint,omitempty"`     // ARG the coinbase minted for the address's request (mint_index.go); also Coinbase
 	Assets   []AssetMove      `json:"assets,omitempty"`
 }
 
 // indexVersion is bumped whenever the stored shapes change; a mismatch
 // rebuilds the index from genesis on start.
-const indexVersion = "7"
+const indexVersion = "8"
 
 // AssetTotals are an address's lifetime totals for one non-ARG asset.
 type AssetTotals struct {
@@ -145,6 +150,7 @@ type undoEntry struct {
 	Assets   []AssetMove      `json:"m,omitempty"`
 	Coinbase bool             `json:"c,omitempty"`
 	Referral bool             `json:"f,omitempty"`
+	Mint     bool             `json:"n,omitempty"`
 }
 
 // coinbaseEntry is what a mining reward paid an address (key 'c').
@@ -189,6 +195,7 @@ type blockUndo struct {
 	Spent   []spentCoin `json:"spent,omitempty"`
 	Created []coinRef   `json:"created,omitempty"`
 	Names   []nameUndo  `json:"names,omitempty"`
+	Mints   []mintUndo  `json:"mints,omitempty"`
 }
 
 type syncPoint struct {
@@ -456,6 +463,16 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 			summary.Work = fmt.Sprintf("%x", consensus.BlockWork(target))
 		}
 	}
+	// The mint requests of the block: the coinbase created their ARG on
+	// top of the subsidy and the fees.
+	mints := ix.blockMints(blk)
+	for _, m := range mints {
+		summary.Minted = satAdd(summary.Minted, m.Minted)
+	}
+	if blk.Height > 0 {
+		summary.MintedTotal = ix.mintedAt(int64(blk.Height) - 1)
+	}
+	summary.MintedTotal = satAdd(summary.MintedTotal, summary.Minted)
 	if len(blk.Tx) > 0 {
 		cb := blk.Tx[0]
 		for _, o := range cb.Outputs {
@@ -464,8 +481,8 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 		if len(cb.Outputs) > 0 {
 			summary.Miner = cb.Outputs[0].Address
 		}
-		if sub := consensus.Subsidy(blk.Height); summary.Reward > sub {
-			summary.Fees = summary.Reward - sub
+		if due := consensus.Subsidy(blk.Height) + summary.Minted; summary.Reward > due {
+			summary.Fees = summary.Reward - due
 		}
 	}
 	sb, _ := json.Marshal(summary)
@@ -473,6 +490,11 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 
 	state := &blockState{ix: ix, totals: map[string]*AddrTotals{}, assets: map[string]*AssetInfo{}}
 	var undo blockUndo
+	ix.applyMints(mints, batch, &undo)
+	buyers := map[string]bool{}
+	for _, m := range mints {
+		buyers[m.Buyer] = true
+	}
 	// The coin set, transaction by transaction: a coin created and spent in
 	// the same block is put and deleted in that order in the batch.
 	fresh := map[string]coinEntry{}
@@ -620,13 +642,21 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 
 		refAddr := ""
 		if ti == 0 {
-			if i := ix.referralOutput(tx, blk.Height); i >= 0 {
-				refAddr = tx.Outputs[i].Address
+			// The buyers' outputs come between the miner's and the
+			// treasury's; the referral test wants the coinbase without them.
+			plain := tx
+			plain.Outputs = withoutMintOutputs(tx.Outputs, mints)
+			if i := ix.referralOutput(plain, blk.Height); i >= 0 {
+				refAddr = plain.Outputs[i].Address
 			}
 		}
 		for _, addr := range order {
 			a := per[addr]
 			e := AddrEntry{Height: blk.Height, Time: blk.Time, TxID: tx.TxID, Received: a.recv, Sent: a.sent, Coinbase: ti == 0, Referral: ti == 0 && addr == refAddr}
+			// A buyer's share of the coinbase is minted, not mined (unless
+			// the buyer is the miner: then the entry is both and reads as
+			// mined).
+			e.Mint = e.Coinbase && !e.Referral && buyers[addr] && addr != summary.Miner
 			t := state.addr(addr)
 			t.Received = satAdd(t.Received, a.recv)
 			t.Sent = satAdd(t.Sent, a.sent)
@@ -639,6 +669,8 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 			case e.Referral:
 				t.ReferralCount++
 				t.ReferralTotal = satAdd(t.ReferralTotal, a.recv)
+			case e.Mint:
+				// The mint records (mint_index.go) carry the figures.
 			case e.Coinbase:
 				t.Mined++
 				t.MinedTotal = satAdd(t.MinedTotal, a.recv)
@@ -665,7 +697,7 @@ func (ix *Indexer) apply(blk *blockJSON) error {
 			sortMoves(e.Assets)
 			eb, _ := json.Marshal(e)
 			batch.Put(keyAddr(addr, blk.Height, tx.TxID), eb)
-			undo.Addrs = append(undo.Addrs, undoEntry{Addr: addr, TxID: tx.TxID, Received: a.recv, Sent: a.sent, Assets: e.Assets, Coinbase: e.Coinbase, Referral: e.Referral})
+			undo.Addrs = append(undo.Addrs, undoEntry{Addr: addr, TxID: tx.TxID, Received: a.recv, Sent: a.sent, Assets: e.Assets, Coinbase: e.Coinbase, Referral: e.Referral, Mint: e.Mint})
 		}
 	}
 	nstate := newNameState(ix)
@@ -705,6 +737,7 @@ func (ix *Indexer) rewind(h uint32) error {
 				case u.Referral:
 					t.ReferralCount--
 					t.ReferralTotal = satSub(t.ReferralTotal, u.Received)
+				case u.Mint:
 				case u.Coinbase:
 					t.Mined--
 					t.MinedTotal = satSub(t.MinedTotal, u.Received)
@@ -762,6 +795,7 @@ func (ix *Indexer) rewind(h uint32) error {
 			nstate := newNameState(ix)
 			ix.rewindNames(h, &undo, batch, nstate)
 			nstate.flush(batch)
+			ix.rewindMints(h, &undo, batch)
 		}
 	}
 	state.write(batch)
@@ -1177,9 +1211,15 @@ func (ix *Indexer) hashrate(n int) float64 {
 	return f / float64(span)
 }
 
-// supply is the total subsidy issued by blocks 1 to h. The genesis block
-// pays nothing: its coinbase never enters the UTXO set.
-func supply(h int64) consensus.Amount {
+// supply is every ARG in existence at height h: the subsidies of blocks 1
+// to h and what the mint window had created by then (mint_index.go).
+func (ix *Indexer) supply(h int64) consensus.Amount {
+	return satAdd(subsidySupply(h), ix.mintedAt(h))
+}
+
+// subsidySupply is the total subsidy issued by blocks 1 to h. The genesis
+// block pays nothing: its coinbase never enters the UTXO set.
+func subsidySupply(h int64) consensus.Amount {
 	var total consensus.Amount
 	for start := int64(0); start <= h; start += int64(consensus.HalvingInterval) {
 		end := start + int64(consensus.HalvingInterval) - 1

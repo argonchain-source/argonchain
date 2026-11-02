@@ -20,6 +20,46 @@ type TemplateJSON struct {
 		Data string `json:"data"`
 		TxID string `json:"txid"`
 	} `json:"transactions"`
+	// Mint: the buyers the coinbase must pay for the mint requests among
+	// the transactions (consensus/mint.go), part of CoinbaseValue.
+	Mint []MintJSON `json:"mint,omitempty"`
+}
+
+// MintJSON is one buyer's due in a template.
+type MintJSON struct {
+	PubKey string           `json:"pubkey"`
+	Amount consensus.Amount `json:"amount"`
+}
+
+// MintOutputs are the template's buyer outputs and their total.
+func (t *TemplateJSON) MintOutputs() ([]consensus.TxOut, consensus.Amount, error) {
+	var outs []consensus.TxOut
+	var total consensus.Amount
+	for _, m := range t.Mint {
+		key, err := hex.DecodeString(m.PubKey)
+		if err != nil || len(key) != consensus.P2PKPayloadLen || m.Amount <= 0 {
+			return nil, 0, fmt.Errorf("template: bad mint entry")
+		}
+		if total, err = consensus.AddAmounts(total, m.Amount); err != nil {
+			return nil, 0, err
+		}
+		outs = append(outs, consensus.TxOut{Amount: m.Amount, Type: consensus.OutputTypeP2PK, Payload: key})
+	}
+	return outs, total, nil
+}
+
+// MinerValue is what a template's coinbase pays besides the treasury's
+// share and the buyers: the part a miner may direct.
+func (t *TemplateJSON) MinerValue(p *consensus.Params) (consensus.Amount, error) {
+	_, mint, err := t.MintOutputs()
+	if err != nil {
+		return 0, err
+	}
+	value := t.CoinbaseValue - consensus.TreasuryAmount(p, t.Height) - mint
+	if value < 0 {
+		return 0, fmt.Errorf("template: coinbase value %d is below the treasury's share and the mint", t.CoinbaseValue)
+	}
+	return value, nil
 }
 
 // AssembleFromTemplate builds a complete block (nonce 0) from a node's
@@ -31,9 +71,9 @@ func AssembleFromTemplate(p *consensus.Params, t *TemplateJSON, payout consensus
 	if payout.Type != consensus.OutputTypeP2PK || len(payout.Payload) != consensus.P2PKPayloadLen {
 		return nil, ErrNoPayout
 	}
-	value := t.CoinbaseValue - consensus.TreasuryAmount(p, t.Height)
-	if value < 0 {
-		return nil, fmt.Errorf("template: coinbase value %d is below the treasury's share", t.CoinbaseValue)
+	value, err := t.MinerValue(p)
+	if err != nil {
+		return nil, err
 	}
 	return AssembleFromTemplateOutputs(p, t, []consensus.TxOut{{Amount: value, Type: payout.Type, Payload: append([]byte{}, payout.Payload...)}}, tag, now)
 }
@@ -52,6 +92,11 @@ func AssembleFromTemplateOutputs(p *consensus.Params, t *TemplateJSON, outputs [
 	if payTreasury {
 		budget -= treasury.Amount
 	}
+	mintOuts, mint, err := t.MintOutputs()
+	if err != nil {
+		return nil, err
+	}
+	budget -= mint
 	var total consensus.Amount
 	for i := range outputs {
 		o := &outputs[i]
@@ -80,10 +125,11 @@ func AssembleFromTemplateOutputs(p *consensus.Params, t *TemplateJSON, outputs [
 	if len(tag) > consensus.MaxCoinbaseTagLen {
 		tag = tag[:consensus.MaxCoinbaseTagLen]
 	}
-	outs := make([]consensus.TxOut, 0, len(outputs)+1)
+	outs := make([]consensus.TxOut, 0, len(outputs)+len(mintOuts)+1)
 	for _, o := range outputs {
 		outs = append(outs, consensus.TxOut{Amount: o.Amount, Type: o.Type, Payload: append([]byte{}, o.Payload...)})
 	}
+	outs = append(outs, mintOuts...)
 	if payTreasury {
 		outs = append(outs, treasury)
 	}

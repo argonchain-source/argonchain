@@ -92,6 +92,10 @@ type Entry struct {
 	Fee   consensus.Amount
 	Size  int
 	Added time.Time
+	// A mint request (consensus/mint.go): the buyer's key and what the
+	// coinbase of the block that includes it must pay that key.
+	MintKey []byte
+	Mint    consensus.Amount
 	// parents are pool transactions whose outputs this one spends; children
 	// are pool transactions spending this one's outputs.
 	parents  map[consensus.Hash]struct{}
@@ -133,8 +137,10 @@ type selectCache struct {
 	gen          uint64
 	count, bytes int
 	maxBytes     int
+	height       uint32
 	txs          []*consensus.Tx
 	fees         consensus.Amount
+	mints        *consensus.Mints
 }
 
 // maxIncrementalBlocks: a new tip up to this many blocks ahead of the last
@@ -276,6 +282,17 @@ func (p *Pool) Accept(tx *consensus.Tx) error {
 		}
 		return p.rejectTx(txid, err)
 	}
+	// A mint request must be valid at the next height; the window closing
+	// later removes it (revalidateLocked, selectLocked). Policy: before the
+	// window, or on a network without one, the memo would make the payment
+	// an ordinary one that buys nothing, so it is refused.
+	mintKey, mint, err := consensus.MintAmount(p.ch.Params(), tx, spent, nextHeight)
+	if err == nil && mint == 0 && consensus.IsMintRequest(tx) {
+		err = consensus.ErrTxMintClosed
+	}
+	if err != nil {
+		return p.rejectTx(txid, err)
+	}
 	// From here on the verdict depends on the size, hence on the witness.
 	minFee := p.cfg.MinFeeRate*consensus.Amount(size) + AssetSurcharge(p.cfg, tx)
 	if fee < minFee {
@@ -328,7 +345,7 @@ func (p *Pool) Accept(tx *consensus.Tx) error {
 		}
 	}
 
-	e := &Entry{Tx: tx, TxID: txid, Fee: fee, Size: size, Added: time.Now(), parents: parents, children: map[consensus.Hash]struct{}{}}
+	e := &Entry{Tx: tx, TxID: txid, Fee: fee, Size: size, Added: time.Now(), MintKey: mintKey, Mint: mint, parents: parents, children: map[consensus.Hash]struct{}{}}
 	for parent := range parents {
 		p.txs[parent].children[txid] = struct{}{}
 	}
@@ -605,7 +622,14 @@ func (p *Pool) revalidateLocked() {
 			continue
 		}
 		view := poolView{p: p, nextHeight: nextHeight, ignore: map[consensus.Hash]struct{}{e.TxID: {}}}
-		if _, _, err := consensus.CheckTxInputs(e.Tx, view, nextHeight); err != nil {
+		_, spent, err := consensus.CheckTxInputs(e.Tx, view, nextHeight)
+		if err == nil {
+			var mint consensus.Amount
+			if _, mint, err = consensus.MintAmount(p.ch.Params(), e.Tx, spent, nextHeight); err == nil && mint == 0 && consensus.IsMintRequest(e.Tx) {
+				err = consensus.ErrTxMintClosed
+			}
+		}
+		if err != nil {
 			p.removeOne(e.TxID)
 		}
 	}
@@ -730,21 +754,33 @@ func (p *Pool) topK(k int) []*Entry {
 // gives, but the walk stops as soon as nothing more can fit, so only the
 // entries that make it into (or just miss) the template are ordered; and
 // while the pool is unchanged the previous result is reused.
-func (p *Pool) Select(maxBytes int) ([]*consensus.Tx, consensus.Amount) {
+func (p *Pool) Select(maxBytes int) ([]*consensus.Tx, consensus.Amount, *consensus.Mints) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	c := &p.sel
-	if !c.valid || c.gen != p.gen || c.count != len(p.txs) || c.bytes != p.bytes || c.maxBytes != maxBytes {
-		txs, fees := p.selectLocked(maxBytes)
-		p.sel = selectCache{valid: true, gen: p.gen, count: len(p.txs), bytes: p.bytes, maxBytes: maxBytes, txs: txs, fees: fees}
+	var height uint32 // tests build pools without a chain
+	if p.ch != nil {
+		height = p.ch.Tip().Height + 1
 	}
-	return append([]*consensus.Tx(nil), c.txs...), c.fees
+	if !c.valid || c.gen != p.gen || c.count != len(p.txs) || c.bytes != p.bytes || c.maxBytes != maxBytes || c.height != height {
+		txs, fees, mints := p.selectLocked(maxBytes, height)
+		p.sel = selectCache{valid: true, gen: p.gen, count: len(p.txs), bytes: p.bytes, maxBytes: maxBytes, height: height, txs: txs, fees: fees, mints: mints}
+	}
+	m := &consensus.Mints{Total: c.mints.Total, Payouts: append([]consensus.MintPayout(nil), c.mints.Payouts...)}
+	return append([]*consensus.Tx(nil), c.txs...), c.fees, m
 }
 
 // selectLocked is Kahn's algorithm over the whole pool (as kahn), run
 // lazily: entries are popped in the same order kahn would output them, and
 // popping stops once the space left is below the smallest entry.
-func (p *Pool) selectLocked(maxBytes int) ([]*consensus.Tx, consensus.Amount) {
+func (p *Pool) selectLocked(maxBytes int, height uint32) ([]*consensus.Tx, consensus.Amount, *consensus.Mints) {
+	// Mint requests go in up to the block's mint, and only while the window
+	// is open at this height; the rest wait for a later block.
+	var params *consensus.Params
+	if p.ch != nil {
+		params = p.ch.Params()
+	}
+	mints := &consensus.Mints{}
 	ready := make(entryHeap, 0, len(p.txs)/4+1)
 	minSize := -1
 	for _, e := range p.txs {
@@ -797,12 +833,23 @@ func (p *Pool) selectLocked(maxBytes int) ([]*consensus.Tx, consensus.Amount) {
 		if !ok {
 			continue
 		}
+		if e.Mint > 0 {
+			if !consensus.MintOpen(params, height) {
+				continue
+			}
+			probe := *mints
+			probe.Payouts = append([]consensus.MintPayout(nil), mints.Payouts...)
+			if probe.Add(params.Mint, e.MintKey, e.Mint) != nil {
+				continue
+			}
+			*mints = probe
+		}
 		included[e.TxID] = struct{}{}
 		txs = append(txs, e.Tx)
 		fees += e.Fee
 		used += e.Size
 	}
-	return txs, fees
+	return txs, fees, mints
 }
 
 // Ordered returns up to max pool txids with parents before children and

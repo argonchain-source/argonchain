@@ -4,7 +4,7 @@
 set -eu
 
 NET="${ARGONMINE_NETWORK:-mainnet}"
-ROLE="${ARGONMINE_ROLE:?set ARGONMINE_ROLE to node, explorer, web, bridge, swap or miner}"
+ROLE="${ARGONMINE_ROLE:?set ARGONMINE_ROLE to node, explorer, web, bridge, swap, miner, staging-explorer or staging-web}"
 EXTRA="${ARGONMINE_ARGS:-}"
 
 case "$ROLE" in
@@ -136,8 +136,53 @@ case "$ROLE" in
       ${SWAP_CLOSED_PAIRS:+-closed-pairs "$SWAP_CLOSED_PAIRS"} \
       -client-ip-header X-Forwarded-For
     ;;
+  staging-explorer)
+    # A private test copy for the team: a regtest node, a block every
+    # BLOCK_SECONDS paid to MINE_ADDRESS, and the explorer in front, all
+    # behind one password (BASIC_AUTH user:password). MINT_RULE is the early
+    # blocks window as start:end:perBlockARG:rateARG:asset:key and
+    # UARG_ASSET the test network's uARG (docs/EARLY-BLOCKS.md).
+    : "${BASIC_AUTH:?BASIC_AUTH is required (user:password)}"
+    : "${MINE_ADDRESS:?MINE_ADDRESS is required (the test wallet that receives every block)}"
+    argonmined -network regtest -datadir /data/node -listen none \
+      -rpc 127.0.0.1:29332 -rpctoken "${RPC_TOKEN:?RPC_TOKEN is required}" \
+      ${MINT_RULE:+-mint "$MINT_RULE"} &
+    ( sleep 5; while true; do
+        wget -q -O /dev/null --header="Authorization: Bearer $RPC_TOKEN" --header="Content-Type: application/json" \
+          --post-data="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"generatetoaddress\",\"params\":[1,\"$MINE_ADDRESS\"]}" \
+          http://127.0.0.1:29332/ || true
+        sleep "${BLOCK_SECONDS:-120}"
+      done ) &
+    sleep 3
+    # shellcheck disable=SC2086
+    exec argonmine-explorer -network regtest -datadir /data/node \
+      -rpc http://127.0.0.1:29332 -token "$RPC_TOKEN" \
+      -listen ":${PORT:-8380}" -basic-auth "$BASIC_AUTH" \
+      ${MINT_RULE:+-mint "$MINT_RULE"} \
+      ${UARG_ASSET:+-uarg-asset "$UARG_ASSET"} \
+      ${APP_URL:+-app-url "$APP_URL"} \
+      ${NAMES_TREASURY:+-names-treasury "$NAMES_TREASURY"} \
+      $EXTRA
+    ;;
+  staging-web)
+    # The app of the private test copy: every request needs BASIC_AUTH, and
+    # the explorer's API is reached through this site (/x/) over the private
+    # network (EXPLORER_PROXY), so one password covers both.
+    : "${BASIC_AUTH:?BASIC_AUTH is required (user:password)}"
+    # shellcheck disable=SC2086
+    exec argonmine-web -listen ":${PORT:-8370}" -repo /srv \
+      -hrp "${ARGONMINE_HRP:-rarg}" \
+      -explorer "${EXPLORER_URL:?EXPLORER_URL is required}" \
+      -explorer-proxy "${EXPLORER_PROXY:?EXPLORER_PROXY is required, e.g. http://staging-explorer.railway.internal:8380}" \
+      -basic-auth "$BASIC_AUTH" \
+      ${UARG_ASSET:+-uarg-asset "$UARG_ASSET"} \
+      ${APP_URL:+-app "$APP_URL"} \
+      ${SITE_URL:+-site "$SITE_URL"} \
+      ${HOLD_ARG:+-hold-arg "$HOLD_ARG"} \
+      $EXTRA
+    ;;
   *)
-    echo "unknown ARGONMINE_ROLE '$ROLE' (node, explorer, web, bridge, swap or miner)" >&2
+    echo "unknown ARGONMINE_ROLE '$ROLE' (node, explorer, web, bridge, swap, miner, staging-explorer or staging-web)" >&2
     exit 2
     ;;
 esac

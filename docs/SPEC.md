@@ -44,6 +44,7 @@ No non-trivial software can be proven free of bugs. What this project does inste
 | Nonce width | 64-bit | no extra-nonce in coinbase needed |
 | Genesis coinbase | NOT added to UTXO set | explicit, unlike Bitcoin's accident |
 | Premine | none | |
+| Early blocks | mainnet blocks 2,960 to 4,959: at most 500 ARG a block, 1,000,000 ARG in all | section 3.3.2 |
 | Address format | bech32m, HRP `arg` (mainnet) `targ` (testnet) `rarg` (regtest) | |
 
 ## 2. Primitives
@@ -118,6 +119,24 @@ Treasury(h) = 0                                  if TREASURY_HEIGHT = 0 or h < T
 ```
 Fees are not part of it: they stay with the miner. The sum-of-outputs limit above still applies to the coinbase as a whole. A node from before this rule accepts every block that follows it (a coinbase may have several outputs), so the rule was added as a soft fork at mainnet height 300. By convention the treasury output is the coinbase's last output; consensus does not require an order.
 
+#### 3.3.2 Early blocks (mint window)
+On a network with early blocks `MINT_START..MINT_END` (inclusive heights), a block at height `h` with `MINT_START ≤ h ≤ MINT_END` may create ARG beyond the subsidy for the **mint requests** it includes. A network without early blocks never does.
+
+A mint request is a version-2 transaction with a NULLDATA output whose payload is exactly the 6 bytes `EARLY1`. Its `paid` is the sum of its P2PK outputs whose asset is `MINT_ASSET` and whose payload is `MINT_KEY` (any number of such outputs, anywhere in the transaction; checked add). Its **buyer** is the key of the output spent by input 0, which MUST be a P2PK output. Its due is
+```
+Due = paid × MINT_RATE                         (ARG units; invalid on overflow)
+```
+Before `MINT_START`, and on a network without early blocks, the memo means nothing: the transaction is an ordinary one, valid to every node from before this rule (relay policy refuses it, §10, so a wallet cannot pay for coins no block can make). From `MINT_START` on, a transaction with the memo MUST be a valid mint request: it is invalid when `h > MINT_END`, `paid = 0`, input 0 does not spend a P2PK output, or `Due > MINT_PER_BLOCK`. After `MINT_END` the memo stays invalid for ever. The check needs the spent outputs, so it is made with 6.2 at the height the transaction is included (or, in the mempool, the next height). A transaction without the memo is never a mint request, whatever it pays.
+
+Block rule (§7 step 5):
+- `Σ Due` over the block's mint requests ≤ `MINT_PER_BLOCK` (checked add), else the block is invalid.
+- The coinbase MUST pay each buyer key at least its summed `Due` in ARG, over its P2PK outputs whose payload is that key (any number of outputs, anywhere in the coinbase). One key with several requests in a block is owed their sum.
+- The coinbase's sum of outputs ≤ `Subsidy(h) + Σ fees + Σ Due` (checked). Outside the early blocks `Σ Due = 0` and 3.3 applies unchanged.
+
+A buyer's output is a coinbase output: it is spendable only at height ≥ `h + 100`, like the miner's. The `paid` units go to `MINT_KEY` as an ordinary transfer. No ARG is issued (3.5): the minted ARG comes out of the coinbase. By convention the coinbase order is the miner's outputs, then the buyers in order of first appearance, then the treasury; consensus does not require an order.
+
+A node from before this rule rejects a block whose coinbase exceeds subsidy plus fees, so the rule is a hard fork: every node must run release 1.2.0 before `MINT_START` (mainnet 2,960). Mainnet's early blocks are fixed in the rules (§11): 2,000 blocks at 500 ARG, so at most 1,000,000 ARG. Testnet and regtest have none unless the node and the explorer are started with `-mint start:end:perBlockARG:rateARG:asset:key`.
+
 ### 3.4 Block
 ```
 header         120 B
@@ -130,7 +149,7 @@ txs            varint count, then each transaction (full serialization)
 ### 3.5 Assets (version-2 transactions)
 A version-2 transaction can hold and move units of assets other than ARG,
 and can create units of an asset with an issuance. ARG is never issued:
-it comes from the coinbase only. Every existing block is a version-1
+it comes from the coinbase only, in the early blocks too (3.3.2). Every existing block is a version-1
 object and is unchanged by this section.
 
 - Every output of a version-2 transaction carries a 32-byte `asset`. The
@@ -223,6 +242,7 @@ bits = Compact(target)
 4. For each input `i` spending a P2PK output with pubkey `pk`: witness `i` MUST be exactly 64 bytes and a valid BIP-340 signature by `pk` over `sighash(tx, i)`.
 5. Version 2 only: for every non-ARG asset, `Σ out ≤ Σ in + issued` (3.5); a version-1 transaction spending a non-ARG output is invalid.
 6. Version 2 with an issuance: witness `n` MUST be a valid signature by the issuer over `sighash(tx, 0xFFFFFFFF)`.
+7. From `MINT_START` on, a transaction with the `EARLY1` memo MUST be a valid mint request at `h` (3.3.2).
 
 Sighash (all-inputs, all-outputs; there is only one sighash type):
 ```
@@ -243,7 +263,7 @@ Committing to all spent amounts and spent scripts means an offline signer cannot
 2. Size limit. First tx is coinbase, no other tx is coinbase.
 3. Merkle roots match. No duplicate txids. No duplicate outpoints spent anywhere in the block.
 4. Every tx passes 6.1; every non-coinbase tx passes 6.2 against a UTXO view that is updated **sequentially** (a tx may spend an output created earlier in the same block, never later).
-5. Coinbase outputs sum ≤ `Subsidy(h) + Σ fees` (checked), and from the treasury height the coinbase pays the treasury at least `Treasury(h)` (3.3.1).
+5. Coinbase outputs sum ≤ `Subsidy(h) + Σ fees + Σ Due` (checked), where `Σ Due` is the sum over the block's mint requests and MUST be ≤ `MINT_PER_BLOCK` (3.3.2; zero outside the early blocks). From the treasury height the coinbase pays the treasury at least `Treasury(h)` (3.3.1), and in the early blocks it pays each buyer at least its summed `Due` (3.3.2).
 6. Apply: remove spent outputs, add new P2PK outputs (never NULLDATA; never genesis outputs). Write undo data so the block can be disconnected on reorg.
 
 Fork choice: the valid chain with the greatest total work (Σ 2^256 / (target+1)) wins. Ties: first seen.
@@ -254,7 +274,7 @@ Subsidy(h): halvings = h / 210000
             if halvings >= 64: return 0
             return 50 × 1e8 >> halvings
 ```
-Total emission is strictly below MAX_MONEY (equal to Bitcoin's 20,999,999.9769 ARG).
+Total emission from the subsidy is strictly below MAX_MONEY (equal to Bitcoin's 20,999,999.9769 ARG). The mainnet early blocks (3.3.2) add at most 1,000,000 ARG to that bound, 20,999,999.9769 + 1,000,000 ARG in all; the two together remain far below MAX_MONEY, and every amount and sum is still checked against it.
 
 ## 9. Bitcoin pitfalls and the rule here that prevents each
 
@@ -287,6 +307,7 @@ Total emission is strictly below MAX_MONEY (equal to Bitcoin's 20,999,999.9769 A
 - Min relay fee 1 unit/byte; dust limit 546 units for ARG P2PK outputs; max standard tx 100,000 bytes; full RBF by fee; mempool cap 300 MB.
 - Asset outputs have no dust limit (asset units have no ARG value). Instead every asset output beyond the first two in a transaction adds 546 units (`-assetoutputfee`) to the minimum relay fee, so an asset UTXO costs about what an ARG one does. A payment with its change, or one issuance output, pays only for its bytes.
 - Chains of unconfirmed transactions: a transaction with all its unconfirmed ancestors, and every ancestor with all its unconfirmed descendants, at most 25 transactions and 101,000 bytes (Bitcoin's defaults). Making room in a full pool never evicts the newcomer's own ancestors. Block templates order transactions parents first, best fee rate first among those whose parents are placed.
+- A transaction with the `EARLY1` memo is relayed only while the early blocks are open at the next height and it is a valid request there (3.3.2); before them, after them, and on a network without them it is refused, so no wallet pays for coins that no block can make.
 - Rejections are remembered for 2 minutes and forgotten on every new tip. A failure that does not depend on the witness (dust, inputs, lock height, maturity, conflicts) is remembered by txid; one that does (signature, fee, size) only by wtxid, so a copy with a garbage witness cannot block the genuine transaction.
 - Relay and connection limits are node policy too: [Run a node, "Connection limits"](../docs/NODE.md#connection-limits).
 
@@ -300,6 +321,12 @@ Total emission is strictly below MAX_MONEY (equal to Bitcoin's 20,999,999.9769 A
 | POW_LIMIT | compact 0x1E400000 (2^18 hashes) | compact 0x1F7FFFFF (512 hashes) | compact 0x207FFFFF, constant |
 | TREASURY_HEIGHT | 300 | 0 (none) | 0 (none) |
 | TREASURY_KEY | `7ad1a30d482a3fdb23efd2de4da69de2e9dc50d204d8cd82495183e6b3ffdf6c` (address `arg1q0tg6xr2g9glakgl06t0ymf5aut5ac5xjqnvvmqjf2xp7dvllmakqna8cd2`) | none | none |
+| MINT_START | 2,960 | none (`-mint`) | none (`-mint`) |
+| MINT_END | 4,959 | none (`-mint`) | none (`-mint`) |
+| MINT_PER_BLOCK | 500 ARG | `-mint` | `-mint` |
+| MINT_RATE | 20 ARG units per unit paid (1 uARG = 20 ARG) | `-mint` | `-mint` |
+| MINT_ASSET | uARG, `15772bdf3353c217b21394e9db1f5023986b51bd36fa2d41144cb1e898f8a595` | `-mint` | `-mint` |
+| MINT_KEY | TREASURY_KEY | `-mint` | `-mint` |
 
 ## 12. Where this chain is better than Bitcoin (by design, v1)
 

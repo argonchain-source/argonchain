@@ -98,7 +98,7 @@ func New(cfg Config, d Deps) *Server {
 		d.Logf = log.Printf
 	}
 	if d.Version == "" {
-		d.Version = "1.1.0"
+		d.Version = "1.2.0"
 	}
 	s := &Server{cfg: cfg, d: d}
 	s.methods = map[string]method{
@@ -694,7 +694,7 @@ func (s *Server) getblocktemplate(params []json.RawMessage) (any, error) {
 	// Build a template with a dummy payout to learn fees and txs; the miner
 	// substitutes its own coinbase output.
 	dummy := consensus.TxOut{Type: consensus.OutputTypeP2PK, Payload: make([]byte, 32)}
-	blk, err := miner.BuildTemplate(s.d.Chain, s.d.Pool, dummy, nil, time.Now().Unix())
+	blk, mints, err := miner.BuildTemplateMints(s.d.Chain, s.d.Pool, dummy, nil, time.Now().Unix())
 	if err != nil {
 		return nil, rpcErr(codeInternal, "%v", err)
 	}
@@ -712,7 +712,14 @@ func (s *Server) getblocktemplate(params []json.RawMessage) (any, error) {
 	for _, o := range blk.Txs[0].Outputs {
 		value += o.Amount
 	}
+	// The block's mint: the buyers the coinbase pays (consensus/mint.go),
+	// so a remote miner can build the same coinbase.
+	mint := make([]miner.MintJSON, 0, len(mints.Payouts))
+	for _, m := range mints.Payouts {
+		mint = append(mint, miner.MintJSON{PubKey: hex.EncodeToString(m.Key), Amount: m.Amount})
+	}
 	return map[string]any{
+		"mint":              mint,
 		"version":           blk.Header.Version,
 		"previousblockhash": tip.Hash.String(),
 		"height":            tip.Height + 1,

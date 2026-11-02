@@ -1,10 +1,12 @@
 # Argonmine documentation
 
 Argonmine is a new digital currency with its own blockchain. Its coin is
-called ARG. New ARG is created only by mining, and you can mine it in a web
+called ARG. New ARG is created by mining, and you can mine it in a web
 browser on an ordinary laptop or phone. Nobody received coins in advance:
-there is no premine. From block 300, 1% of each block reward goes to the
-project treasury; the miner keeps the rest and all fees.
+there is no premine. Early blocks, written in the rules, open to
+everyone, block 2,960 to 4,959 ([Early blocks](docs/EARLY-BLOCKS.md)). From
+block 300, 1% of each block reward goes to the project treasury; the
+miner keeps the rest and all fees.
 
 **Mainnet** launched on 28 October 2026, 12:00 UTC. It is the only public network,
 and its coins have real value: a payment cannot be undone, and nobody can
@@ -39,7 +41,7 @@ from the same wallet.
 
 | Coin | What it is | Where it comes from |
 |---|---|---|
-| **ARG** | The native coin. Its supply is capped at 21 million. | Created only by mining. |
+| **ARG** | The native coin. Its supply is capped at 21 million from mining, plus at most 1,000,000 from the early blocks. | Created by mining, and in blocks 2,960 to 4,959 by the [early blocks](docs/EARLY-BLOCKS.md). Always from a block's coinbase. |
 | **wARG** | Wrapped ARG. One wARG is backed by one ARG. | Issued by the swap service when you swap ARG for it, and destroyed when you swap it back. See [Swaps](docs/SWAP.md). |
 | **uARG** | A dollar token, backed by USDC and USDT in the bridge vaults. It is redeemable one for one for USDC or USDT through the bridge, less the 1% withdrawal fee, subject to the risks in [Bridge, Risks](docs/BRIDGE.md#risks). | Issued by the bridge when you deposit USDC or USDT on another chain. See [Bridge](docs/BRIDGE.md). |
 
@@ -63,7 +65,7 @@ through the app screen by screen.
 | Item | Value |
 |---|---|
 | Coin | ARG. 1 ARG = 100,000,000 units. |
-| Supply | Capped at 21,000,000 ARG. The rewards add up to 20,999,999.9769 ARG. |
+| Supply | The rewards add up to 20,999,999.9769 ARG. The early blocks add at most 1,000,000 ARG, and only as much as is asked for. |
 | Block reward | 50 ARG at the start, halving every 210,000 blocks (about every four years). From block 300, 1% of it goes to the project treasury and 99% to the miner. |
 | Time between blocks | 10 minutes on average. |
 | Reward lock | A mining reward can be spent 100 blocks after the block that paid it, about 17 hours at 10-minute blocks. |
@@ -94,8 +96,10 @@ power doubles, block times move back toward 10 minutes over the following
 day or two. See [Specification §5](docs/SPEC.md).
 
 **Supply.** The reward starts at 50 ARG and halves every 210,000 blocks,
-like Bitcoin. After 64 halvings it reaches zero. The total never exceeds
-21 million ARG.
+like Bitcoin. After 64 halvings it reaches zero. The rewards never exceed
+21 million ARG. The early blocks, 2,960 to 4,959, add at most
+1,000,000 ARG, 20 ARG for each uARG asked for; after them, ARG comes only
+from mining ([Early blocks](docs/EARLY-BLOCKS.md)).
 
 **Transactions.** A coin is an unspent output locked to a public key. To
 spend it, your wallet signs a transaction with the matching private key.

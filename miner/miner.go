@@ -228,8 +228,15 @@ func (m *Miner) loop(ctx context.Context) {
 // treasury), pool transactions by fee rate, correct roots,
 // bits and timestamp. Only the nonce remains to be found.
 func BuildTemplate(ch *chain.Chain, pool *mempool.Pool, payout consensus.TxOut, tag []byte, now int64) (*consensus.Block, error) {
+	blk, _, err := BuildTemplateMints(ch, pool, payout, tag, now)
+	return blk, err
+}
+
+// BuildTemplateMints is BuildTemplate that also returns the block's mint:
+// the buyers its coinbase pays (consensus/mint.go), for getblocktemplate.
+func BuildTemplateMints(ch *chain.Chain, pool *mempool.Pool, payout consensus.TxOut, tag []byte, now int64) (*consensus.Block, *consensus.Mints, error) {
 	if payout.Type != consensus.OutputTypeP2PK || len(payout.Payload) != consensus.P2PKPayloadLen {
-		return nil, ErrNoPayout
+		return nil, nil, ErrNoPayout
 	}
 	p := ch.Params()
 	tip := ch.Tip()
@@ -250,20 +257,25 @@ func BuildTemplate(ch *chain.Chain, pool *mempool.Pool, payout consensus.TxOut, 
 	}
 	// Reserve: header + count varint + coinbase.
 	budget := consensus.MaxBlockSize - consensus.HeaderSize - 9 - cb.SerializedSize()
-	txs, fees := pool.Select(budget)
+	txs, fees, mints := pool.Select(budget)
 	value, err := consensus.AddAmounts(consensus.Subsidy(height), fees)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if payTreasury {
 		value -= treasury.Amount
 	}
 	cb.Outputs[0].Amount = value
+	// The block's mint (consensus/mint.go): one output per buyer, between
+	// the miner's and the treasury's.
+	if mints.Total > 0 {
+		cb.Outputs = append(cb.Outputs[:1], append(mints.Outputs(), cb.Outputs[1:]...)...)
+	}
 
 	blk := &consensus.Block{Txs: append([]*consensus.Tx{cb}, txs...)}
 	txRoot, wRoot, err := blk.ComputeRoots()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	t := uint64(now)
 	if mtp := chain.MedianTimePast(tip); t <= mtp {
@@ -277,7 +289,7 @@ func BuildTemplate(ch *chain.Chain, pool *mempool.Pool, payout consensus.TxOut, 
 		Time:        t,
 		Bits:        consensus.NextBits(p, tip.Header.Time, tip.Height),
 	}
-	return blk, nil
+	return blk, mints, nil
 }
 
 // Solve searches for a nonce satisfying the header's target using the given

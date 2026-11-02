@@ -208,8 +208,9 @@ func TestWalletScreens(t *testing.T) {
 		t.Error("a wallet flow links to the bridge site")
 	}
 	// Visible words only: the markup between tags, not ids or script.
+	// (Mint is the verb on the Early blocks screen, not the bridge's word for issuing uARG.)
 	text := body[:strings.Index(body, "<script src=")]
-	for _, w := range []string{">Redeem", "Burn", "burn ", ">Mint", "Bridge out", "wARG</span>"} {
+	for _, w := range []string{">Redeem", "Burn", "burn ", "Bridge out", "wARG</span>"} {
 		if strings.Contains(text, w) {
 			t.Errorf("wallet page says %q", w)
 		}
@@ -263,6 +264,7 @@ func TestLandingAppDocsHosts(t *testing.T) {
 		{"docs.example.com", "/docs/mining", 301, "/mining"},
 		{"docs.example.com", "/nope", 404, ""},
 		{"app.example.com", "/wallet", 200, "wallet.sealed"},
+		{"app.example.com", "/early", 200, "page-mint"},
 		{"app.example.com", "/docs", 301, "https://docs.example.com/"},
 	} {
 		rec := get(c.host, c.path)

@@ -90,6 +90,16 @@ blocks is a referral share that you agree to yourself (see
 [Invite links](#invite-links-and-referral-shares) below). All fees in the
 system are listed in [Fees](docs/FEES.md).
 
+### Early blocks and your blocks
+
+From block 2,960 to block 4,959 the chain also mints ARG for anyone who
+asks, 20 ARG for 1 uARG, at most 500 ARG a block ([Early
+blocks](docs/EARLY-BLOCKS.md)). A block that includes mint requests carries
+their buyers' coins in its coinbase, beside the miner's output and the
+treasury's. Nothing changes for you: the reward you keep is the same,
+and pool and browser miners need no update, because the explorer builds
+their coinbases. A node that mines must run release 1.2.0.
+
 ## When can I spend a reward?
 
 A mining reward can be spent **100 blocks** after the block that paid it.
@@ -304,9 +314,11 @@ argonmined -mine arg1… -threads 4
 about 8 MiB of memory while it mines. Setup, monitoring and every flag are
 in [Run a node](docs/NODE.md#mining-with-a-node).
 
-A node that mines must run release 1.1.0 before block 300. Blocks from an
-older node leave the treasury out and are rejected (see
-[Run a node, Upgrades](docs/NODE.md#upgrades)).
+A node that mines must run release 1.2.0 before block 2,960, and every
+node that follows the chain must too: in the early blocks a block's
+coinbase may pay more than the subsidy and the fees, and an older node
+rejects it (see [Run a node, Upgrades](docs/NODE.md#upgrades)). Before
+that, 1.1.0 was needed from block 300 for the treasury rule.
 
 ## How the proof of work works
 
@@ -468,7 +480,8 @@ POST /pool/api/work/submit   {"job_id": "…", "nonce": 123, "address": "<your a
 
 A pool job is the same object as a solo job, with two differences: its
 `coinbase` pays the pool's address (from block 300 followed by the
-treasury's output, nothing else), and `target` is your **share target**
+treasury's output, and in the early blocks by the outputs to the buyers
+of the block's mint requests, nothing else), and `target` is your **share target**
 while `block_target` carries the real one. Mine against `target` and
 submit every hash that meets it. The answer gains one field:
 

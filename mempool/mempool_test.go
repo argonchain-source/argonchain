@@ -120,7 +120,7 @@ func TestAcceptAndConfirm(t *testing.T) {
 	if err := h.pool.Accept(tx); !errors.Is(err, ErrAlreadyInPool) {
 		t.Fatalf("dup: %v", err)
 	}
-	sel, fees := h.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ := h.pool.Select(consensus.MaxBlockSize)
 	if len(sel) != 1 || fees != 1*coin {
 		t.Fatalf("select: %d txs, fees %d", len(sel), fees)
 	}
@@ -218,12 +218,12 @@ func TestChainedSpendsAndOrdering(t *testing.T) {
 	if err := h.pool.Accept(child); err != nil {
 		t.Fatal(err)
 	}
-	sel, fees := h.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ := h.pool.Select(consensus.MaxBlockSize)
 	if len(sel) != 2 || sel[0].TxID() != parent.TxID() || sel[1].TxID() != child.TxID() || fees != 6*coin {
 		t.Fatalf("ordering: n=%d fees=%d", len(sel), fees)
 	}
 	// Size budget that fits only the parent excludes the child too.
-	sel, _ = h.pool.Select(parent.SerializedSize())
+	sel, _, _ = h.pool.Select(parent.SerializedSize())
 	if len(sel) != 1 || sel[0].TxID() != parent.TxID() {
 		t.Fatal("size budget")
 	}
@@ -236,7 +236,7 @@ func TestChainedSpendsAndOrdering(t *testing.T) {
 		t.Fatal("descendant not evicted with replaced parent")
 	}
 	// The block must validate with pool-selected txs.
-	sel, fees = h.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ = h.pool.Select(consensus.MaxBlockSize)
 	h.mine(sel, fees)
 	if h.pool.Count() != 0 {
 		t.Fatal("pool not cleared")

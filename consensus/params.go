@@ -29,6 +29,10 @@ type Params struct {
 	// TreasuryHeight 0: no treasury on this network.
 	TreasuryHeight uint32
 	TreasuryKey    []byte
+
+	// Mint (mint.go): the window in which blocks mint ARG for mint
+	// requests. nil: no window on this network.
+	Mint *MintRule
 }
 
 // genesisSpec holds the mined values for a network's genesis block.
@@ -122,7 +126,8 @@ var (
 	MainNet = newParams("mainnet", "arg", [4]byte{0x41, 0x52, 0x47, 0x4D}, 9333, 9332,
 		0x1E400000, false,
 		genesisSpec{time: mainnetGenesisTime, bits: 0x1E400000, nonce: 77492, message: GenesisMessage}).
-		withTreasury(mainnetTreasuryHeight, mainnetTreasuryKey)
+		withTreasury(mainnetTreasuryHeight, mainnetTreasuryKey).
+		withMint(MintRule{Start: mainnetMintStart, End: mainnetMintEnd, PerBlock: mainnetMintPerBlock, Rate: mainnetMintRate, Asset: mainnetMintAsset, Key: mainnetTreasuryKey})
 	// mainnet genesis hash e378ed192099aa7693a063071926aff1415165557b9e1edebfdbbe65a1cac8f6
 
 	TestNet = newParams("testnet", "targ", [4]byte{0x54, 0x41, 0x52, 0x47}, 19333, 19332,

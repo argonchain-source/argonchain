@@ -5,9 +5,9 @@ wallet hold and send all three, and the explorer shows them.
 
 | Coin | What it is | Where it comes from |
 |---|---|---|
-| **ARG** | The native coin. At most 21 million will ever exist. | Created only by mining, as block rewards. ARG is never issued by anyone and never leaves the Argonmine chain. Network fees are always paid in ARG. |
+| **ARG** | The native coin. At most 21 million from mining, plus at most 1,000,000 from the early blocks. | Created by mining, as block rewards, and in blocks 2,960 to 4,959 by the [early blocks](docs/EARLY-BLOCKS.md), 20 ARG for 1 uARG; both come out of a block's coinbase. ARG is never issued by anyone and never leaves the Argonmine chain. Network fees are always paid in ARG. |
 | **wARG** | Wrapped ARG, one for one. | Issued by the swap service when you swap ARG for it, and burned when you swap it back. The service holds the ARG behind every wARG in circulation and never pays that ARG out, so wARG can always be swapped back. See [Swaps](docs/SWAP.md). |
-| **uARG** | A dollar token with 8 decimals. | Issued by the bridge when you deposit USDC or USDT on Ethereum, Base, Arbitrum One or BNB Chain. It is redeemable one for one for USDC or USDT through the bridge, less the 1% withdrawal fee, subject to the risks in [Bridge, Risks](docs/BRIDGE.md#risks). |
+| **uARG** | A dollar token with 8 decimals. | Issued by the bridge when you deposit USDC or USDT on Ethereum, Base, Arbitrum One or BNB Chain. It is redeemable one for one for USDC or USDT through the bridge, less the 1% withdrawal fee, subject to the risks in [Bridge, Risks](docs/BRIDGE.md#risks). In the [early blocks](docs/EARLY-BLOCKS.md) it is also what a mint request pays, to the treasury. |
 
 ## The asset layer
 
@@ -29,5 +29,6 @@ show any other asset with those symbols as unverified, with no dollar value.
 
 - [Specification §3.5](docs/SPEC.md): the asset rules.
 - [Bridge](docs/BRIDGE.md): deposits, withdrawals and the risks of uARG.
+- [Early blocks](docs/EARLY-BLOCKS.md): 20 ARG for 1 uARG, blocks 2,960 to 4,959.
 - [Swaps](docs/SWAP.md): wARG and swaps between the three coins.
 - [Fees](docs/FEES.md): every fee, including the bridge fee and the swap spread.

@@ -217,9 +217,10 @@ type mempoolRow struct {
 	Fee     consensus.Amount
 	FeeRate float64
 	Outputs int
-	Spends  []coinRef // the coins it spends, with their owners
-	Pays    []mpOut   // its outputs to addresses
-	Name    *names.Op // the name operation its memo carries, if any (names.go)
+	Spends  []coinRef        // the coins it spends, with their owners
+	Pays    []mpOut          // its outputs to addresses
+	Name    *names.Op        // the name operation its memo carries, if any (names.go)
+	Mint    consensus.Amount // the ARG it asks the next block to mint, for a mint request (mint.go)
 }
 
 // mpOut is an unconfirmed output to an address.
@@ -269,7 +270,7 @@ func (s *server) mempoolView() mempoolView {
 				if err != nil {
 					continue
 				}
-				rw = mempoolRowOf(id, raw)
+				rw = mempoolRowOf(s.params, id, raw)
 			}
 			rows[id] = rw
 			totalBytes += rw.Size
@@ -293,7 +294,7 @@ func (s *server) mempoolView() mempoolView {
 
 func outpointKey(txid string, index uint32) string { return fmt.Sprintf("%s:%d", txid, index) }
 
-func mempoolRowOf(id string, raw json.RawMessage) mempoolRow {
+func mempoolRowOf(p *consensus.Params, id string, raw json.RawMessage) mempoolRow {
 	var tx txJSON
 	json.Unmarshal(raw, &tx)
 	var size struct {
@@ -322,6 +323,9 @@ func mempoolRowOf(id string, raw json.RawMessage) mempoolRow {
 	rw.In, rw.Out = float64(in), float64(out)
 	if op, ok := names.FindMemo(nullDataPayloads(&tx)); ok {
 		rw.Name = &op
+	}
+	if _, _, minted, ok := mintRequestOf(p, &tx); ok {
+		rw.Mint = minted
 	}
 	if in >= out {
 		rw.Fee = in - out

@@ -29,7 +29,7 @@
 <header class="topbar">
   <a class="wordmark" href="/">{{.Mark}}<span>{{.Brand}} explorer</span></a>
   <span class="badge">{{.Network}}</span>
-  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a><a class="btn btn-ghost btn-sm" href="/pool">Pool</a><a class="btn btn-ghost btn-sm" href="/names">Names</a></nav>
+  <nav class="row" style="gap:2px" aria-label="Sections"><a class="btn btn-ghost btn-sm" href="/blocks">Blocks</a><a class="btn btn-ghost btn-sm" href="/mempool">Mempool</a><a class="btn btn-ghost btn-sm" href="/pool">Pool</a><a class="btn btn-ghost btn-sm" href="/names">Names</a>{{if .Mint}}<a class="btn btn-ghost btn-sm" href="/early">Early blocks</a>{{end}}</nav>
   <form class="searchbar" action="/search" method="get" role="search"><i data-icon="search"></i><input name="q" placeholder="Search a height, block hash, transaction, address or name" aria-label="Search" autocomplete="off"></form>
   <span class="spacer"></span>
   <span class="badge" title="Indexed height / node height">indexed <b class="num" style="margin-left:4px">{{num .Height}}</b><span class="muted" style="margin:0 4px">/</span><b class="num">{{num .Tip}}</b></span>
@@ -115,7 +115,7 @@
 </div></div>
 <div class="grid cols-4">
   <div class="card stat"><span class="stat-label">Mined</span><span class="stat-value sm">{{agof .Data.time}}</span><span class="stat-hint">{{whenf .Data.time}} UTC</span></div>
-  <div class="card stat"><span class="stat-label">Reward</span><span class="stat-value sm"><span class="num">{{if .Data.reward}}{{coin .Data.reward}}{{else}}–{{end}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">includes {{coin .Data.fees}} {{.Coin}} in fees</span></div>
+  <div class="card stat"><span class="stat-label">Reward</span><span class="stat-value sm"><span class="num">{{if .Data.reward}}{{coin .Data.reward}}{{else}}–{{end}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">includes {{coin .Data.fees}} {{.Coin}} in fees{{if .Data.minted}} and {{coins .Data.minted}} {{.Coin}} minted{{end}}</span></div>
   <div class="card stat"><span class="stat-label">Transactions</span><span class="stat-value sm num">{{.Data.txcount}}</span><span class="stat-hint">{{num .Data.size}} bytes</span></div>
   <div class="card stat"><span class="stat-label">Miner</span><span class="stat-value sm mono" style="font-size:var(--fs-4)">{{if .Data.miner}}<a class="link" href="/address/{{.Data.miner}}" title="{{.Data.miner}}">{{short .Data.miner}}</a>{{else}}–{{end}}</span><span class="stat-hint">coinbase recipient</span></div>
 </div>
@@ -127,6 +127,7 @@
   <dt>Difficulty</dt><dd>{{printf "%.4f" .Data.difficulty}} <span class="muted">(bits {{.Data.bits}})</span></dd>
   {{if .Data.target}}<dt>Target</dt><dd class="mono">{{.Data.target}}</dd>{{end}}
   {{if .Data.work}}<dt>Work</dt><dd class="mono">{{.Data.work}} <span class="muted">expected hashes, hex</span></dd>{{end}}
+  {{if .Data.minted}}<dt>Minted</dt><dd>{{coins .Data.minted}} {{.Coin}} for {{.Data.mintRequests}} {{if eq .Data.mintRequests 1}}request{{else}}requests{{end}} <span class="muted small">paid out of the coinbase · <a class="link" href="/early">about early blocks</a></span></dd>{{end}}
   <dt>Nonce</dt><dd class="num">{{printf "%.0f" .Data.nonce}}</dd>
   <dt>Version</dt><dd class="num">{{printf "%.0f" .Data.version}}</dd>
   <dt>Transaction root</dt><dd class="mono">{{.Data.txroot}}</dd>
@@ -135,13 +136,13 @@
 </dl></div>
 <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Transactions</h2><span class="muted small">{{.Data.txcount}} in this block</span></div>
 <div class="table-wrap"><table class="table"><thead><tr><th>Transaction</th><th class="num">Inputs</th><th class="num">Outputs</th><th class="num">Value out</th><th class="num">Fee</th></tr></thead><tbody>
-{{range .Data.tx}}<tr><td class="mono"><a href="/tx/{{.txid}}">{{.txid}}</a>{{if .coinbase}} <span class="badge badge-accent">reward</span>{{end}}</td><td class="num">{{len .inputs}}</td><td class="num">{{len .outputs}}</td><td class="num">{{coin .valueOut}}</td><td class="num muted">{{if .coinbase}}–{{else}}{{coin .fee}}{{end}}</td></tr>{{end}}
+{{range .Data.tx}}<tr><td class="mono"><a href="/tx/{{.txid}}">{{.txid}}</a>{{if .coinbase}} <span class="badge badge-accent">reward</span>{{end}}{{if .mint}} <span class="badge badge-accent">early</span>{{end}}</td><td class="num">{{len .inputs}}</td><td class="num">{{len .outputs}}</td><td class="num">{{coin .valueOut}}</td><td class="num muted">{{if .coinbase}}–{{else}}{{coin .fee}}{{end}}</td></tr>{{end}}
 </tbody></table></div></div>
 {{template "foot" .}}{{end}}
 
 {{define "tx"}}{{template "head" .}}
 <div class="page-header"><div><h1>Transaction</h1><p class="mono">{{.Data.txid}}</p></div>
-<div class="row">{{if .Data.blockhash}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-accent"><i data-icon="history"></i>Pending</span>{{end}}{{if .Data.coinbase}}<span class="badge badge-accent">mining reward</span>{{end}}{{with .Data.nameOp}}<a class="badge badge-accent" href="/name/{{.Label}}"><i data-icon="user"></i>{{.Display}}</a>{{end}}</div></div>
+<div class="row">{{if .Data.blockhash}}<span class="badge badge-ok"><i data-icon="check"></i>{{num .Data.confirmations}} confirmations</span>{{else}}<span class="badge badge-accent"><i data-icon="history"></i>Pending</span>{{end}}{{if .Data.coinbase}}<span class="badge badge-accent">mining reward</span>{{end}}{{with .Data.nameOp}}<a class="badge badge-accent" href="/name/{{.Label}}"><i data-icon="user"></i>{{.Display}}</a>{{end}}{{if .Data.mintReq}}<a class="badge badge-accent" href="/early">early</a>{{end}}</div></div>
 <div class="grid cols-4">
   <div class="card stat"><span class="stat-label">Value out</span><span class="stat-value sm"><span class="num">{{coin .Data.totalOut}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">{{len .Data.outputs}} outputs{{if .Data.assets}} · also moves {{range $i, $a := .Data.assets}}{{if $i}}, {{end}}{{$a.Name}}{{end}}{{end}}</span></div>
   <div class="card stat"><span class="stat-label">Fee</span><span class="stat-value sm"><span class="num">{{if .Data.coinbase}}–{{else}}{{coin .Data.fee}}{{end}}</span>{{if not .Data.coinbase}}<span class="stat-unit">{{.Coin}}</span>{{end}}</span><span class="stat-hint">{{if .Data.feeRate}}{{printf "%.2f" .Data.feeRate}} units per byte{{else}}{{if .Data.coinbase}}new coins pay no fee{{else}}–{{end}}{{end}}</span></div>
@@ -155,6 +156,7 @@
   <dt>Total out</dt><dd>{{coin .Data.totalOut}} {{.Coin}}</dd>
   <dt>Witness id</dt><dd class="mono">{{.Data.wtxid}}</dd>
   {{with .Data.nameOp}}<dt>Name</dt><dd>{{.Before}} <a class="link" href="/name/{{.Label}}">{{.Display}}</a> {{.After}}{{if .Confirmed}}{{if .Applied}} <span class="badge badge-ok">applied</span>{{else}} <span class="badge badge-warn">ignored</span> <span class="muted small">the operation broke a rule, so the transaction did nothing to names</span>{{end}}{{else}} <span class="badge badge-accent">pending</span>{{end}}</dd>{{end}}
+  {{with .Data.mintReq}}<dt>Early block</dt><dd>Early block request: paid {{coin .Paid}} {{.AssetName}}, {{coin .Minted}} {{$.Coin}} paid to <a class="link mono" href="/address/{{.Buyer}}" title="{{.Buyer}}">{{short .Buyer}}</a> {{if .Confirmed}}in block <a class="link" href="/block/{{.Height}}">{{num .Height}}</a>'s coinbase{{else}}<span class="badge badge-accent">waiting for a block</span>{{end}} <span class="muted small"><a class="link" href="/early">about early blocks</a></span></dd>{{end}}
   {{range .Data.assets}}{{if .Issued}}<dt>Issuance</dt><dd><span class="num">{{coin .Issued}}</span> <b{{if .Unverified}} class="unverified"{{end}}>{{.Name}}</b> <span class="muted small">created in this transaction</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div><div class="muted small mono">issuer {{.Issuer}}</div></dd>{{end}}{{end}}
   {{range .Data.assets}}{{if .Burned}}<dt>Burned</dt><dd><span class="num">{{coin .Burned}}</span> <b>{{.Name}}</b> <span class="muted small">destroyed: the inputs and issuance exceed the outputs</span><div class="muted small mono">asset <span class="link">{{.Asset}}</span></div></dd>{{end}}{{end}}
 </dl></div>
@@ -167,7 +169,7 @@
 </tbody></table></div></div>
 <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Outputs</h2><span class="muted small">{{len .Data.outputs}}</span></div>
 <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>To</th><th class="num">Amount</th></tr></thead><tbody>
-{{range .Data.outputs}}<tr><td class="num muted">{{.n}}</td><td class="mono">{{if .address}}<a href="/address/{{.address}}" title="{{.address}}">{{short .address}}</a>{{else}}<span class="badge">data</span> {{if .text}}<span class="memo">{{.text}}</span>{{else}}<span class="muted">{{.payload}}</span>{{end}}{{end}}{{if .asset}} <span class="badge badge-accent">{{sym .assetDisplay .asset}}</span>{{end}}</td><td class="num">{{.coin}}{{if .asset}} <span class="muted">{{sym .assetDisplay .asset}}</span>{{end}}</td></tr>{{end}}
+{{range .Data.outputs}}<tr><td class="num muted">{{.n}}</td><td class="mono">{{if .address}}<a href="/address/{{.address}}" title="{{.address}}">{{short .address}}</a>{{if .mint}} <span class="badge badge-accent" title="minted for a request in this block">early</span>{{end}}{{else}}<span class="badge">data</span> {{if .text}}<span class="memo">{{.text}}</span>{{else}}<span class="muted">{{.payload}}</span>{{end}}{{end}}{{if .asset}} <span class="badge badge-accent">{{sym .assetDisplay .asset}}</span>{{end}}</td><td class="num">{{.coin}}{{if .asset}} <span class="muted">{{sym .assetDisplay .asset}}</span>{{end}}</td></tr>{{end}}
 </tbody></table></div></div>
 </div>
 {{template "foot" .}}{{end}}
@@ -194,13 +196,20 @@
 {{if .Data.Holdings}}<div class="grid cols-3">
 {{range .Data.Holdings}}  <div class="card stat"><span class="stat-label{{if .Unverified}} unverified{{end}}">{{if .Logo}}<img class="tok" src="{{.Logo}}" alt="" width="20" height="20">{{end}}{{sym .Display .Asset}} balance</span><span class="stat-value sm"><span class="num">{{coin .Balance}}</span><span class="stat-unit">{{sym .Display .Asset}}</span></span><span class="stat-hint">{{if .Unverified}}<span class="mono" title="issuer {{.Issuer}}">issuer {{short .Issuer}}</span> · {{end}}received <span class="num">{{coin .Received}}</span> · sent <span class="num">{{coin .Sent}}</span> · <span class="link">about {{sym .Display .Asset}}</span></span></div>
 {{end}}</div>{{end}}
+{{if .Data.Mints}}<div class="grid cols-3">
+  <div class="card stat"><span class="stat-label">Minted</span><span class="stat-value sm"><span class="num">{{coin .Data.MintMinted}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">for {{num .Data.MintCount}} {{if eq .Data.MintCount 1}}request{{else}}requests{{end}} · paid {{coin .Data.MintPaid}} {{.Data.MintAsset}} · <a class="link" href="/early">about early blocks</a></span></div>
+</div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Early block requests</h2><span class="muted small">newest first{{if gt .Data.MintCount (len .Data.Mints)}} · the newest {{len .Data.Mints}} of {{num .Data.MintCount}}{{end}}</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Transaction</th><th class="num">Paid</th><th class="num">Minted</th></tr></thead><tbody>
+{{range .Data.Mints}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{coin .Paid}} <span class="muted small">{{$.Data.MintAsset}}</span></td><td class="num pos">+{{coin .Minted}} <span class="muted small">{{$.Coin}}</span></td></tr>{{end}}
+</tbody></table></div></div>{{end}}
 {{if .Data.Names}}<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Names</h2><span class="muted small">{{len .Data.Names}} owned · <a class="link" href="/names">about names</a></span></div>
 <div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Status</th><th class="num">Expires</th><th class="hide-m">Expires in</th></tr></thead><tbody>
 {{range .Data.Names}}<tr><td><a class="link" href="/name/{{.Label}}">{{.Display}}</a>{{if .Primary}} <span class="badge badge-accent">primary</span>{{end}}</td><td>{{if .Grace}}<span class="badge badge-warn">in grace</span>{{else}}<span class="badge badge-ok">registered</span>{{end}}</td><td class="num"><a href="/block/{{.Expires}}">{{num .Expires}}</a></td><td class="hide-m">{{.ExpiresIn}} <span class="muted small">{{date .ExpiresTime}}</span></td></tr>{{end}}
 </tbody></table></div></div>{{end}}
 <div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>History</h2><span class="muted small">{{if .Data.Before}}older than block {{num .Data.Before}}{{else}}newest first{{end}}</span></div>
 <div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th class="hide-m">Time (UTC)</th><th>Type</th><th>Transaction</th><th class="num">Change</th></tr></thead><tbody>
-{{range .Data.History}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td>{{if .Referral}}<span class="tag mined"><i data-icon="users"></i>Referral</span>{{else}}{{if .Coinbase}}<span class="tag mined"><i data-icon="pickaxe"></i>Mined</span>{{else}}{{if .Incoming}}<span class="tag in"><i data-icon="receive"></i>Received</span>{{else}}<span class="tag out"><i data-icon="send"></i>Sent</span>{{end}}{{end}}{{end}}{{range .Assets}} <span class="badge {{if .Unverified}}badge-warn{{else}}badge-accent{{end}}">{{sym .Display .Asset}}</span>{{end}}</td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{if .MovedARG}}<span class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}}</span>{{end}}{{range .Assets}}<div class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}} <span class="muted small">{{sym .Display .Asset}}</span></div>{{end}}</td></tr>{{end}}
+{{range .Data.History}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td>{{if .Referral}}<span class="tag mined"><i data-icon="users"></i>Referral</span>{{else}}{{if .Mint}}<span class="tag mined"><i data-icon="layers"></i>Minted</span>{{else}}{{if .Coinbase}}<span class="tag mined"><i data-icon="pickaxe"></i>Mined</span>{{else}}{{if .Incoming}}<span class="tag in"><i data-icon="receive"></i>Received</span>{{else}}<span class="tag out"><i data-icon="send"></i>Sent</span>{{end}}{{end}}{{end}}{{end}}{{range .Assets}} <span class="badge {{if .Unverified}}badge-warn{{else}}badge-accent{{end}}">{{sym .Display .Asset}}</span>{{end}}</td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{if .MovedARG}}<span class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}}</span>{{end}}{{range .Assets}}<div class="{{if ge .Received .Sent}}pos{{else}}neg{{end}}">{{if ge .Received .Sent}}+{{coin (sub64 .Received .Sent)}}{{else}}−{{coin (sub64 .Sent .Received)}}{{end}} <span class="muted small">{{sym .Display .Asset}}</span></div>{{end}}</td></tr>{{end}}
 {{if not .Data.History}}<tr><td colspan="5"><div class="empty"><i data-icon="wallet" class="lg"></i><h3>No activity yet</h3><p>This address has not received or sent anything the index knows about.</p></div></td></tr>{{end}}
 </tbody></table></div></div>
 <div class="pager">{{if .Data.Before}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}">Newest</a>{{else}}<span></span>{{end}}{{if .Data.Older}}<a class="btn btn-secondary btn-sm" href="/address/{{.Data.Address}}?before={{.Data.Older}}">Older</a>{{end}}</div>
@@ -265,6 +274,42 @@
 {{range .Data.History}}<tr><td><span class="badge {{if eq .Op "register"}}badge-ok{{else}}badge-accent{{end}}">{{.Op}}</span>{{if .Years}} <span class="muted small">{{.Years}} {{if eq .Years 1}}year{{else}}years{{end}}</span>{{end}}</td><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td class="hide-m">{{when .Time}} <span class="muted small">{{ago .Time}}</span></td><td class="mono"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="mono">{{if eq .Op "transfer"}}<a href="/address/{{.From}}" title="{{.From}}">{{short .From}}</a><span class="arrow">→</span><a href="/address/{{.To}}" title="{{.To}}">{{short .To}}</a>{{else}}<a href="/address/{{.From}}" title="{{.From}}">{{short .From}}</a>{{end}}</td></tr>{{end}}
 {{if not .Data.History}}<tr><td colspan="5"><div class="empty"><i data-icon="history" class="lg"></i><h3>No history</h3><p>No valid operation on {{.Data.Display}} has been indexed.</p></div></td></tr>{{end}}
 </tbody></table></div></div>
+{{end}}
+{{template "foot" .}}{{end}}
+
+{{define "mint"}}{{template "head" .}}
+<style>
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .step { display: flex; gap: var(--sp-3); } .step b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+</style>
+<div class="page-header"><div><h1>Early blocks</h1><p>{{if .Data.Window}}For {{num .Data.Blocks}} blocks the chain mints {{.Coin}} for anyone who asks: {{num .Data.Rate}} {{.Coin}} for 1 {{.Data.AssetName}}, up to {{coins .Data.PerBlock}} {{.Coin}} a block, {{coins .Data.Cap}} in all. Then {{.Coin}} comes only from mining.{{else}}{{.Network}} has no early blocks. Every {{.Coin}} on it comes from mining.{{end}}</p></div>{{if .Data.Window}}<a class="btn btn-secondary btn-sm" href="{{.App}}/early" rel="noopener">Open in the app</a>{{end}}</div>
+{{if .Data.Window}}
+<div class="grid cols-3">
+  <div class="card stat"><span class="stat-label">Status</span>{{if eq .Data.Status "upcoming"}}<span class="stat-value sm">Opens at block {{num .Data.Start}}</span><span class="stat-hint">{{num .Data.Remaining}} {{if eq .Data.Remaining 1}}block{{else}}blocks{{end}} to go, {{.Data.ETA}} · open until block {{num .Data.End}}</span>{{else if eq .Data.Status "open"}}<span class="stat-value sm"><span class="badge badge-ok"><i data-icon="check"></i>Open</span></span><span class="stat-hint">closes at block {{num .Data.End}} · {{num .Data.Remaining}} {{if eq .Data.Remaining 1}}block{{else}}blocks{{end}} remaining, {{.Data.ETA}}</span>{{else}}<span class="stat-value sm">Closed</span><span class="stat-hint">ran from block {{num .Data.Start}} to block {{num .Data.End}}</span>{{end}}</div>
+  <div class="card stat"><span class="stat-label">Minted so far</span><span class="stat-value sm"><span class="num">{{coins .Data.Minted}}</span><span class="stat-unit">{{.Coin}}</span></span><span class="stat-hint">of {{coins .Data.Cap}} {{.Coin}} · {{pct .Data.Pct}} of the most the window can mint</span></div>
+  <div class="card stat"><span class="stat-label">Requests</span><span class="stat-value sm num">{{num .Data.Requests}}</span><span class="stat-hint">{{if .Data.PendingCount}}{{num .Data.PendingCount}} waiting in the mempool for {{coins .Data.Pending}} {{.Coin}}{{else}}none waiting in the mempool{{end}}</span></div>
+</div>
+<div class="card"><div class="card-header"><h2>How it works</h2></div>
+<div class="card-body">
+  <div class="steps">
+    <div class="step"><b>1</b><div>Send {{.Data.AssetName}} to the address below with the memo <span class="memo">{{.Data.Memo}}</span>, or use the app.</div></div>
+    <div class="step"><b>2</b><div>The next block that takes your request pays you {{num .Data.Rate}} {{.Coin}} per {{.Data.AssetName}} from its coinbase, spendable {{num .Data.Maturity}} blocks later.</div></div>
+    <div class="step"><b>3</b><div>At most {{coins .Data.MaxPaid}} {{.Data.AssetName}} a request and {{coins .Data.PerBlock}} {{.Coin}} a block. The {{.Data.AssetName}} goes to the treasury.</div></div>
+  </div>
+  <dl class="props" style="margin-top:var(--sp-5)">
+    <dt>Address</dt><dd class="mono"><a class="link" href="/address/{{.Data.Address}}">{{.Data.Address}}</a></dd>
+    <dt>Memo</dt><dd><span class="memo">{{.Data.Memo}}</span></dd>
+    <dt>API</dt><dd class="mono"><a class="link" href="/api/early">/api/early</a> · /api/early/{address}</dd>
+  </dl>
+</div></div>
+<div class="card flush"><div class="card-header" style="padding-bottom:var(--sp-4)"><h2>Recent requests</h2><span class="muted small">newest first</span></div>
+<div class="table-wrap"><table class="table"><thead><tr><th class="num">Block</th><th>Age</th><th>Address</th><th class="hide-m">Transaction</th><th class="num">Paid</th><th class="num">Minted</th></tr></thead><tbody>
+{{range .Data.Recent}}<tr><td class="num"><a href="/block/{{.Height}}">{{num .Height}}</a></td><td title="{{when .Time}} UTC">{{ago .Time}}</td><td class="mono"><a href="/address/{{.Buyer}}" title="{{.Buyer}}">{{short .Buyer}}</a></td><td class="mono hide-m"><a href="/tx/{{.TxID}}" title="{{.TxID}}">{{short .TxID}}</a></td><td class="num">{{coin .Paid}} <span class="muted small">{{$.Data.AssetName}}</span></td><td class="num">{{coin .Minted}} <span class="muted small">{{$.Coin}}</span></td></tr>{{end}}
+{{if not .Data.Recent}}<tr><td colspan="6"><div class="empty"><i data-icon="layers" class="lg"></i><h3>No requests yet</h3><p>{{if eq .Data.Status "upcoming"}}Requests can be made from block {{num .Data.Start}}.{{else if eq .Data.Status "open"}}The first request on {{.Network}} will appear here.{{else}}No request was made while the window was open.{{end}}</p></div></td></tr>{{end}}
+</tbody></table></div></div>
+{{else}}
+<div class="card"><div class="empty"><i data-icon="layers" class="lg"></i><h3>No early blocks</h3><p>{{.Network}} has no early blocks. Every coin is mined.</p><a class="btn btn-secondary btn-sm" href="/">Back to the explorer</a></div></div>
 {{end}}
 {{template "foot" .}}{{end}}
 

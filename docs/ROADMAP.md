@@ -56,7 +56,8 @@ From launch on, every change to the consensus rules is scheduled at a
 block height and announced in advance ([SPEC §3.2](docs/SPEC.md)). The
 treasury rule from block 300 only turns away blocks that leave the
 treasury out, so nodes on release 1.0.0 keep following the chain; a node
-that mines must run release 1.1.0 before block 300
+that mines must run release 1.1.0 before block 300. The early blocks from
+block 2,960 are a hard fork: every node must run release 1.2.0 before it
 ([Run a node, Upgrades](docs/NODE.md#upgrades)).
 
 ## After launch
@@ -162,15 +163,17 @@ explorer loses its node, falls behind, or sees no block for an hour.
 | Plainer words on Mine and Settings | Planned |
 | A full test as a new user, on a phone and a laptop, start to finish | Partly done |
 
-### A11: Names and buying ARG
+### A11: Names and early blocks
 
-**Priority P1 · In progress (2026-10-31).**
+**Priority P1 · In progress (2026-11-01).**
 
 | Item | Status |
 |---|---|
 | Names: `alice.arg` for an address, registered from the app, paid in ARG to the treasury ([Names](docs/NAMES.md)) | In progress |
 | Send to a name; names on the explorer and the dashboard | In progress |
 | Buying ARG from the project was built and withdrawn (2026-10-31): a page where the project sells its own coins at its own price is a presale, whatever it is called | Decided |
+| Early blocks (2026-11-01): from block 2,960 to 4,959 the chain mints 20 ARG for 1 uARG for anyone who asks, at most 500 ARG a block and 1,000,000 in all, by consensus rule; the uARG goes to the treasury. Early blocks screen in the app, `/early` on the explorer, node release 1.2.0 ([Early blocks](docs/EARLY-BLOCKS.md), [SPEC §3.3.2](docs/SPEC.md)) | Done |
+| Release 1.2.0 on every node before block 2,960 | In progress |
 
 ### A10: Documentation
 
@@ -306,3 +309,4 @@ clients ([SPEC §12](docs/SPEC.md)).
 | 2026-10-28 | No limits per deposit, per withdrawal or per day on the bridge. Users are told plainly that it holds real funds without an external audit and without limits. |
 | 2026-10-28 | The vault owner on every chain is, for now, one wallet of the project, not a key on a server. Every change the owner makes to a vault waits 7 days; 2 of the 3 guardians can veto it, and the owner can override a veto after 60 days. Moving ownership to the multisig is planned. |
 | 2026-10-28 (evening) | From mainnet block 300, every block pays 1% of the block subsidy to the project treasury, by consensus rule. Transaction fees stay with the miner. No premine still holds: the treasury's coins are mined too. The swap spread and the bridge fees also go to the treasury. Node runners who do not mine earn nothing from the protocol; the treasury may fund public seed nodes later. |
+| 2026-11-01 | Early blocks, written in the rules, open to everyone, block 2,960 to 4,959: 20 ARG for 1 uARG, at most 500 ARG a block and 1,000,000 in all, minted block by block from the coinbase only when asked for. The uARG goes to the treasury. After block 4,959 ARG comes only from mining. A hard fork: every node runs release 1.2.0 before block 2,960. |

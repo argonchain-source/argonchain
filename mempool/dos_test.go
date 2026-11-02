@@ -88,7 +88,7 @@ func TestChainLimitAndFastSelect(t *testing.T) {
 		t.Fatalf("accepted %d of a 2000-long chain (want %d), then: %v", len(chain), MaxChainTxs, refused)
 	}
 	start := time.Now()
-	txs, _ := h.pool.Select(consensus.MaxBlockSize)
+	txs, _, _ := h.pool.Select(consensus.MaxBlockSize)
 	if el := time.Since(start); el > 100*time.Millisecond {
 		t.Fatalf("Select took %s", el)
 	}
@@ -177,7 +177,7 @@ func TestTopologicalScales(t *testing.T) {
 		}
 	}
 	start = time.Now()
-	txs, _ := p.Select(consensus.MaxBlockSize)
+	txs, _, _ := p.Select(consensus.MaxBlockSize)
 	if el := time.Since(start); el > 2*time.Second || len(txs) == 0 {
 		t.Fatalf("Select: %d txs in %s", len(txs), el)
 	}
@@ -219,7 +219,7 @@ func TestChildSurvivesParentConfirmation(t *testing.T) {
 	if h.pool.Has(parent.TxID()) || !h.pool.Has(child.TxID()) {
 		t.Fatalf("after confirming the parent: parent in pool %v, child in pool %v", h.pool.Has(parent.TxID()), h.pool.Has(child.TxID()))
 	}
-	sel, fees := h.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ := h.pool.Select(consensus.MaxBlockSize)
 	if len(sel) != 1 || sel[0].TxID() != child.TxID() {
 		t.Fatal("child not selected")
 	}
@@ -263,7 +263,7 @@ func TestEvictionKeepsAncestors(t *testing.T) {
 		if !withOther && !errors.Is(err, ErrPoolFull) {
 			t.Fatalf("child: %v", err)
 		}
-		sel, _ := h.pool.Select(consensus.MaxBlockSize)
+		sel, _, _ := h.pool.Select(consensus.MaxBlockSize)
 		seen := map[consensus.Hash]bool{}
 		for _, tx := range sel {
 			for _, in := range tx.Inputs {

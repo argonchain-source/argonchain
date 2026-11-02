@@ -123,9 +123,22 @@ address and the same coins.
 ## The coin
 
 **Is there a premine?**
-No. Every ARG that will ever exist is created as a block reward, starting
-from a genesis block whose coinbase is not spendable. That includes the
-treasury's share below: it is mined too.
+No. Every ARG that will ever exist is created in a block's coinbase,
+starting from a genesis block whose coinbase is not spendable. That
+includes the treasury's share below: it is mined too. The one exception
+to "mined" is the early blocks below, written in the rules and open to
+everyone; outside mining and the early blocks no ARG is created.
+
+**What are early blocks?**
+For 2,000 blocks the chain mints ARG for anyone who asks: 20 ARG for
+1 uARG, up to 500 ARG a block, 1,000,000 in all. The rate is written in
+the rules, the same for everyone, and it ends at block 4,959. After
+that, ARG comes only from mining. Nothing is set aside and nothing is
+minted unless someone asks for it, block by block, the way mining works.
+The uARG paid goes to the treasury. Open **Early blocks** in the app, or send
+uARG to the treasury address with the memo `EARLY1`. Coins are paid out
+of the coinbase of the block that includes the request, like a miner's,
+and can be spent 100 blocks later. See [Early blocks](docs/EARLY-BLOCKS.md).
 
 **Is there a fee on mining?**
 Yes, from block 300. Every mainnet block from block 300 on pays 1% of the
@@ -139,8 +152,10 @@ address is `arg1q0tg6xr2g9glakgl06t0ymf5aut5ac5xjqnvvmqjf2xp7dvllmakqna8cd2`; an
 Its key is held offline by the project. See [Fees](docs/FEES.md).
 
 **What is the supply?**
-A little under 21 million ARG: 50 ARG per block, halving every 210,000
-blocks. See [Mining](docs/MINING.md).
+A little under 21 million ARG from mining: 50 ARG per block, halving
+every 210,000 blocks, plus at most 1,000,000 ARG from the early blocks,
+and only as much of that as was asked for. See [Mining](docs/MINING.md)
+and [Early blocks](docs/EARLY-BLOCKS.md).
 
 **What are fees?**
 Transactions pay a fee in ARG to the miner of their block. The default
@@ -211,7 +226,8 @@ So the honest advice is: do not run a bare node for income. Bare nodes
 still matter for the network, as seed nodes and as independent verifiers,
 and are run by people and projects with a reason to keep the chain
 healthy, exactly as on Bitcoin. The treasury may fund public seed nodes
-later. A node that mines must run release 1.1.0 before block 300.
+later. Every node must run release 1.2.0 before block 2,960, when the
+early blocks open; an older node stops following the chain there.
 
 **Is the code open source?**
 Yes. The node, the wallets, the explorer, the bridge and its contracts,

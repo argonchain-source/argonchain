@@ -27,7 +27,7 @@ share, and only if you accepted an invite yourself (see
 |---|---|
 | Address | `arg1q0tg6xr2g9glakgl06t0ymf5aut5ac5xjqnvvmqjf2xp7dvllmakqna8cd2` |
 | Key | Held offline by the project. |
-| Receives | 1% of the subsidy of every block from block 300, paid by the chain inside the block. The swap service pays its spread to the treasury automatically, and the project moves the bridge fees there. |
+| Receives | 1% of the subsidy of every block from block 300, paid by the chain inside the block. The uARG paid by mint requests in the [early blocks](docs/EARLY-BLOCKS.md), 2,960 to 4,959. The swap service pays its spread to the treasury automatically, and the project moves the bridge fees there. |
 | How to check | The address is public. Anyone can watch it on the [explorer](https://explorer.argonmine.com/address/arg1q0tg6xr2g9glakgl06t0ymf5aut5ac5xjqnvvmqjf2xp7dvllmakqna8cd2). From block 300, every block's reward transaction shows its output to this address. |
 
 Running a node that does not mine earns nothing from the protocol. The
@@ -44,6 +44,7 @@ treasury may fund public seed nodes later.
 | [Wrap fee](#swap-spread) | 0% between ARG and wARG | Nobody today | n/a |
 | [Referral share](#referral-share) | 5% of each block you mine, after the treasury's share, only if you accepted an invite | You, out of your own reward | The person who invited you, inside the block |
 | [Treasury share](#is-there-a-fee-on-mining-rewards) | 1% of the block subsidy, from block 300. Fees are not touched | Every miner, by consensus rule | [The treasury](#the-treasury), inside the block |
+| [Early blocks](docs/EARLY-BLOCKS.md) | 1 uARG for 20 ARG, blocks 2,960 to 4,959. Not a fee: what a mint request pays, written in the rules | Whoever sends a mint request | [The treasury](#the-treasury), inside the request |
 
 From block 300 the miner keeps the rest of each block: 99% of the subsidy (49.5 ARG at
 today's subsidy) and every transaction fee, less any referral share.

@@ -351,6 +351,7 @@ func (p *pool) Job(miner string) (*workJobJSON, error) {
 	p.mu.Unlock()
 
 	outs := []consensus.TxOut{{Amount: value, Type: pay.Type, Payload: pay.Payload}}
+	outs = append(outs, t.mint...)
 	if payTreasury {
 		outs = append(outs, treasury)
 	}

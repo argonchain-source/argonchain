@@ -59,6 +59,18 @@ type Config struct {
 	// per device in a card at the top of the screen, with a link to it.
 	AnnounceURL  string
 	AnnounceText string
+	// A private copy for the team (staging.go): BasicAuth ("user:password")
+	// guards every request; ExplorerProxy is the explorer on the private
+	// network, served at /x/ so the app's API calls need no second password
+	// (ExplorerAuth is the explorer's own "user:password" for that hop);
+	// UARGAsset names uARG when there is no bridge to ask.
+	BasicAuth     string
+	ExplorerProxy string
+	ExplorerAuth  string
+	UARGAsset     string
+	// ExplorerAPI is where the app's scripts call the explorer's API: the
+	// explorer itself, or /x on this site with ExplorerProxy.
+	ExplorerAPI string
 }
 
 type docEntry struct {
@@ -135,7 +147,26 @@ func main() {
 	flag.StringVar(&cfg.DownloadsUpstream, "downloads-upstream", "", "file service with the node release archives on the private network, served at /downloads/ (e.g. http://downloads.railway.internal:8080); empty: off")
 	flag.StringVar(&cfg.AnnounceURL, "announce-url", "", "a post the app points to once per device, e.g. https://x.com/argonminechain/status/…; empty: no card")
 	flag.StringVar(&cfg.AnnounceText, "announce-text", "", "the line the announcement card shows with the link")
+	flag.StringVar(&cfg.BasicAuth, "basic-auth", "", "staging: ask every request for this user:password")
+	flag.StringVar(&cfg.ExplorerProxy, "explorer-proxy", "", "staging: forward /x/api/ to this explorer on the private network, so the app needs no second password")
+	flag.StringVar(&cfg.ExplorerAuth, "explorer-auth", "", "staging: the explorer's own user:password, sent by the /x/ proxy (default: the same as -basic-auth)")
+	flag.StringVar(&cfg.UARGAsset, "uarg-asset", "", "the uARG asset id (64 hex) when there is no bridge to ask, e.g. on a test network")
 	flag.Parse()
+	cfg.ExplorerAPI = cfg.Explorer
+	if cfg.ExplorerProxy != "" {
+		cfg.ExplorerAPI = explorerProxyPrefix
+		if cfg.ExplorerAuth == "" {
+			cfg.ExplorerAuth = cfg.BasicAuth
+		}
+	}
+	if cfg.BasicAuth != "" {
+		if _, _, ok := splitCredentials(cfg.BasicAuth); !ok {
+			log.Fatal("-basic-auth must be user:password")
+		}
+	}
+	if cfg.UARGAsset != "" && !isHex64(cfg.UARGAsset) {
+		log.Fatal("-uarg-asset must be a 64-character hex asset id")
+	}
 	if cfg.AnnounceURL != "" && !strings.HasPrefix(cfg.AnnounceURL, "https://") {
 		log.Fatal("-announce-url must start with https://")
 	}
@@ -277,6 +308,13 @@ func (s *site) handler() http.Handler {
 			log.Printf("swap: -swap-upstream %q is not a URL; /swap/api/ is off", s.cfg.SwapUpstream)
 		}
 	}
+	if s.cfg.ExplorerProxy != "" {
+		if h, err := explorerProxy(s.cfg.ExplorerProxy, s.cfg.ExplorerAuth); err == nil && h != nil {
+			mux.Handle(explorerProxyPrefix+"/", h)
+		} else {
+			log.Printf("explorer: -explorer-proxy %q is not a URL; /x/ is off", s.cfg.ExplorerProxy)
+		}
+	}
 	if s.cfg.DownloadsUpstream != "" {
 		if h, err := downloadsProxy(s.cfg.DownloadsUpstream); err == nil && h != nil {
 			mux.Handle("/downloads/", h)
@@ -349,7 +387,20 @@ func (s *site) handler() http.Handler {
 			s.notFound(w)
 		}
 	})
-	return securityHeaders(s.csp, mux)
+	return basicAuth(s.cfg.BasicAuth, securityHeaders(s.csp, mux))
+}
+
+// isHex64 reports whether s is a 64-character lower-case hex id.
+func isHex64(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // originRe is what a CSP source may be built from: scheme, host and port,
@@ -443,7 +494,7 @@ func serveQR(w http.ResponseWriter, r *http.Request) {
 // real paths (/mine, /wallet, ...) and switches screens client-side.
 func isAppPath(path string) bool {
 	switch strings.TrimSuffix(path, "/") {
-	case "", "/mine", "/wallet", "/names", "/dashboard", "/history", "/settings":
+	case "", "/mine", "/wallet", "/names", "/early", "/dashboard", "/history", "/settings":
 		return true
 	}
 	return false
@@ -509,6 +560,7 @@ var docSources = []struct{ slug, path, group, title string }{
 	{"bridge", "docs/BRIDGE.md", "Protocol", "Bridge"},
 	{"swaps", "docs/SWAP.md", "Protocol", "Swaps"},
 	{"names", "docs/NAMES.md", "Protocol", "Names"},
+	{"early-blocks", "docs/EARLY-BLOCKS.md", "Protocol", "Early blocks"},
 	{"node", "docs/NODE.md", "Operate", "Run a node"},
 	{"seed-nodes", "deploy/README.md", "Operate", "Seed nodes"},
 	{"launch", "docs/LAUNCH.md", "Operate", "Launch runbook"},
@@ -521,7 +573,7 @@ var docSources = []struct{ slug, path, group, title string }{
 // page that renders them (its slug, under the docs base).
 var linkRewrites = map[string]string{
 	"docs/OVERVIEW.md": "overview", "docs/GETTING-STARTED.md": "getting-started", "docs/MINING.md": "mining", "docs/WAYS-TO-MINE.md": "ways-to-mine",
-	"docs/NODE.md": "node", "docs/FAQ.md": "faq", "docs/FEES.md": "fees", "docs/SWAP.md": "swaps", "docs/NAMES.md": "names",
+	"docs/NODE.md": "node", "docs/FAQ.md": "faq", "docs/FEES.md": "fees", "docs/SWAP.md": "swaps", "docs/NAMES.md": "names", "docs/EARLY-BLOCKS.md": "early-blocks",
 	"docs/SPEC.md": "spec", "docs/ROADMAP.md": "roadmap", "docs/BRIDGE.md": "bridge", "docs/LAUNCH.md": "launch",
 	"docs/SECURITY-REVIEW.md": "security-review", "docs/TOKENS.md": "tokens", "docs/BRAND.md": "overview", "deploy/README.md": "seed-nodes",
 	"SECURITY.md": "security", "README.md": "overview",

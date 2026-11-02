@@ -69,7 +69,7 @@ func TestIncrementalConnectMatchesRevalidate(t *testing.T) {
 	if h.pool.Count() != len(want) {
 		t.Errorf("pool has %d, want %d", h.pool.Count(), len(want))
 	}
-	txs, _ := h.pool.Select(consensus.MaxBlockSize)
+	txs, _, _ := h.pool.Select(consensus.MaxBlockSize)
 	if len(txs) != 2 {
 		t.Errorf("template has %d transactions, want 2", len(txs))
 	}

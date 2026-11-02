@@ -6,6 +6,14 @@ an explorer. You do not need a node to use Argonmine. The app at
 [app.argonmine.com](https://app.argonmine.com) does everything a user
 needs, including mining.
 
+> **Upgrade to 1.2.0 before block 2,960.** Release 1.2.0 adds the
+> [early blocks](docs/EARLY-BLOCKS.md), a change to the consensus rules that opens at
+> mainnet block 2,960. A node that still runs 1.1.0 or 1.0.0 stops
+> following the chain at the first block that mints: it rejects the
+> block, and every block after it, as paying too much. Download 1.2.0
+> below and follow [Upgrades](#upgrades). Pool and browser miners need
+> nothing.
+
 ## What does a node do?
 
 A node is the program `argonmined`. It:
@@ -88,18 +96,19 @@ Other platforms are not built or tested.
 
 ## Download
 
-The current release is **1.1.0**. It adds the treasury rule from block 300
-and is required for mining from that block (see [Upgrades](#upgrades)).
+The current release is **1.2.0**. It adds the early blocks from block 2,960
+and is required on every node before that block (see
+[Upgrades](#upgrades)). It includes the treasury rule of 1.1.0.
 Download the archive for your system:
 
 | System | Archive |
 |---|---|
-| Windows, x86-64 | [argonmine-1.1.0-windows-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-windows-amd64.zip) |
-| Windows, ARM64 | [argonmine-1.1.0-windows-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-windows-arm64.zip) |
-| Linux, x86-64 | [argonmine-1.1.0-linux-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-linux-amd64.zip) |
-| Linux, ARM64 | [argonmine-1.1.0-linux-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-linux-arm64.zip) |
-| macOS, Intel | [argonmine-1.1.0-darwin-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-darwin-amd64.zip) |
-| macOS, Apple silicon | [argonmine-1.1.0-darwin-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.1.0-darwin-arm64.zip) |
+| Windows, x86-64 | [argonmine-1.2.0-windows-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-windows-amd64.zip) |
+| Windows, ARM64 | [argonmine-1.2.0-windows-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-windows-arm64.zip) |
+| Linux, x86-64 | [argonmine-1.2.0-linux-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-linux-amd64.zip) |
+| Linux, ARM64 | [argonmine-1.2.0-linux-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-linux-arm64.zip) |
+| macOS, Intel | [argonmine-1.2.0-darwin-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-darwin-amd64.zip) |
+| macOS, Apple silicon | [argonmine-1.2.0-darwin-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-darwin-arm64.zip) |
 
 Download the checksum file,
 [SHA256SUMS](https://docs.argonmine.com/downloads/SHA256SUMS), into the
@@ -116,7 +125,7 @@ shasum -a 256 -c SHA256SUMS --ignore-missing      # macOS
 Each command must print `OK` for your archive. On Windows, in PowerShell:
 
 ```
-Get-FileHash .\argonmine-1.1.0-windows-amd64.zip -Algorithm SHA256
+Get-FileHash .\argonmine-1.2.0-windows-amd64.zip -Algorithm SHA256
 Get-Content .\SHA256SUMS
 ```
 
@@ -245,10 +254,10 @@ On first start the node:
 The log shows each step:
 
 ```
-argonmined 1.1.0 starting on mainnet, datadir /home/you/.argonmine
+argonmined 1.2.0 starting on mainnet, datadir /home/you/.argonmine
 chain: height 0 tip e378ed192099aa7693a063071926aff1415165557b9e1edebfdbbe65a1cac8f6
 rpc: token written to /home/you/.argonmine/rpc.cookie
-p2p: handshake with … (/argonmined:1.1.0/, height 120)
+p2p: handshake with … (/argonmined:1.2.0/, height 120)
 status: height 120 peers 8 mempool 0
 ```
 
@@ -303,6 +312,7 @@ Under systemd, put the flags in the unit file.
 | `-behind-proxy` | off | Incoming connections arrive through a TCP proxy or load balancer (a hosting platform's TCP proxy, a cloud load balancer): never ban or cap incoming peers by address. See [Connection limits](#connection-limits). |
 | `-ban-local-addrs` | off | Treat loopback, private and carrier-grade NAT source addresses as separate peers, so bans and the per-address cap apply. For private networks where every peer has its own address. |
 | `-assetoutputfee` | 546 | Relay policy: extra fee, in units, for every asset output beyond the first two in a transaction. |
+| `-mint` | none | Testnet and regtest only: early blocks as `start:end:perBlockARG:rateARG:asset:key` ([Early blocks](docs/EARLY-BLOCKS.md)). Mainnet's is fixed in the rules. |
 
 Fixed limits that have no flag: 8 outbound connections, at most 3 incoming
 connections from one address, and a 300 MB mempool.
@@ -425,8 +435,10 @@ public services and a checklist for every seed.
 The built-in miner builds blocks from the node's own chain and mempool and
 pays the reward, plus fees, to the address you give it. From block 300 each
 block also pays 1% of its subsidy to the project treasury, as consensus
-requires; the fees stay with you. Mining needs release 1.1.0 or later from
-block 300:
+requires; the fees stay with you. In the early blocks (2,960 to
+4,959) a block's coinbase also pays the buyers of the mint requests it
+includes ([Early blocks](docs/EARLY-BLOCKS.md)); the built-in miner does this
+by itself. Mining needs release 1.2.0 or later from block 2,960:
 
 ```
 argonmined -mine arg1… -threads 4 -tag "my miner"
@@ -526,6 +538,15 @@ Bridge guardians and the swap service keep their own state and keys. See
 
 ## Upgrades
 
+**Release 1.2.0 and block 2,960.** Release 1.2.0 adds the early blocks
+([Early blocks](docs/EARLY-BLOCKS.md), [SPEC §3.3.2](docs/SPEC.md)): from
+mainnet block 2,960 to block 4,959 a block's coinbase may create up to
+500 ARG beyond the subsidy, for the mint requests the block includes. A
+node from before the rule rejects such a block as paying too much, so it
+stops following the chain at the first block that mints, whether it mines
+or not. Every node must run 1.2.0 before block 2,960. Upgrade with the
+steps below; the database is unchanged.
+
 **Release 1.1.0 and block 300.** Release 1.1.0 adds the treasury rule:
 from mainnet block 300, every block must pay 1% of the block subsidy to
 the project treasury
@@ -537,8 +558,9 @@ out; upgrade it anyway, with the steps below.
 
 1. Read the release notes. Consensus changes are announced in advance with
    an activation height. Depending on the change, a node that is not
-   upgraded in time stops following the chain at that height, or, as with
-   the treasury rule above, has the blocks it mines rejected.
+   upgraded in time stops following the chain at that height, as with the
+   early blocks, or, as with the treasury rule, has the blocks it mines
+   rejected.
 2. Download the new archive and check it against `SHA256SUMS`
    ([Download](#download)).
 3. Stop the node (Ctrl+C or `sudo systemctl stop argonmined`). Wait for
@@ -647,7 +669,7 @@ request. Every request carries the token (see [The RPC token](#the-rpc-token)).
 | `getrawmempool` | Transaction ids waiting for a block |
 | `getmempoolinfo` | `size` (transactions) and `bytes` in the mempool |
 | `sendrawtransaction <hex>` | Check, add to the mempool and relay; returns the txid |
-| `getblocktemplate` | Everything a miner needs for the next block. `coinbasevalue` is the whole coinbase, subsidy plus fees; from block 300 the miner pays the treasury its 1% of the subsidy out of it (fixed 2026-10-30; nodes before that reported the miner's share only) |
+| `getblocktemplate` | Everything a miner needs for the next block. `coinbasevalue` is the whole coinbase, subsidy plus fees plus the block's mint; from block 300 the miner pays the treasury its 1% of the subsidy out of it (fixed 2026-10-30; nodes before that reported the miner's share only). `mint` lists the buyers the coinbase must pay, each as `pubkey` (x-only, hex) and `amount` (units), for the mint requests among the transactions ([Early blocks](docs/EARLY-BLOCKS.md)); empty outside the early blocks |
 | `submitblock <hex>` | Check and connect a mined block |
 | `getmininginfo` | `blocks`, `difficulty`, `pooledtx`, `chain`, `mining`, `hashrate`, `threads`, `blocksfound`, `powalgorithm` |
 | `getpeerinfo` | Connected peers: address, direction, user agent, start height, ban score, ping, bytes in and out |
@@ -716,6 +738,7 @@ holds no coins.
 | `-token` | from `rpc.cookie` | The RPC token. |
 | `-listen` | `127.0.0.1:8380` | HTTP address. Put a reverse proxy with TLS in front of it. |
 | `-referral-share` | `5` | Percent of a block a browser miner gives to the inviter they accepted (at most 50; `0` turns referrals off). |
+| `-mint` | none | Testnet and regtest only: the same early blocks the node was started with, so the explorer's jobs pay the buyers. |
 | `-allow-origin` | local addresses | Comma-separated web app origins whose pages may submit mining solutions; `*` allows any. |
 | `-client-ip-header` | none | The header that names the client's address behind a proxy, such as `X-Forwarded-For`, for the per-client limits. |
 | `-bridge-url`, `-uarg-asset` | none | Which asset is the bridge's real uARG. Look-alikes are marked unverified. |
@@ -732,6 +755,8 @@ holds no coins.
 | `GET /api/utxos/{address}` | The address's unspent coins (at most 1,000) with height, asset and coinbase flag; `spentBy` for a coin a waiting transaction spends; `pending`, its unconfirmed outputs (`own` when every input was its own coin, its change); `mempool`, the waiting transactions that touch it. What the browser wallet spends from |
 | `GET /api/asset/{id}` | One asset by its id: symbol, issuer, issued, burned and supply, whether it is a look-alike (`unverified`), and its newest transactions |
 | `GET /api/assets` | Every asset the index knows, with the same fields but without the transactions |
+| `GET /api/early` | Early blocks: `status` (`none`, `upcoming`, `open`, `closed`), `start`, `end`, `rate`, `perBlock`, `maxPaid`, `asset`, `address`, `minted`, `requests`, `cap`, `remaining`, `pending`, `maturity` and the newest requests ([Early blocks](docs/EARLY-BLOCKS.md)) |
+| `GET /api/early/{address}` | The same, with the address's own requests, confirmed and pending |
 | `POST /api/tx` | Body `{"hex": signed transaction}`: checked and handed to the node; returns `{"txid"}`. A transaction spending a coin that a waiting one already spends is refused (409), so a payment never quietly replaces another. Any origin may call it; one a second per client, bursts of 10 |
 | `GET /api/work?address=…[&ref=…]` | A block template for a browser miner |
 | `POST /api/work/submit` | Submit a solved block |

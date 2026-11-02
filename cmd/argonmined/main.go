@@ -26,7 +26,7 @@ import (
 )
 
 // version is set at release time with -ldflags "-X main.version=<version>".
-var version = "1.1.0"
+var version = "1.2.0"
 
 // Default seed peers per network. Mainnet is filled in at launch (docs/LAUNCH.md
 // step 7). The testnet is retired; it has no public seed.
@@ -70,6 +70,7 @@ func main() {
 		mineTo    = flag.String("mine", "", "start the built-in miner paying to this address")
 		threads   = flag.Int("threads", 0, "miner threads (default: CPUs-1)")
 		tag       = flag.String("tag", "", "coinbase miner tag (<=100 bytes)")
+		mintRule  = flag.String("mint", "", "testnet/regtest only: the mint window as start:end:perBlockARG:rateARG:asset:key (consensus.ParseMintRule); mainnet's is fixed")
 
 		behindProxy   = flag.Bool("behind-proxy", false, "inbound P2P connections arrive through a TCP proxy or load balancer (e.g. Railway): never ban or cap inbound peers by address")
 		banLocalAddrs = flag.Bool("ban-local-addrs", false, "treat loopback/private/CGNAT inbound addresses as distinct peers (bans and the per-address cap apply); for private networks")
@@ -88,6 +89,16 @@ func main() {
 		params = consensus.RegTest
 	default:
 		log.Fatalf("unknown network %q", *network)
+	}
+
+	if *mintRule != "" {
+		r, err := consensus.ParseMintRule(*mintRule)
+		if err == nil {
+			err = consensus.SetMint(params, r)
+		}
+		if err != nil {
+			log.Fatalf("-mint: %v", err)
+		}
 	}
 
 	dir := *dataDir

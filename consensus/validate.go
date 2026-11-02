@@ -316,6 +316,7 @@ func ConnectBlock(p *Params, blk *Block, height uint32, view *Overlay) error {
 
 	// Each non-coinbase tx, sequentially against the evolving view.
 	var fees Amount
+	var mints Mints
 	for i, tx := range blk.Txs[1:] {
 		if err := CheckTxStateless(tx); err != nil {
 			return fmt.Errorf("tx %d: %w", i+1, err)
@@ -330,12 +331,28 @@ func ConnectBlock(p *Params, blk *Block, height uint32, view *Overlay) error {
 		if fees, err = AddAmounts(fees, fee); err != nil {
 			return err
 		}
+		// A mint request (SPEC §3.3.2): the coinbase owes its buyer.
+		buyer, due, err := MintAmount(p, tx, spent, height)
+		if err != nil {
+			return fmt.Errorf("tx %d: %w", i+1, err)
+		}
+		if due > 0 {
+			if err := mints.Add(p.Mint, buyer, due); err != nil {
+				return err
+			}
+		}
 		applyTx(view, tx, txids[i+1], height, false)
 	}
+	if err := CheckMintPaid(blk.Txs[0], &mints); err != nil {
+		return err
+	}
 
-	// Coinbase value.
+	// Coinbase value: subsidy, fees, and what the block mints.
 	allowed, err := AddAmounts(Subsidy(height), fees)
 	if err != nil {
+		return err
+	}
+	if allowed, err = AddAmounts(allowed, mints.Total); err != nil {
 		return err
 	}
 	var cbOut Amount
