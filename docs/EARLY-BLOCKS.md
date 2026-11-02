@@ -1,5 +1,11 @@
 # Early blocks
 
+> **Paused on mainnet.** The window opened at block 2,925 on 2 November
+> before most nodes and the largest miner had upgraded, and the chain
+> split. Nothing was minted and no request was taken. Early blocks return
+> with a new start block, announced well ahead, once miners have
+> upgraded. The rules below are unchanged.
+
 For 2,000 blocks the chain mints ARG for anyone who asks: 20 ARG for
 1 uARG, up to 500 ARG a block, 1,000,000 in all. Then ARG comes only
 from mining.

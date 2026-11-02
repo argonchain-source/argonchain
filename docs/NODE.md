@@ -6,12 +6,14 @@ an explorer. You do not need a node to use Argonmine. The app at
 [app.argonmine.com](https://app.argonmine.com) does everything a user
 needs, including mining.
 
-> **Upgrade to 1.2.0 before block 2,925.** Release 1.2.0 adds the
-> [early blocks](docs/EARLY-BLOCKS.md), a change to the consensus rules that opens at
-> mainnet block 2,925. A node that still runs 1.1.0 or 1.0.0 stops
-> following the chain at the first block that mints: it rejects the
-> block, and every block after it, as paying too much. Download 1.2.0
-> below and follow [Upgrades](#upgrades). Pool and browser miners need
+> **Run 1.2.1.** Release 1.2.0 (2 November) opened the
+> [early blocks](docs/EARLY-BLOCKS.md) at block 2,925 before most nodes
+> had upgraded, and a node on 1.2.0 stopped following the main chain at
+> block 2,928. Release 1.2.1 follows the main chain: if you installed
+> 1.2.0, replace it with 1.2.1 and start it once with a fresh data folder
+> (or move the `chain` folder aside) so it syncs again. Early blocks are
+> paused and return with a new start block, announced well ahead. Nodes
+> on 1.1.0 or 1.0.0 need nothing today. Pool and browser miners need
 > nothing.
 
 ## What does a node do?
@@ -96,19 +98,17 @@ Other platforms are not built or tested.
 
 ## Download
 
-The current release is **1.2.0**. It adds the early blocks from block 2,925
-and is required on every node before that block (see
-[Upgrades](#upgrades)). It includes the treasury rule of 1.1.0.
-Download the archive for your system:
+The current release is **1.2.1**. It follows the main chain; the early
+blocks it carries are paused on mainnet (see [Upgrades](#upgrades)).
 
 | System | Archive |
 |---|---|
-| Windows, x86-64 | [argonmine-1.2.0-windows-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-windows-amd64.zip) |
-| Windows, ARM64 | [argonmine-1.2.0-windows-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-windows-arm64.zip) |
-| Linux, x86-64 | [argonmine-1.2.0-linux-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-linux-amd64.zip) |
-| Linux, ARM64 | [argonmine-1.2.0-linux-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-linux-arm64.zip) |
-| macOS, Intel | [argonmine-1.2.0-darwin-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-darwin-amd64.zip) |
-| macOS, Apple silicon | [argonmine-1.2.0-darwin-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.0-darwin-arm64.zip) |
+| Windows, x86-64 | [argonmine-1.2.1-windows-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-windows-amd64.zip) |
+| Windows, ARM64 | [argonmine-1.2.1-windows-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-windows-arm64.zip) |
+| Linux, x86-64 | [argonmine-1.2.1-linux-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-linux-amd64.zip) |
+| Linux, ARM64 | [argonmine-1.2.1-linux-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-linux-arm64.zip) |
+| macOS, Intel | [argonmine-1.2.1-darwin-amd64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-darwin-amd64.zip) |
+| macOS, Apple silicon | [argonmine-1.2.1-darwin-arm64.zip](https://docs.argonmine.com/downloads/argonmine-1.2.1-darwin-arm64.zip) |
 
 Download the checksum file,
 [SHA256SUMS](https://docs.argonmine.com/downloads/SHA256SUMS), into the
@@ -125,7 +125,7 @@ shasum -a 256 -c SHA256SUMS --ignore-missing      # macOS
 Each command must print `OK` for your archive. On Windows, in PowerShell:
 
 ```
-Get-FileHash .\argonmine-1.2.0-windows-amd64.zip -Algorithm SHA256
+Get-FileHash .\argonmine-1.2.1-windows-amd64.zip -Algorithm SHA256
 Get-Content .\SHA256SUMS
 ```
 
@@ -254,10 +254,10 @@ On first start the node:
 The log shows each step:
 
 ```
-argonmined 1.2.0 starting on mainnet, datadir /home/you/.argonmine
+argonmined 1.2.1 starting on mainnet, datadir /home/you/.argonmine
 chain: height 0 tip e378ed192099aa7693a063071926aff1415165557b9e1edebfdbbe65a1cac8f6
 rpc: token written to /home/you/.argonmine/rpc.cookie
-p2p: handshake with … (/argonmined:1.2.0/, height 120)
+p2p: handshake with … (/argonmined:1.2.1/, height 120)
 status: height 120 peers 8 mempool 0
 ```
 
@@ -435,10 +435,9 @@ public services and a checklist for every seed.
 The built-in miner builds blocks from the node's own chain and mempool and
 pays the reward, plus fees, to the address you give it. From block 300 each
 block also pays 1% of its subsidy to the project treasury, as consensus
-requires; the fees stay with you. In the early blocks (2,925 to
-4,924) a block's coinbase also pays the buyers of the mint requests it
+requires; the fees stay with you. When the early blocks are open, a block's coinbase also pays the buyers of the mint requests it
 includes ([Early blocks](docs/EARLY-BLOCKS.md)); the built-in miner does this
-by itself. Mining needs release 1.2.0 or later from block 2,925:
+by itself. Run release 1.2.1:
 
 ```
 argonmined -mine arg1… -threads 4 -tag "my miner"
@@ -538,14 +537,15 @@ Bridge guardians and the swap service keep their own state and keys. See
 
 ## Upgrades
 
-**Release 1.2.0 and block 2,925.** Release 1.2.0 adds the early blocks
-([Early blocks](docs/EARLY-BLOCKS.md), [SPEC §3.3.2](docs/SPEC.md)): from
-mainnet block 2,925 to block 4,924 a block's coinbase may create up to
-500 ARG beyond the subsidy, for the mint requests the block includes. A
-node from before the rule rejects such a block as paying too much, so it
-stops following the chain at the first block that mints, whether it mines
-or not. Every node must run 1.2.0 before block 2,925. Upgrade with the
-steps below; the database is unchanged.
+**Release 1.2.1.** Release 1.2.0 opened the early blocks
+([Early blocks](docs/EARLY-BLOCKS.md), [SPEC §3.3.2](docs/SPEC.md)) at
+mainnet block 2,925, before most nodes and the largest miner had
+upgraded. Their chain included a block that 1.2.0 rejects, at block
+2,928, and a node on 1.2.0 stopped following it. Release 1.2.1 has no
+early blocks on mainnet and follows the main chain. If you ran 1.2.0,
+install 1.2.1 and move the `chain` folder in your data folder aside once,
+so the node syncs again; a node on 1.1.0 needs nothing. Early blocks
+return with a new start block, announced well ahead.
 
 **Release 1.1.0 and block 300.** Release 1.1.0 adds the treasury rule:
 from mainnet block 300, every block must pay 1% of the block subsidy to
