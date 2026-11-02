@@ -126,8 +126,12 @@ var (
 	MainNet = newParams("mainnet", "arg", [4]byte{0x41, 0x52, 0x47, 0x4D}, 9333, 9332,
 		0x1E400000, false,
 		genesisSpec{time: mainnetGenesisTime, bits: 0x1E400000, nonce: 77492, message: GenesisMessage}).
-		withTreasury(mainnetTreasuryHeight, mainnetTreasuryKey).
-		withMint(MintRule{Start: mainnetMintStart, End: mainnetMintEnd, PerBlock: mainnetMintPerBlock, Rate: mainnetMintRate, Asset: mainnetMintAsset, Key: mainnetTreasuryKey})
+		withTreasury(mainnetTreasuryHeight, mainnetTreasuryKey)
+	// Early blocks are paused on mainnet (2026-11-02): most nodes and the
+	// largest miner still ran 1.1.0 at block 2,925, so the rule split the
+	// chain. It returns, with a new start height, once node runners have
+	// had time to upgrade. mainnetMint holds the rule for that release.
+	mainnetMint = MintRule{Start: mainnetMintStart, End: mainnetMintEnd, PerBlock: mainnetMintPerBlock, Rate: mainnetMintRate, Asset: mainnetMintAsset, Key: mainnetTreasuryKey}
 	// mainnet genesis hash e378ed192099aa7693a063071926aff1415165557b9e1edebfdbbe65a1cac8f6
 
 	TestNet = newParams("testnet", "targ", [4]byte{0x54, 0x41, 0x52, 0x47}, 19333, 19332,

@@ -362,12 +362,12 @@ func TestMintPages(t *testing.T) {
 	asset := s.mintAssetName()
 	for _, want := range []string{
 		"<h1>Early blocks</h1>",
-		"For 3 blocks the chain mints ARG for anyone who asks: 20 ARG for 1 " + asset + ", up to 500 ARG a block, 1,500 in all. Then ARG comes only from mining.",
+		"For 3 blocks anyone can mine ARG at one rate: 20 ARG for 1 " + asset + ", up to 500 ARG a block, 1,500 in all. After that, ARG is mined only with hashrate.",
 		"<h2>How it works</h2>",
 		"Send " + asset + " to the address below with the memo <span class=\"memo\">" + consensus.MintMemo + "</span>, or use the app.",
 		"The next block that takes your request pays you 20 ARG per " + asset + " from its coinbase, spendable 100 blocks later.",
 		"At most 25 " + asset + " a request and 500 ARG a block. The " + asset + " goes to the treasury.",
-		"Closed", "ran from block 1 to block 3", "Minted so far", ">70<", "of 1,500 ARG", ">3<", "t5", "t1", mintAddr,
+		"Closed", "ran from block 1 to block 3", "Mined so far", ">70<", "of 1,500 ARG", ">3<", "t5", "t1", mintAddr,
 		`href="` + defaultAppURL + `/early" rel="noopener">Open in the app</a>`,
 		`href="/early">Early blocks</a>`, `href="/api/early">/api/early</a> · /api/early/{address}`,
 	} {
@@ -442,7 +442,7 @@ func TestMintPages(t *testing.T) {
 	if err := s.tmpl.ExecuteTemplate(&buf, "block", page{Title: "Block", Brand: "Argonmine", Coin: "ARG", Network: "regtest", Mint: true, Data: blk}); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"<dt>Minted</dt><dd>40 ARG for 1 request", "and 40 ARG minted", `<span class="badge badge-accent">early</span>`} {
+	for _, want := range []string{"<dt>Early blocks</dt><dd>40 ARG for 1 request", "and 40 ARG from early blocks", `<span class="badge badge-accent">early</span>`} {
 		if !strings.Contains(buf.String(), want) {
 			t.Errorf("block page lacks %q", want)
 		}
@@ -504,7 +504,7 @@ func TestMintPages(t *testing.T) {
 
 	// The address page: the Minted card and the history's type.
 	_, body = get(s, "/address/"+alice)
-	for _, want := range []string{"Minted", "50.00000000", "for 2 requests", "Early block requests", "t5", ">Minted</span>", "Blocks mined"} {
+	for _, want := range []string{"Early blocks", "50.00000000", "for 2 requests", "Early block requests", "t5", ">Early blocks</span>", "Blocks mined"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("address page lacks %q", want)
 		}

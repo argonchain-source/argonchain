@@ -9,6 +9,15 @@ EXTRA="${ARGONMINE_ARGS:-}"
 
 case "$ROLE" in
   node)
+    # RESET_CHAIN=<tag> sets the node's chain copy aside once (kept as
+    # /data/chain-<tag>), so it syncs again from its peers: the way back
+    # after it marked a block of the main chain invalid. The marker file
+    # keeps it from happening again on later restarts.
+    if [ -n "${RESET_CHAIN:-}" ] && [ ! -f "/data/.reset-$RESET_CHAIN" ]; then
+      [ -d /data/chain ] && mv /data/chain "/data/chain-$RESET_CHAIN"
+      touch "/data/.reset-$RESET_CHAIN"
+      echo "start: chain copy set aside as /data/chain-$RESET_CHAIN; syncing again"
+    fi
     # P2P on the network's default port (dual-stack), RPC on the private network only.
     # shellcheck disable=SC2086
     exec argonmined -network "$NET" -datadir /data \

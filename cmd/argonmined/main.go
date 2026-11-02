@@ -26,7 +26,7 @@ import (
 )
 
 // version is set at release time with -ldflags "-X main.version=<version>".
-var version = "1.2.0"
+var version = "1.2.1"
 
 // Default seed peers per network. Mainnet is filled in at launch (docs/LAUNCH.md
 // step 7). The testnet is retired; it has no public seed.

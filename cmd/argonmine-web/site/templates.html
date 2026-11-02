@@ -792,7 +792,7 @@
               <h2 class="mint-status"><b id="mintTitle">Loading</b><span id="mintSub"></span></h2>
             </div>
             <div class="mint-stats" id="mintStats" hidden>
-              <div><span>Minted so far</span><b id="mintStM"></b><em id="mintStMs"></em></div>
+              <div><span>Mined so far</span><b id="mintStM"></b><em id="mintStMs"></em></div>
               <div><span>Blocks left</span><b id="mintStL"></b><em id="mintStLs"></em></div>
               <div><span>Requests</span><b id="mintStR"></b><em id="mintStRs"></em></div>
             </div>
@@ -804,7 +804,7 @@
                 <div class="swap-main"><input class="swap-amt mint-amt" id="mintAmt" inputmode="decimal" placeholder="0" autocomplete="off" spellcheck="false"><span class="mint-chip" id="mintChip" aria-hidden="true"></span></div>
                 <div class="swap-foot"><span id="mintUsd"></span><span class="swap-bal" id="mintBal"></span></div>
               </div>
-              <div class="mint-get"><span>You mint</span><b class="num dim" id="mintGet">0 ARG</b></div>
+              <div class="mint-get"><span>You mine</span><b class="num dim" id="mintGet">0 ARG</b></div>
               <div class="swap-note" id="mintNote" aria-live="polite"></div>
               <button class="btn btn-primary swap-go" id="mintGo" type="button" disabled>Enter an amount</button>
               <button class="swap-link" id="mintGetU" type="button" hidden>Get uARG</button>
@@ -1161,7 +1161,7 @@
   <div class="w-flow-h"><button class="w-ib" type="button" data-back aria-label="Back"><i data-icon="chevronLeft"></i></button><h2 class="w-flow-t" id="flMintT">Review</h2><button class="w-ib w-x" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
   <div class="w-view" data-view="review" data-title="Review">
     <div class="w-body" id="mtRvBody"></div>
-    <div class="w-foot"><div class="w-pw" id="mtPwBox" hidden><label for="mtPw">Password</label><input class="input" id="mtPw" type="password" autocomplete="current-password"></div><div class="error" id="mtRvErr" role="alert"></div><button class="btn btn-primary swap-go" id="mtRvGo" type="button">Mint</button></div>
+    <div class="w-foot"><div class="w-pw" id="mtPwBox" hidden><label for="mtPw">Password</label><input class="input" id="mtPw" type="password" autocomplete="current-password"></div><div class="error" id="mtRvErr" role="alert"></div><button class="btn btn-primary swap-go" id="mtRvGo" type="button">Mine</button></div>
   </div>
   <div class="w-view" data-view="keys" data-title="Turn on sending">
     <div class="w-body">
@@ -3208,7 +3208,7 @@
     if (i.asset && i.asset !== UASSET) return ['Not available', 'It takes an asset this wallet does not hold.'];
     if (raw && u === null) return ['Enter an amount', 'Enter a number with up to 8 decimals.'];
     if (!u) return ['Enter an amount'];
-    if (u > i.maxPaid) return ['At most ' + fmtU(i.maxPaid, 0) + ' uARG', 'One request mints at most ' + mtArg(i.perBlock) + ', which is ' + fmtU(i.maxPaid, 0) + ' uARG.'];
+    if (u > i.maxPaid) return ['At most ' + fmtU(i.maxPaid, 0) + ' uARG', 'One request mines at most ' + mtArg(i.perBlock) + ', which is ' + fmtU(i.maxPaid, 0) + ' uARG.'];
     if (!CO.ok) return ['Loading balance'];
     if (u > coinBal('UARG')) return ['Insufficient uARG'];
     return null;
@@ -3259,7 +3259,7 @@
     $('mintGet').textContent = mtArg(get); $('mintGet').classList.toggle('dim', get <= ZERO);
     var pr = mtProblem(i);
     note('mintNote', pr && pr[1] ? pr[1] : '', pr && pr[1] ? 'bad' : '');
-    setGo($('mintGo'), pr ? pr[0] : 'Mint ' + mtArg(get), !pr);
+    setGo($('mintGo'), pr ? pr[0] : 'Mine ' + mtArg(get), !pr);
     $('mintGetU').hidden = !(CO.ok && bal <= ZERO && !BRIDGE && SWAP);
   }
   // Two lines of small print under the form, the numbers from the explorer.
@@ -3283,7 +3283,7 @@
       return '<div class="mint-row" data-txid="' + esc(txid) + '"><span class="mint-pill ' + pill[0] + '">' + pill[1] + '</span><div class="mint-row-t"><b class="num">' + esc(minted === null ? 'Request' : mtArg(minted)) + '</b><div class="mint-row-s">' + esc(s) + '</div></div>' +
         '<div class="mint-row-v"><b>' + esc(paid === null ? '–' : fmtU(paid, 0) + ' uARG') + '</b><span>' + txLink(EXPLORER + '/tx/' + txid, UI.fmt.short(txid, 6, 4)) + '</span></div></div>';
     };
-    var PENDING = ['pending', 'Pending'], MINTED = ['', 'Minted'], OK = ['ok', 'Spendable'];
+    var PENDING = ['pending', 'Pending'], MINTED = ['', 'Mined'], OK = ['ok', 'Spendable'];
     var html = pend.map(function (t) { var x = lp[t]; return row(t, x ? big(x.minted) : null, PENDING, 'Waiting for a block', x ? big(x.amount) : null); }).join('');
     html += list.map(function (x) {
       if (!x.height) return row(x.txid, x.minted, PENDING, 'Waiting for a block', x.paid);
@@ -3323,10 +3323,10 @@
     var P = mint.plan, get = P.u * P.rate;
     var fee = P.noFee ? 'None' : P.pre ? mtArg(big(P.pre.fee)) : fmtU(P.topUp.amount, 0) + ' uARG, swapped to ' + COIN;
     $('mtRvBody').innerHTML = amtRow('You pay', fmtU(P.u), 'uARG', '$' + fmt2(P.u, 8), true) +
-      '<dl class="swap-kv"><dt>You mint</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Rate</dt><dd>' + esc(String(P.rate) + ' ' + COIN + ' for 1 uARG') + '</dd>' + kvTo('Paid to', P.to) +
-      '<dt>Memo</dt><dd class="mono">' + esc(MINT_MEMO) + '</dd><dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Minted</dt><dd>By the next block that includes it, about 10 min</dd>' +
+      '<dl class="swap-kv"><dt>You mine</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Rate</dt><dd>' + esc(String(P.rate) + ' ' + COIN + ' for 1 uARG') + '</dd>' + kvTo('Paid to', P.to) +
+      '<dt>Memo</dt><dd class="mono">' + esc(MINT_MEMO) + '</dd><dt>Network fee</dt><dd>' + esc(fee) + '</dd><dt>Mined</dt><dd>By the next block that includes it, about 10 min</dd>' +
       '<dt>Spendable</dt><dd>' + esc(plural(P.maturity, 'block', 'blocks') + ' later, ' + mtAbout(P.maturity)) + '</dd></dl>';
-    err('mtRvErr', ''); $('mtRvGo').textContent = 'Mint ' + mtArg(get);
+    err('mtRvErr', ''); $('mtRvGo').textContent = 'Mine ' + mtArg(get);
     if (!FL || FL.name !== 'mint') openFlow('mint', 'review'); else if (FL.stack[FL.stack.length - 1] !== 'review') showView('review');
   }
   function mintExec(P) {
@@ -3338,8 +3338,8 @@
       addPend({ txid: pay.txid, kind: 'mint', sym: 'uARG', amount: String(paid), minted: String(get), to: P.to, spent: pay.spent, incoming: pay.change });
       mtPendAdd(pay.txid);
       $('mintAmt').value = ''; mint.plan = null;
-      $('mtDoneBody').innerHTML = '<div class="w-res" id="mintDoneCard" data-txid="' + esc(pay.txid) + '"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Request sent</h3><p>' + esc('The next block that includes it mints ' + mtArg(get) + ' for you, spendable ' + plural(P.maturity, 'block', 'blocks') + ' later, ' + mtAbout(P.maturity) + '.') + '</p>' +
-        '<dl class="swap-kv"><dt>Paid</dt><dd>' + esc(fmtU(paid) + ' uARG') + '</dd><dt>Mints</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Network fee</dt><dd>' + esc(mtArg(big(pay.fee))) + '</dd>' + txRow(pay.txid) + '</dl></div>';
+      $('mtDoneBody').innerHTML = '<div class="w-res" id="mintDoneCard" data-txid="' + esc(pay.txid) + '"><span class="w-res-ic">' + UI.icon('check') + '</span><h3>Request sent</h3><p>' + esc('The next block that includes it pays you ' + mtArg(get) + ',' spendable ' + plural(P.maturity, 'block', 'blocks') + ' later, ' + mtAbout(P.maturity) + '.') + '</p>' +
+        '<dl class="swap-kv"><dt>Paid</dt><dd>' + esc(fmtU(paid) + ' uARG') + '</dd><dt>Mines</dt><dd>' + esc(mtArg(get)) + '</dd><dt>Network fee</dt><dd>' + esc(mtArg(big(pay.fee))) + '</dd>' + txRow(pay.txid) + '</dl></div>';
       showView('done', true); refreshChain(); renderMintIf(); mintPollStart();
     });
   }
@@ -3950,7 +3950,7 @@
       if (x.kind === 'swap') { title = 'Swap · ' + dispName(x.from) + ' to ' + dispName(x.to); v = '<div class="v"><div class="pos">+' + esc(fmtU(big(x.amountOut), 0) + ' ' + dispName(x.to)) + '</div><div class="neg">−' + esc(fmtU(big(x.amountIn), 0) + ' ' + dispName(x.from)) + '</div></div>'; }
       else if (x.kind === 'out') { title = 'Swap · uARG to ' + x.sym + ' on ' + x.chain; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
       else if (x.kind === 'name') { title = 'Name · ' + nmDisp(nmNorm(x.label)) + ' ' + nmOpPast(x.op); v = big(x.amount) > NM_MIN ? '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + COIN) + '</div>' : '<div class="v"></div>'; }
-      else if (x.kind === 'mint') { title = 'Mint · ' + mtArg(big(x.minted)); v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
+      else if (x.kind === 'mint') { title = 'Mine · ' + mtArg(big(x.minted)); v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0)) + ' uARG</div>'; }
       else { title = 'Sent ' + x.sym; v = '<div class="v neg">−' + esc(fmtU(big(x.amount), 0) + ' ' + x.sym) + '</div>'; }
       return '<a class="rowi" href="' + explorerLink('tx', x.txid) + '" target="_blank" rel="noopener"><span class="ic out">' + UI.icon(x.kind === 'send' ? 'send' : x.kind === 'name' ? 'user' : x.kind === 'mint' ? 'zap' : 'swap') + '</span><div><div class="t">' + esc(title) + '</div><div class="s">Waiting for the next block</div></div>' + v + '</a>';
     }).join('');

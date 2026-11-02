@@ -98,7 +98,7 @@ func New(cfg Config, d Deps) *Server {
 		d.Logf = log.Printf
 	}
 	if d.Version == "" {
-		d.Version = "1.2.0"
+		d.Version = "1.2.1"
 	}
 	s := &Server{cfg: cfg, d: d}
 	s.methods = map[string]method{

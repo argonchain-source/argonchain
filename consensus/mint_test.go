@@ -25,11 +25,12 @@ func mintRequest(r *MintRule, paid Amount, memo string) *Tx {
 }
 
 func TestMintRule(t *testing.T) {
-	if MainNet.Mint == nil || MainNet.Mint.Start != 2_925 || MainNet.Mint.End != 4_924 || MainNet.Mint.PerBlock != 500*UnitsPerCoin || MainNet.Mint.Rate != 20 {
-		t.Fatalf("mainnet mint window: %+v", MainNet.Mint)
+	// Paused on mainnet: no window, the old rules exactly.
+	if MainNet.Mint != nil {
+		t.Fatalf("mainnet has a mint window while early blocks are paused: %+v", MainNet.Mint)
 	}
-	if string(MainNet.Mint.Key) != string(MainNet.TreasuryKey) {
-		t.Fatal("mainnet pays the mint to a key other than the treasury's")
+	if err := mainnetMint.check(); err != nil || string(mainnetMint.Key) != string(MainNet.TreasuryKey) {
+		t.Fatalf("the held mainnet rule: %v", err)
 	}
 	if err := SetMint(MainNet, nil); err == nil {
 		t.Fatal("mainnet's window could be changed")
