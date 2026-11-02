@@ -279,9 +279,10 @@
 
 {{define "mint"}}{{template "head" .}}
 <style>
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
   .step { display: flex; gap: var(--sp-3); } .step b { color: var(--accent); font-variant-numeric: tabular-nums; }
-  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+  @media (max-width: 1000px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .steps { grid-template-columns: 1fr; } }
 </style>
 <div class="page-header"><div><h1>Early blocks</h1><p>{{if .Data.Window}}For {{num .Data.Blocks}} blocks the chain mints {{.Coin}} for anyone who asks: {{num .Data.Rate}} {{.Coin}} for 1 {{.Data.AssetName}}, up to {{coins .Data.PerBlock}} {{.Coin}} a block, {{coins .Data.Cap}} in all. Then {{.Coin}} comes only from mining.{{else}}{{.Network}} has no early blocks. Every {{.Coin}} on it comes from mining.{{end}}</p></div>{{if .Data.Window}}<a class="btn btn-secondary btn-sm" href="{{.App}}/early" rel="noopener">Open in the app</a>{{end}}</div>
 {{if .Data.Window}}
@@ -293,9 +294,10 @@
 <div class="card"><div class="card-header"><h2>How it works</h2></div>
 <div class="card-body">
   <div class="steps">
-    <div class="step"><b>1</b><div>Send {{.Data.AssetName}} to the address below with the memo <span class="memo">{{.Data.Memo}}</span>, or use the app.</div></div>
-    <div class="step"><b>2</b><div>The next block that takes your request pays you {{num .Data.Rate}} {{.Coin}} per {{.Data.AssetName}} from its coinbase, spendable {{num .Data.Maturity}} blocks later.</div></div>
-    <div class="step"><b>3</b><div>At most {{coins .Data.MaxPaid}} {{.Data.AssetName}} a request and {{coins .Data.PerBlock}} {{.Coin}} a block. The {{.Data.AssetName}} goes to the treasury.</div></div>
+    <div class="step"><b>1</b><div>Get {{.Data.AssetName}}: bridge USDC or USDT in from Ethereum, Base, Arbitrum One or BNB Chain, in the <a class="link" href="{{.App}}/early">app</a>.</div></div>
+    <div class="step"><b>2</b><div>Send {{.Data.AssetName}} to the address below with the memo <span class="memo">{{.Data.Memo}}</span>, or use the app.</div></div>
+    <div class="step"><b>3</b><div>The next block that takes your request pays you {{num .Data.Rate}} {{.Coin}} per {{.Data.AssetName}} from its coinbase, spendable {{num .Data.Maturity}} blocks later.</div></div>
+    <div class="step"><b>4</b><div>At most {{coins .Data.MaxPaid}} {{.Data.AssetName}} a request and {{coins .Data.PerBlock}} {{.Coin}} a block. The {{.Data.AssetName}} goes to the treasury.</div></div>
   </div>
   <dl class="props" style="margin-top:var(--sp-5)">
     <dt>Address</dt><dd class="mono"><a class="link" href="/address/{{.Data.Address}}">{{.Data.Address}}</a></dd>

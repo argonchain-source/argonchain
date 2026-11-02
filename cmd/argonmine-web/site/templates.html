@@ -497,6 +497,14 @@
   .mint-empty { padding: var(--sp-3) var(--sp-4) var(--sp-4); font-size: var(--fs-3); color: var(--ink-3); }
   .mint-how { display: flex; flex-direction: column; gap: 4px; padding: 0 var(--sp-1); font-size: var(--fs-2); color: var(--ink-3); line-height: 1.5; font-variant-numeric: tabular-nums; }
   .mint-how:empty { display: none; }
+  .mint-bridge { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border-radius: 14px; background: var(--sunken); border: 1px solid var(--hair); }
+  .mint-bridge-ic { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; }
+  .mint-bridge-ic svg { width: 18px; height: 18px; }
+  .mint-bridge > div { flex: 1; min-width: 0; }
+  .mint-bridge b { display: block; font-size: var(--fs-3); font-weight: 600; color: var(--ink); }
+  .mint-bridge span.t { display: block; font-size: var(--fs-2); color: var(--ink-2); line-height: 1.45; }
+  .mint-bridge .btn { flex: none; }
+  @media (max-width: 560px) { .mint-bridge { flex-wrap: wrap; } .mint-bridge .btn { width: 100%; } }
   .mint-how p { margin: 0; }
   @media (max-width: 600px) {
     .mint-hero { padding: var(--sp-4); gap: var(--sp-4); }
@@ -801,6 +809,7 @@
               <button class="btn btn-primary swap-go" id="mintGo" type="button" disabled>Enter an amount</button>
               <button class="swap-link" id="mintGetU" type="button" hidden>Get uARG</button>
             </div>
+            <div class="mint-bridge" id="mintBridge" hidden><span class="mint-bridge-ic" aria-hidden="true"><i data-icon="swap"></i></span><div><b>Need uARG?</b><span class="t">Bridge USDC or USDT in from Ethereum, Base, Arbitrum One or BNB Chain. It arrives as uARG in this wallet, less the bridge's 1% fee.</span></div><button class="btn btn-secondary btn-sm" id="mintBridgeGo" type="button">Bridge in</button></div>
             <div class="mint-how" id="mintHow"></div>
           </div>
           <div class="card list-card mint-mine" id="mintMine">
@@ -3251,11 +3260,12 @@
     var pr = mtProblem(i);
     note('mintNote', pr && pr[1] ? pr[1] : '', pr && pr[1] ? 'bad' : '');
     setGo($('mintGo'), pr ? pr[0] : 'Mint ' + mtArg(get), !pr);
-    $('mintGetU').hidden = !(CO.ok && bal <= ZERO && (BRIDGE || SWAP));
+    $('mintGetU').hidden = !(CO.ok && bal <= ZERO && !BRIDGE && SWAP);
   }
   // Two lines of small print under the form, the numbers from the explorer.
   function renderMintHow() {
     var i = mint.info;
+    $('mintBridge').hidden = !(BRIDGE && i && i.window && i.ok && (i.status === 'open' || i.status === 'upcoming'));
     if (!i || !i.window || !i.ok) { $('mintHow').innerHTML = ''; return; }
     $('mintHow').innerHTML = '<p>' + esc(String(i.rate) + ' ' + COIN + ' for 1 uARG, up to ' + mtArg(i.perBlock) + ' a block, ' + fmtU(i.cap, 0) + ' in all, until block ' + UI.fmt.int(i.end) + '. Then ' + COIN + ' comes only from mining.') + '</p>' +
       '<p>' + esc('Paid from the coinbase of the block that takes your request, spendable ' + UI.fmt.int(i.maturity) + ' blocks later. The uARG goes to the treasury.') + '</p>';
@@ -3381,6 +3391,7 @@
   $('mintEmpty').addEventListener('click', function (e) { if (e.target.closest('[data-act="reload"]')) { mint.mine = null; renderMintMine(); mtLoadMine(); } });
   $('mintGo').onclick = mintBegin;
   $('mintGetU').onclick = mintGetU;
+  $('mintBridgeGo').onclick = mintGetU;
   // Every ten seconds while the screen is shown: the window, this
   // wallet's requests and, while it is open, the balance.
   function mintPollStart() { clearInterval(mint.poll); mint.poll = 0; if (current === 'mint' && addr) mint.poll = setInterval(mintPollTick, 10000); }
