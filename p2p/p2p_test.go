@@ -207,7 +207,7 @@ func TestSyncRelayAndTxPropagation(t *testing.T) {
 	waitFor(t, "tx relay", 10*time.Second, func() bool { return a.pool.Has(tx.TxID()) })
 
 	// A mines it; B's mempool drops it after the block arrives.
-	sel, fees := a.pool.Select(consensus.MaxBlockSize)
+	sel, fees, _ := a.pool.Select(consensus.MaxBlockSize)
 	blk3 := mine(t, a.ch, k, sel, fees)
 	waitFor(t, "block with tx", 10*time.Second, func() bool { return b.ch.Tip().Hash == blk3.Header.Hash() })
 	waitFor(t, "mempool clear", 5*time.Second, func() bool { return b.pool.Count() == 0 })
